@@ -3,14 +3,11 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,02.11.2019</changed>
+/// <changed>ʆϒʅ,03.11.2019</changed>
 // ********************************************************************************
 
 #ifndef LIGHT_H
 #define LIGHT_H
-
-
-#include <DirectXMath.h>
 
 
 // lightening wrapper

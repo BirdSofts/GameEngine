@@ -3,16 +3,12 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,02.11.2019</changed>
+/// <changed>ʆϒʅ,06.11.2019</changed>
 // ********************************************************************************
 
 #ifndef POLYGONS_H
 #define POLYGONS_H
 
-
-#include <d3d10_1.h>
-#include <DirectXMath.h>
-#include <string>
 
 #include "ModelFormats.h"
 
@@ -22,27 +18,28 @@ template <class tType>
 class Model
 {
 private:
-  std::wstring entryPoint;
+  std::string entryPoint;
   bool dynamic; // true: dynamic usage + write access for CPU
 protected:
-  ID3D10Device1* device; // pointer to Direct3D device
+  ID3D11Device* device; // pointer to DirectX device
+  ID3D11DeviceContext* devCon; // pointer to DirectX device context
 
-  D3D10_BUFFER_DESC vertexBufferDesc;
+  D3D11_BUFFER_DESC vertexBufferDesc;
   // 2D/3D models buffer containers, drawn by invoked shaders that are compiled into vertex/pixel shaders
-  ID3D10Buffer* vertexBuffer; // models' vertex buffer
+  ID3D11Buffer* vertexBuffer; // models' vertex buffer
 
-  D3D10_SUBRESOURCE_DATA subResourceDate; // to interface with the object model vertices as resources
+  D3D11_SUBRESOURCE_DATA subResourceDate; // to interface with the object model vertices as resources
 
-  D3D10_BUFFER_DESC indexBufferDesc;
-  ID3D10Buffer* indexBuffer; // models' index buffer
+  D3D11_BUFFER_DESC indexBufferDesc;
+  ID3D11Buffer* indexBuffer; // models' index buffer
   // Note index buffers purposes: record the location of each vertex introduced in vertex buffer,
   // achieving much hider speed, and helps to cache the vertices data in faster locations of video memory.
 
   bool allocate ( tType*, unsigned long*, unsigned long& ); // object model resources allocation
 public:
-  Model ( ID3D10Device1*, std::wstring, bool );
-  ID3D10Buffer** const getVertexBuffer ( void ); // vertex buffer
-  ID3D10Buffer* const getIndexBuffer ( void ); // index buffer
+  Model ( ID3D11Device*, ID3D11DeviceContext*, std::string, bool );
+  ID3D11Buffer** const getVertexBuffer ( void ); // vertex buffer
+  ID3D11Buffer* const getIndexBuffer ( void ); // index buffer
   void release ( void ); // release the object model
 };
 void O2DmodelClassLinker ( void ); // don't call this function: solution for linker error, when using templates.
@@ -57,7 +54,7 @@ public:
   unsigned long verticesCount; // object model vertices dataobject model vertices count
   bool allocated; // true after successful resource allocation
 
-  Triangles ( ID3D10Device1* );
+  Triangles ( ID3D11Device*, ID3D11DeviceContext* );
 };
 
 
@@ -70,10 +67,10 @@ public:
   unsigned long verticesCount; // object model vertices dataobject model vertices count
   bool allocated; // true after successful resource allocation
 
-  D3D10_MAPPED_TEXTURE2D mappedRes; // updating the resource
+  D3D11_MAPPED_SUBRESOURCE mappedRes; // updating the resource
   // note DirectX 11: D3D11_MAPPED_SUBRESOURCE
 
-  Line ( ID3D10Device1* );
+  Line ( ID3D11Device*, ID3D11DeviceContext* );
   void update ( void );
 };
 
@@ -87,7 +84,7 @@ public:
   unsigned long verticesCount; // object model vertices dataobject model vertices count
   bool allocated; // true after successful resource allocation
 
-  TexturedTriangles ( ID3D10Device1* );
+  TexturedTriangles ( ID3D11Device*, ID3D11DeviceContext* );
 };
 
 
@@ -100,7 +97,7 @@ public:
   unsigned long verticesCount; // object model vertices dataobject model vertices count
   bool allocated; // true after successful resource allocation
 
-  LightedTriangle ( ID3D10Device1* );
+  LightedTriangle ( ID3D11Device*, ID3D11DeviceContext* );
 };
 
 
@@ -113,7 +110,7 @@ public:
   unsigned long verticesCount; // object model vertices dataobject model vertices count
   bool allocated; // true after successful resource allocation
 
-  Cube ( ID3D10Device1* );
+  Cube ( ID3D11Device*, ID3D11DeviceContext* );
 };
 
 

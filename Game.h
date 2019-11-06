@@ -3,18 +3,18 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,02.11.2019</changed>
+/// <changed>ʆϒʅ,03.11.2019</changed>
 // ********************************************************************************
+
+#ifndef GAME_H
+#define GAME_H
+
 
 #include "Core.h"
 #include "Universe.h"
 #include "Shader.h"
 #include "Texture.h"
 #include "Polygons.h"
-
-
-#ifndef GAME_H
-#define GAME_H
 
 
 class Game
@@ -42,7 +42,7 @@ private:
   bool initialized; // true if initialization was successful
   bool allocated; // true if resources allocation was successful
 public:
-  Game ( HINSTANCE& ); // game initialization
+  Game ( ::IUnknown* ); // game initialization
   void allocateResources ( void ); // resources creation
   //void validate ( void ); // validate the allocation of game resources
   const bool& isReady ( void ); // get the initialized state

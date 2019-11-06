@@ -3,16 +3,18 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,02.11.2019</changed>
+/// <changed>ʆϒʅ,06.11.2019</changed>
 // ********************************************************************************
 
+#include "pch.h"
 #include "Polygons.h"
 #include "Shared.h"
 
 
 template <class tType>
-Model<tType>::Model ( ID3D10Device1* dev, std::wstring entry, bool rewrite ) :
-  entryPoint ( entry ), dynamic ( rewrite ), device ( dev ),
+Model<tType>::Model ( ID3D11Device* dev, ID3D11DeviceContext* devC, std::string entry, bool rewrite ) :
+  entryPoint ( " Entry Point: " + entry ), dynamic ( rewrite ),
+  device ( dev ), devCon ( devC ),
   vertexBuffer ( nullptr ), indexBuffer ( nullptr )
 {
   subResourceDate.pSysMem = nullptr;
@@ -29,17 +31,17 @@ bool Model<tType>::allocate ( tType* data, unsigned long* index, unsigned long& 
 
     // vertex buffer description
     vertexBufferDesc.ByteWidth = sizeof ( tType ) * count; // buffer size
-    vertexBufferDesc.BindFlags = D3D10_BIND_VERTEX_BUFFER; // how to bound to graphics pipeline
+    vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER; // how to bound to graphics pipeline
     if (!dynamic)
     {
-      vertexBufferDesc.Usage = D3D10_USAGE_DEFAULT; // default: only GPC can read and write
+      vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT; // default: only GPC can read and write
       vertexBufferDesc.CPUAccessFlags = 0; // CPU access
     } else
     {
-      vertexBufferDesc.Usage = D3D10_USAGE_DYNAMIC;
-      vertexBufferDesc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
+      vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+      vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     }
-    //vertexBufferDesc.MiscFlags = D3D10_RESOURCE_MISC_GDI_COMPATIBLE;
+    //vertexBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
     vertexBufferDesc.MiscFlags = 0; // for now
     //vertexBufferDesc.StructureByteStride = 0; // Direct3D 11: structured buffer (the size of each element)
 
@@ -53,57 +55,57 @@ bool Model<tType>::allocate ( tType* data, unsigned long* index, unsigned long& 
     // note E_OUTOFMEMORY: self-explanatory
     if (FAILED ( device->CreateBuffer ( &vertexBufferDesc, &subResourceDate, &vertexBuffer ) ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Creation of vertex buffer failed!" + entryPoint );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Creation of vertex buffer failed!" + entryPoint );
       return false;
     }
 
     // index buffer description
     indexBufferDesc.ByteWidth = sizeof ( long ) * count;
-    indexBufferDesc.BindFlags = D3D10_BIND_INDEX_BUFFER;
+    indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
     if (!dynamic)
     {
-      indexBufferDesc.Usage = D3D10_USAGE_DEFAULT;
+      indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
       indexBufferDesc.CPUAccessFlags = 0;
     } else
     {
-      indexBufferDesc.Usage = D3D10_USAGE_DYNAMIC;
-      indexBufferDesc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
+      indexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+      indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     }
-    //indexBufferDesc.MiscFlags = D3D10_RESOURCE_MISC_GDI_COMPATIBLE;
+    //indexBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
     indexBufferDesc.MiscFlags = 0;
     //indexBufferDesc.StructureByteStride = 0;
 
-    D3D10_SUBRESOURCE_DATA subResourceDate = { index, 0, 0 };
+    D3D11_SUBRESOURCE_DATA subResourceDate = { index, 0, 0 };
 
     if (FAILED ( device->CreateBuffer ( &indexBufferDesc, &subResourceDate, &indexBuffer ) ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Creation of vertex buffer failed!" + entryPoint );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Creation of vertex buffer failed!" + entryPoint );
       return false;
     }
 
     return true;
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) + entryPoint );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () + entryPoint );
     return false;
   }
 };
 
 
 template <class tType>
-ID3D10Buffer** const Model<tType>::getVertexBuffer ( void )
+ID3D11Buffer** const Model<tType>::getVertexBuffer ( void )
 {
   return &vertexBuffer;
 };
 
 
 template <class tType>
-ID3D10Buffer* const Model<tType>::getIndexBuffer ( void )
+ID3D11Buffer* const Model<tType>::getIndexBuffer ( void )
 {
   return indexBuffer;
 };
@@ -127,10 +129,10 @@ void Model<tType>::release ( void )
 
     device = nullptr;
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
@@ -138,24 +140,25 @@ void Model<tType>::release ( void )
 void PolygonsClassLinker ( void ) // don't call this function: solution for linker error, when using templates.
 {
 
-  ID3D10Device1* temp { nullptr };
-  Model<Vertex> tempVertex ( temp, L"", false );
+  ID3D11Device* dev { nullptr };
+  ID3D11DeviceContext* devCon { nullptr };
+  Model<Vertex> tempVertex ( dev, devCon, "", false );
   tempVertex.getIndexBuffer ();
   tempVertex.getVertexBuffer ();
   tempVertex.release ();
-  Model<VertexT> tempVertexT ( temp, L"", false );
+  Model<VertexT> tempVertexT ( dev, devCon, "", false );
   tempVertexT.getIndexBuffer ();
   tempVertexT.getVertexBuffer ();
   tempVertexT.release ();
-  Model<VertexL> tempVertexL ( temp, L"", false );
+  Model<VertexL> tempVertexL ( dev, devCon, "", false );
   tempVertexL.getIndexBuffer ();
   tempVertexL.getVertexBuffer ();
   tempVertexL.release ();
 }
 
 
-Triangles::Triangles ( ID3D10Device1* dev ) :
-  Model ( dev, L"\tThreeTriangles", false ),
+Triangles::Triangles ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
+  Model ( dev, devC, "\tThreeTriangles", false ),
   verticesCount ( 0 ), allocated ( false )
 {
   try
@@ -194,16 +197,16 @@ Triangles::Triangles ( ID3D10Device1* dev ) :
       allocated = true;
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
 
-Line::Line ( ID3D10Device1* dev ) :
-  Model ( dev, L"\tClockwiseLine", true ),
+Line::Line ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
+  Model ( dev, devC, "\tClockwiseLine", true ),
   verticesCount ( 0 ), allocated ( false )
 {
   try
@@ -227,10 +230,10 @@ Line::Line ( ID3D10Device1* dev ) :
       allocated = true;
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
@@ -251,11 +254,11 @@ void Line::update ( void )
     // second parameter: what CPU does when GPU is busy
     // note that in Direct3D11 a resource may contain sub-resources (additional parameters of device context method)
     // after the resource is mapped, any change to it is reflected to the vertex buffer.
-    hR = vertexBuffer->Map ( D3D10_MAP_WRITE_NO_OVERWRITE, 0, &mappedRes.pData );
+    hR = devCon->Map ( vertexBuffer, 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &mappedRes );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Mapping the resource data failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Mapping the resource data failed!" );
     }
 
     // update the sub-resource:
@@ -267,10 +270,10 @@ void Line::update ( void )
 
     if (data->position.x < (data + 1)->position.x)
     {
-      modeX_1 = 1 ;
-      modeY_1 = 1 ;
-      modeX_2 = -1 ;
-      modeY_2 = -1 ;
+      modeX_1 = 1;
+      modeY_1 = 1;
+      modeX_2 = -1;
+      modeY_2 = -1;
     } else
       if (data->position.x > ( data + 1 )->position.x)
       {
@@ -308,19 +311,19 @@ void Line::update ( void )
     data->color.z = rnd_1 = (data + 1)->color.z = rnd_3; // blue
 
     // validates the pointer of the vertex buffer's resource and enables the GPU's read access upon.
-    vertexBuffer->Unmap ();
+    devCon->Unmap ( vertexBuffer, 0 );
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
 
-TexturedTriangles::TexturedTriangles ( ID3D10Device1* dev ) :
-  Model ( dev, L"\tTexturedTriangles", false ),
+TexturedTriangles::TexturedTriangles ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
+  Model ( dev, devC, "\tTexturedTriangles", false ),
   verticesCount ( 0 ), allocated ( false )
 {
   try
@@ -352,16 +355,16 @@ TexturedTriangles::TexturedTriangles ( ID3D10Device1* dev ) :
       allocated = true;
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
 
-LightedTriangle::LightedTriangle ( ID3D10Device1* dev ) :
-  Model ( dev, L"\tLightedTriangles", false ),
+LightedTriangle::LightedTriangle ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
+  Model ( dev, devC, "\tLightedTriangles", false ),
   verticesCount ( 0 ), allocated ( false )
 {
   try
@@ -393,16 +396,16 @@ LightedTriangle::LightedTriangle ( ID3D10Device1* dev ) :
       allocated = true;
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
 
-Cube::Cube ( ID3D10Device1* dev ) :
-  Model ( dev, L"\tLightedTriangles", false ),
+Cube::Cube ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
+  Model ( dev, devC, "\tLightedTriangles", false ),
   verticesCount ( 0 ), allocated ( false )
 {
   try
@@ -431,9 +434,9 @@ Cube::Cube ( ID3D10Device1* dev ) :
     }
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };

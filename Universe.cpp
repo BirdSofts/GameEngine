@@ -3,15 +3,17 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,02.11.2019</changed>
+/// <changed>ʆϒʅ,06.11.2019</changed>
 // ********************************************************************************
 
+#include "pch.h"
 #include "Universe.h"
 #include "Shared.h"
 
 
-Universe::Universe ( ID3D10Device1* dev ) :
-  device ( dev ), camera ( nullptr ), matrixWorldRotation ( 0.0f ), matrixBuffer ( nullptr ),
+Universe::Universe ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
+  device ( dev ), devCon ( devC ),
+  camera ( nullptr ), matrixWorldRotation ( 0.0f ), matrixBuffer ( nullptr ),
   lightDiffuse ( nullptr ), lightBufferDiffuse ( nullptr ), initialized ( false )
 {
   try
@@ -20,14 +22,14 @@ Universe::Universe ( ID3D10Device1* dev ) :
     HRESULT hR;
 
     // get description
-    D3D10_VIEWPORT viewPort;
+    D3D11_VIEWPORT viewPort;
     unsigned int numberOf { 1 };
-    device->RSGetViewports ( &numberOf, &viewPort );
+    devCon->RSGetViewports ( &numberOf, &viewPort );
 
     // projection matrix setup (usable for shaders)
     // purpose: translates 3D scene into the 2D viewport space
     float viewField { DirectX::XM_PI / 4.0f };
-    float screenAspect { ( float) viewPort.Width / ( float) viewPort.Height };
+    float screenAspect { (float) viewPort.Width / (float) viewPort.Height };
     // projection matrix creation for 3D rendering
     matrixProjection = DirectX::XMMatrixPerspectiveFovLH ( viewField, screenAspect, screenNear, screenDepth );
 
@@ -40,15 +42,15 @@ Universe::Universe ( ID3D10Device1* dev ) :
 
     // orthographic projection matrix creation
     // purpose: to render 2D elements like user interface directly and skipping 3D rendering
-    matrixOrthographic = DirectX::XMMatrixOrthographicLH ( ( float) viewPort.Width, ( float) viewPort.Height, screenNear, screenDepth );
+    matrixOrthographic = DirectX::XMMatrixOrthographicLH ( (float) viewPort.Width, (float) viewPort.Height, screenNear, screenDepth );
 
     // dynamic matrix constant buffer description
     // purpose: to access internal variables introduced in vertex shader
-    D3D10_BUFFER_DESC matrixBufferDesc;
-    matrixBufferDesc.Usage = D3D10_USAGE_DYNAMIC;
+    D3D11_BUFFER_DESC matrixBufferDesc;
+    matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
     matrixBufferDesc.ByteWidth = sizeof ( MatrixBuffer );
-    matrixBufferDesc.BindFlags = D3D10_BIND_CONSTANT_BUFFER;
-    matrixBufferDesc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
+    matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     matrixBufferDesc.MiscFlags = 0;
     //matrixBufferDesc.StructureByteStride = 0; // DirectX 11
 
@@ -56,8 +58,8 @@ Universe::Universe ( ID3D10Device1* dev ) :
     hR = device->CreateBuffer ( &matrixBufferDesc, nullptr, &matrixBuffer );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Creation of matrix buffer failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Creation of matrix buffer failed!" );
       return;
     }
 
@@ -65,18 +67,18 @@ Universe::Universe ( ID3D10Device1* dev ) :
     camera = new (std::nothrow) Camera;
     if (!camera->isInitialized ())
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Camera initialization failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Camera initialization failed!" );
       return;
     }
 
     // dynamic diffuse light constant buffer description
     // purpose: to access internal variables introduced in pixel shader
-    D3D10_BUFFER_DESC lightBufferDiffuseDesc;
-    lightBufferDiffuseDesc.Usage = D3D10_USAGE_DYNAMIC;
+    D3D11_BUFFER_DESC lightBufferDiffuseDesc;
+    lightBufferDiffuseDesc.Usage = D3D11_USAGE_DYNAMIC;
     lightBufferDiffuseDesc.ByteWidth = sizeof ( LightBuffer );
-    lightBufferDiffuseDesc.BindFlags = D3D10_BIND_CONSTANT_BUFFER;
-    lightBufferDiffuseDesc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
+    lightBufferDiffuseDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    lightBufferDiffuseDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     lightBufferDiffuseDesc.MiscFlags = 0;
     //lightBufferDiffuseDesc.StructureByteStride = 0; // DirectX 11
 
@@ -84,8 +86,8 @@ Universe::Universe ( ID3D10Device1* dev ) :
     hR = device->CreateBuffer ( &matrixBufferDesc, nullptr, &lightBufferDiffuse );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Creation of diffuse light buffer failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Creation of diffuse light buffer failed!" );
       return;
     }
 
@@ -93,18 +95,18 @@ Universe::Universe ( ID3D10Device1* dev ) :
     lightDiffuse = new (std::nothrow) DiffuseLight;
     if (!lightDiffuse->isInitialized ())
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Diffuse light initialization failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Diffuse light initialization failed!" );
       return;
     }
 
     initialized = true;
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
@@ -122,7 +124,7 @@ void Universe::renderResources ( void )
 
     HRESULT hR;
 
-    void* mappedResource;
+    D3D11_MAPPED_SUBRESOURCE mappedResource;
 
     MatrixBuffer* dataPtrMatrix;
 
@@ -135,16 +137,16 @@ void Universe::renderResources ( void )
     projection = DirectX::XMMatrixTranspose ( matrixProjection );
 
     // prepare for write (lock the constant buffer)
-    hR = matrixBuffer->Map ( D3D10_MAP_WRITE_DISCARD, 0, &mappedResource );
+    hR = devCon->Map ( matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Mapping the matrix buffer failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Mapping the matrix buffer failed!" );
       return;
     }
 
     // initialize the pointer to the data already in the constant buffer
-    dataPtrMatrix = ( MatrixBuffer*) mappedResource;
+    dataPtrMatrix = (MatrixBuffer*) mappedResource.pData;
 
     // copy the matrices to the constant buffer
     dataPtrMatrix->world = world;
@@ -152,27 +154,27 @@ void Universe::renderResources ( void )
     dataPtrMatrix->projection = projection;
 
     // unlock and make the buffer usable
-    matrixBuffer->Unmap ();
+    devCon->Unmap ( matrixBuffer, 0 );
 
     // activate the updated constant matrix buffer in the vertex shader
     // first parameter: position of the constant buffer in the vertex shader
-    device->VSSetConstantBuffers ( 0, 1, &matrixBuffer );
+    devCon->VSSetConstantBuffers ( 0, 1, &matrixBuffer );
 
     // diffuse light setup + updating it each frame
 
     LightBuffer* dataPtrDiffuseLight;
 
     // prepare for write (lock the constant buffer)
-    hR = lightBufferDiffuse->Map ( D3D10_MAP_WRITE_DISCARD, 0, &mappedResource );
+    hR = devCon->Map ( lightBufferDiffuse, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Mapping the diffuse light buffer failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Mapping the diffuse light buffer failed!" );
       return;
     }
 
     // initialize the pointer to the data already in the constant buffer
-    dataPtrDiffuseLight = ( LightBuffer*) mappedResource;
+    dataPtrDiffuseLight = (LightBuffer*) mappedResource.pData;
 
     // copy the diffuse light structure to the constant buffer
     dataPtrDiffuseLight->diffuseColour = lightDiffuse->getColour ();
@@ -180,18 +182,18 @@ void Universe::renderResources ( void )
     dataPtrDiffuseLight->padding = 0.0f;
 
     // unlock and make the buffer usable
-    lightBufferDiffuse->Unmap ();
+    devCon->Unmap ( lightBufferDiffuse, 0 );
 
     // activate the updated constant diffuse light buffer in the pixel shader
     // first parameter: position of the constant buffer in the pixel shader
-    device->PSSetConstantBuffers ( 0, 1, &lightBufferDiffuse );
+    devCon->PSSetConstantBuffers ( 0, 1, &lightBufferDiffuse );
 
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
@@ -223,10 +225,10 @@ void Universe::update ( void )
     matrixWorld = DirectX::XMMatrixRotationY ( matrixWorldRotation );
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
@@ -259,11 +261,12 @@ void Universe::release ( void )
     }
 
     device = nullptr;
+    devCon = nullptr;
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };

@@ -3,14 +3,18 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,02.11.2019</changed>
+/// <changed>ʆϒʅ,06.11.2019</changed>
 // ********************************************************************************
 
+#include "pch.h"
 #include "Game.h"
 #include "Shared.h"
 
 
-Game::Game ( HINSTANCE& h_instance ) :
+using namespace winrt::Windows::UI::Core;
+
+
+Game::Game ( ::IUnknown* window ) :
   core ( nullptr ), universe ( nullptr ),
   initialized ( false ), allocated ( false )
 {
@@ -28,29 +32,29 @@ Game::Game ( HINSTANCE& h_instance ) :
     _2DlightedTriangle = nullptr;
 
     // the game framework instantiation
-    core = new (std::nothrow) TheCore ( h_instance, this );
+    core = new (std::nothrow) TheCore ( window, this );
 
     if (!core->isInitialized ())
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Initialization of framework failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Initialization of framework failed!" );
     }
 
     initialized = true;
-    PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), L"mainThread",
-                                              L"The game is successfully initialized." );
+    PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), "mainThread",
+                                              "The game is successfully initialized." );
 
     allocateResources ();
 
     if (!allocated)
-      PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), L"mainThread",
-                                                L"The game resources is successfully allocated." );
+      PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), "mainThread",
+                                                "The game resources is successfully allocated." );
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
@@ -63,45 +67,45 @@ void Game::allocateResources ( void )
     allocated = false;
 
     // the game framework instantiation
-    universe = new (std::nothrow) Universe ( core->d3d->device.Get () );
+    universe = new (std::nothrow) Universe ( core->d3d->device.Get (), core->d3d->devCon.Get () );
 
     if (!universe->isInitialized ())
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Initialization of game universe failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Initialization of game universe failed!" );
     }
 
     shaderColour = new (std::nothrow) ShaderColour ( core->d3d->device.Get () );
 
     shaderTexture = new (std::nothrow) ShaderTexture ( core->d3d->device.Get () );
 
-    _2Dtriangles = new (std::nothrow) Triangles ( core->d3d->device.Get () );
+    _2Dtriangles = new (std::nothrow) Triangles ( core->d3d->device.Get (), core->d3d->devCon.Get () );
 
-    _2Dline = new (std::nothrow) Line ( core->d3d->device.Get () );
+    _2Dline = new (std::nothrow) Line ( core->d3d->device.Get (), core->d3d->devCon.Get () );
 
     texture = new (std::nothrow) Texture<TargaHeader>
-      ( core->d3d->device.Get (), "./textures/clouds.tga" ); // a texture file
+      ( core->d3d->device.Get (), core->d3d->devCon.Get (), "./textures/clouds.tga" ); // a texture file
     if (!texture)
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Instantiation of texture failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Instantiation of texture failed!" );
       return;
     }
-    _2DtexturedTriangles = new (std::nothrow) TexturedTriangles ( core->d3d->device.Get () );
+    _2DtexturedTriangles = new (std::nothrow) TexturedTriangles ( core->d3d->device.Get (), core->d3d->devCon.Get () );
 
     shaderDiffuseLight = new (std::nothrow) ShaderDiffuseLight ( core->d3d->device.Get () );
 
-    _2DlightedTriangle = new (std::nothrow) LightedTriangle ( core->d3d->device.Get () );
+    _2DlightedTriangle = new (std::nothrow) LightedTriangle ( core->d3d->device.Get (), core->d3d->devCon.Get () );
 
-    _3Dcube = new (std::nothrow) Cube ( core->d3d->device.Get () );
+    _3Dcube = new (std::nothrow) Cube ( core->d3d->device.Get (), core->d3d->devCon.Get () );
 
     allocated = true;
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
@@ -117,8 +121,12 @@ const bool Game::run ( void )
   try
   {
 
+
+    PointerProvider::getVariables ()->currentState = "gaming";
+
+
     MSG msg { 0 }; // a new message structure
-    unsigned short counter { 0 };
+    unsigned short counter { 1 };
 
     // setting the needed starting points
     core->timer->event ( "reset" ); // reset (start)
@@ -131,8 +139,8 @@ const bool Game::run ( void )
 
 
     // main part (game engine)
-    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     // Todo: research for a robust game loop:
     // mathematical simulation of time and reality, physics, multithreading
     //
@@ -142,33 +150,12 @@ const bool Game::run ( void )
 #pragma region peekLoop
       if ((counter % 10) == 0)
       {
-        // check and peek (get) window messages already placed in an event queue.
-        // note the difference between the below two functions:
-        // the get function, once called, actually waits for a message,
-        // while peek function allows the normal flow, if there is no message in the message queue.
-        while ( // peek loop for messages (empting the message queue)
-                PeekMessage (
-                  // pointer to a message structure to receive message information
-                  &msg,
-                  // handle to the window, whose messages is intended,
-                  // and NULL as argument allow the retrieve of all messages for any window, which belongs to the current thread.
-                  core->appHandle,
-                  // to retrieve messages filtered through the introduced range. (both zero retunes all available messages)
-                  // first message to last message
-                  0, 0,
-                  // removal flags specify how the messages are to be handled:
-                  // additionally to below introduced argument, PM_NOREMOVE prevents the removal of messages in the queue,
-                  // therefore after it is passed, the get function is additionally needed to actually retrieve the messages.
-                  PM_REMOVE ))
-          //while ( GetMessage ( &msg, NULL, 0, 0 ) ) // not a good one for a game, which needs to deliver 30 F/S
-        {
-          // translation of the virtual-key messages into character messages
-          TranslateMessage ( &msg );
-          // dispatching the message to the window procedure function, so the event could be handled appropriately.
-          DispatchMessage ( &msg );
-          // the evaluated value: exit (using intellisense or MSDN, the possible and obvious messages could be seen)
-        }
+
         counter = 0;
+
+        CoreWindow::GetForCurrentThread ().Dispatcher ().ProcessEvents (
+          CoreProcessEventsOption::ProcessAllIfPresent );
+
       }
 #pragma endregion
 
@@ -202,25 +189,35 @@ const bool Game::run ( void )
 
       } else
       {
+
         // Todo add additional suitable procedure can be done in paused state
 
-        // if there is no suitable processing for paused state, set the engine at hibernation:
+
+
+        CoreWindow::GetForCurrentThread ().Dispatcher ().ProcessEvents (
+          CoreProcessEventsOption::ProcessOneIfPresent );
+        // if no task go to hibernation
         std::this_thread::sleep_for ( std::chrono::milliseconds ( 100 ) );
+
+        // Microsoft's resource (suspension)
+        //CoreWindow::GetForCurrentThread ().Dispatcher ().ProcessEvents (
+        //  CoreProcessEventsOption::ProcessOneAndAllPending );
+
       }
 
       counter++;
-    } while (running == true);
-    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    } while (PointerProvider::getVariables ()->running == true);
+    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 
     return true;
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
     return false;
   }
 };
@@ -242,11 +239,11 @@ void Game::render ( void )
 
 
     // setting the active vertex/pixel shaders (active shader technique)
-    core->d3d->device->VSSetShader ( shaderColour->getVertexShader () );
-    core->d3d->device->PSSetShader ( shaderColour->getPixelShader () );
+    core->d3d->devCon->VSSetShader ( shaderColour->getVertexShader (), nullptr, 0 );
+    core->d3d->devCon->PSSetShader ( shaderColour->getPixelShader (), nullptr, 0 );
 
     // setting the active input layout
-    core->d3d->device->IASetInputLayout ( shaderColour->getInputLayout () );
+    core->d3d->devCon->IASetInputLayout ( shaderColour->getInputLayout () );
 
     // set the active vertex and index buffers (binds an array of vertex/index buffers to input-assembler stage)
     // basically, which vertices to put to graphics pipeline when rendering
@@ -254,68 +251,68 @@ void Game::render ( void )
     unsigned int offset = 0;
     // fourth parameter: constant array of stride values (one stride for each buffer in the vertex-buffer array)
     // fifth parameter: number of bytes between the first element and the element to use (usually zero)
-    core->d3d->device->IASetVertexBuffers ( 0, 1, _2Dtriangles->getVertexBuffer (), &strides, &offset );
+    core->d3d->devCon->IASetVertexBuffers ( 0, 1, _2Dtriangles->getVertexBuffer (), &strides, &offset );
     // set the active corresponding index buffer in the input assembler
-    core->d3d->device->IASetIndexBuffer ( _2Dtriangles->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
+    core->d3d->devCon->IASetIndexBuffer ( _2Dtriangles->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
 
     // set primitive topology (Direct3D has no idea about the mathematical conventions to use)
     // basically how to render the resource (vertex data) to screen
-    core->d3d->device->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+    core->d3d->devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 
     // draw indexed vertices, starting from vertex 0
-    core->d3d->device->DrawIndexed ( _2Dtriangles->verticesCount, 0, 0 );
+    core->d3d->devCon->DrawIndexed ( _2Dtriangles->verticesCount, 0, 0 );
 
 
 
-    core->d3d->device->IASetVertexBuffers ( 0, 1, _2Dline->getVertexBuffer (), &strides, &offset );
-    core->d3d->device->IASetIndexBuffer ( _2Dline->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
-    core->d3d->device->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_LINELIST );
-    core->d3d->device->DrawIndexed ( _2Dline->verticesCount, 0, 0 );
+    core->d3d->devCon->IASetVertexBuffers ( 0, 1, _2Dline->getVertexBuffer (), &strides, &offset );
+    core->d3d->devCon->IASetIndexBuffer ( _2Dline->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
+    core->d3d->devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_LINELIST );
+    core->d3d->devCon->DrawIndexed ( _2Dline->verticesCount, 0, 0 );
 
 
 
     // setting the active texture
-    core->d3d->device->PSSetShaderResources ( 0, 1, texture->getTexture () );
+    core->d3d->devCon->PSSetShaderResources ( 0, 1, texture->getTexture () );
 
-    core->d3d->device->VSSetShader ( shaderTexture->getVertexShader () );
-    core->d3d->device->PSSetShader ( shaderTexture->getPixelShader () );
+    core->d3d->devCon->VSSetShader ( shaderTexture->getVertexShader (), nullptr, 0 );
+    core->d3d->devCon->PSSetShader ( shaderTexture->getPixelShader (), nullptr, 0 );
 
-    core->d3d->device->IASetInputLayout ( shaderTexture->getInputLayout () );
+    core->d3d->devCon->IASetInputLayout ( shaderTexture->getInputLayout () );
 
     // setting the active sampler
-    core->d3d->device->PSSetSamplers ( 0, 1, shaderTexture->getSamplerState () );
+    core->d3d->devCon->PSSetSamplers ( 0, 1, shaderTexture->getSamplerState () );
 
     strides = sizeof ( VertexT );
-    core->d3d->device->IASetVertexBuffers ( 0, 1, _2DtexturedTriangles->getVertexBuffer (), &strides, &offset );
-    core->d3d->device->IASetIndexBuffer ( _2DtexturedTriangles->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
+    core->d3d->devCon->IASetVertexBuffers ( 0, 1, _2DtexturedTriangles->getVertexBuffer (), &strides, &offset );
+    core->d3d->devCon->IASetIndexBuffer ( _2DtexturedTriangles->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
 
-    core->d3d->device->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-    core->d3d->device->DrawIndexed ( _2DtexturedTriangles->verticesCount, 0, 0 );
+    core->d3d->devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+    core->d3d->devCon->DrawIndexed ( _2DtexturedTriangles->verticesCount, 0, 0 );
 
 
 
-    core->d3d->device->VSSetShader ( shaderDiffuseLight->getVertexShader () );
-    core->d3d->device->PSSetShader ( shaderDiffuseLight->getPixelShader () );
-    core->d3d->device->IASetInputLayout ( shaderDiffuseLight->getInputLayout () );
-    core->d3d->device->PSSetSamplers ( 0, 1, shaderDiffuseLight->getSamplerState () );
+    core->d3d->devCon->VSSetShader ( shaderDiffuseLight->getVertexShader (), nullptr, 0 );
+    core->d3d->devCon->PSSetShader ( shaderDiffuseLight->getPixelShader (), nullptr, 0 );
+    core->d3d->devCon->IASetInputLayout ( shaderDiffuseLight->getInputLayout () );
+    core->d3d->devCon->PSSetSamplers ( 0, 1, shaderDiffuseLight->getSamplerState () );
     strides = sizeof ( VertexL );
-    core->d3d->device->IASetVertexBuffers ( 0, 1, _2DlightedTriangle->getVertexBuffer (), &strides, &offset );
-    core->d3d->device->IASetIndexBuffer ( _2DlightedTriangle->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
-    core->d3d->device->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-    core->d3d->device->DrawIndexed ( _2DlightedTriangle->verticesCount, 0, 0 );
+    core->d3d->devCon->IASetVertexBuffers ( 0, 1, _2DlightedTriangle->getVertexBuffer (), &strides, &offset );
+    core->d3d->devCon->IASetIndexBuffer ( _2DlightedTriangle->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
+    core->d3d->devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+    core->d3d->devCon->DrawIndexed ( _2DlightedTriangle->verticesCount, 0, 0 );
 
 
 
-    core->d3d->device->IASetVertexBuffers ( 0, 1, _3Dcube->getVertexBuffer (), &strides, &offset );
-    core->d3d->device->IASetIndexBuffer ( _3Dcube->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
-    core->d3d->device->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-    core->d3d->device->DrawIndexed ( _3Dcube->verticesCount, 0, 0 );
+    core->d3d->devCon->IASetVertexBuffers ( 0, 1, _3Dcube->getVertexBuffer (), &strides, &offset );
+    core->d3d->devCon->IASetIndexBuffer ( _3Dcube->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
+    core->d3d->devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+    core->d3d->devCon->DrawIndexed ( _3Dcube->verticesCount, 0, 0 );
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
@@ -329,10 +326,10 @@ void Game::update ( void )
     universe->update ();
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
@@ -422,13 +419,13 @@ void Game::shutdown ( void )
       core = nullptr;
     }
 
-    PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), L"mainThread",
-                                              L"The Game is successfully shut down." );
+    PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), "mainThread",
+                                              "The Game is successfully shut down." );
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };

@@ -3,16 +3,18 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,02.11.2019</changed>
+/// <changed>ʆϒʅ,06.11.2019</changed>
 // ********************************************************************************
 
+#include "pch.h"
 #include "texture.h"
 #include "Shared.h"
 
 
 template <typename fileType>
-Texture<fileType>::Texture ( ID3D10Device1* dev, const char* path ) :
-  device ( dev ), data ( nullptr ), texture ( nullptr ), textureView ( nullptr )
+Texture<fileType>::Texture ( ID3D11Device* dev, ID3D11DeviceContext* devC, const char* path ) :
+  device ( dev ), devCon ( devC ),
+  data ( nullptr ), texture ( nullptr ), textureView ( nullptr )
 {
   try
   {
@@ -21,9 +23,9 @@ Texture<fileType>::Texture ( ID3D10Device1* dev, const char* path ) :
 
     if (!Load ( path ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Loading the texture failed! file: "
-                                                + Converter::strConverter ( path ) );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Loading the texture failed! file: "
+                                                + std::string ( path ) );
       if (data)
         delete [] data;
       data = nullptr;
@@ -31,7 +33,7 @@ Texture<fileType>::Texture ( ID3D10Device1* dev, const char* path ) :
     }
 
     // texture description
-    D3D10_TEXTURE2D_DESC textureDesc;
+    D3D11_TEXTURE2D_DESC textureDesc;
     textureDesc.Height = file.height;
     textureDesc.Width = file.width;
     textureDesc.MipLevels = 0;
@@ -39,22 +41,22 @@ Texture<fileType>::Texture ( ID3D10Device1* dev, const char* path ) :
     textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // 32 bit RGBA
     textureDesc.SampleDesc.Count = 1; // default
     textureDesc.SampleDesc.Quality = 0;
-    textureDesc.Usage = D3D10_USAGE_DEFAULT;
+    textureDesc.Usage = D3D11_USAGE_DEFAULT;
     // default (UpdateSubresource): higher speed memory, gets cache retention preference (for not removed or reloaded data)
     // dynamic (Map,Unmap): will place in the not cached memory locations (data will be rewritten shortly)
 
     // settings required for mipmaped textures
-    textureDesc.BindFlags = D3D10_BIND_SHADER_RESOURCE | D3D10_BIND_RENDER_TARGET;
+    textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
     textureDesc.CPUAccessFlags = 0;
-    textureDesc.MiscFlags = D3D10_RESOURCE_MISC_GENERATE_MIPS;
+    textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
 
     // empty texture creation
     hR = device->CreateTexture2D ( &textureDesc, nullptr, &texture );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Creation of texture 2D failed!"
-                                                + Converter::strConverter ( path ) );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Creation of texture 2D failed!"
+                                                + std::string ( path ) );
       return;
     }
 
@@ -66,12 +68,12 @@ Texture<fileType>::Texture ( ID3D10Device1* dev, const char* path ) :
     // recommendations for correct choice:
     //-- Map and Unmap for data that is reloaded each frame or on a very regular basis.
     //-- UpdateSubresource: for data that is loaded once or rarely during loading sequences
-    device->UpdateSubresource ( texture, 0, nullptr, data, rowPitch, 0 );
+    devCon->UpdateSubresource ( texture, 0, nullptr, data, rowPitch, 0 );
 
     // shader view description
-    D3D10_SHADER_RESOURCE_VIEW_DESC shaderResdataDesc;
+    D3D11_SHADER_RESOURCE_VIEW_DESC shaderResdataDesc;
     shaderResdataDesc.Format = textureDesc.Format;
-    shaderResdataDesc.ViewDimension = D3D10_SRV_DIMENSION_TEXTURE2D;
+    shaderResdataDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 
     // important mipmap variables: below: full range of Mipmap levels for high quality texture rendering at any distance
     shaderResdataDesc.Texture2D.MostDetailedMip = 0;
@@ -82,24 +84,24 @@ Texture<fileType>::Texture ( ID3D10Device1* dev, const char* path ) :
     hR = device->CreateShaderResourceView ( texture, &shaderResdataDesc, &textureView );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Creation of shader resource view failed!"
-                                                + Converter::strConverter ( path ) );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Creation of shader resource view failed!"
+                                                + std::string ( path ) );
       return;
     }
     textureView->GetDesc ( &shaderResdataDesc );
 
     // texture mipmaps generation
-    device->GenerateMips ( textureView );
+    devCon->GenerateMips ( textureView );
 
     delete [] data;
     data = nullptr;
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
@@ -201,10 +203,10 @@ bool Texture<TargaHeader>::Load ( const char* path )
     return true;
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
     return false;
   }
 };
@@ -220,7 +222,7 @@ bool Texture<PngHeader>::Load ( const char* path )
 
 
 template<typename fileType>
-ID3D10ShaderResourceView** const Texture<fileType>::getTexture ()
+ID3D11ShaderResourceView** const Texture<fileType>::getTexture ()
 {
   return &textureView;
 };
@@ -231,6 +233,7 @@ void Texture<fileType>::release ()
 {
   try
   {
+
     if (data)
       delete [] data;
     if (texture)
@@ -245,11 +248,13 @@ void Texture<fileType>::release ()
     }
 
     device = nullptr;
+    devCon = nullptr;
+
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
@@ -257,8 +262,9 @@ void Texture<fileType>::release ()
 void TextureClassLinker ( void ) // don't call this function: solution for linker error, when using templates.
 {
 
-  ID3D10Device1* temp { nullptr };
-  Texture<TargaHeader> tempTex ( temp, "" );
+  ID3D11Device* dev { nullptr };
+  ID3D11DeviceContext* devCon { nullptr };
+  Texture<TargaHeader> tempTex ( dev, devCon, "" );
   tempTex.getTexture ();
   tempTex.release ();
 

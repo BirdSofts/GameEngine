@@ -3,15 +3,12 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,02.11.2019</changed>
+/// <changed>ʆϒʅ,05.11.2019</changed>
 // ********************************************************************************
 
 #ifndef SPACE_H
 #define SPACE_H
 
-
-#include <d3d10_1.h>
-#include <DirectXMath.h>
 
 #include "Camera.h"
 #include "Light.h"
@@ -39,7 +36,8 @@ struct LightBuffer
 class Universe
 {
 private:
-  ID3D10Device1* device;
+  ID3D11Device* device; // pointer to DirecX device
+  ID3D11DeviceContext* devCon; // pointer to DirectX device context
 
   Camera* camera; // pointer to the camera application
   DirectX::XMMATRIX matrixProjection; // projection matrix (translation of 3D scene into the 2D viewport space)
@@ -48,14 +46,14 @@ private:
   DirectX::XMMATRIX matrixOrthographic; // orthographic matrix (2D rendering)
   const float screenDepth { 1000.0f }; // depth settings
   const float screenNear { 0.1f }; // depth settings
-  ID3D10Buffer* matrixBuffer; // constant matrix buffer (to interface with shader)
+  ID3D11Buffer* matrixBuffer; // constant matrix buffer (to interface with shader)
 
   DiffuseLight* lightDiffuse; // pointer to the diffuse light application
-  ID3D10Buffer* lightBufferDiffuse; // constant light buffer (to interface with shader)
+  ID3D11Buffer* lightBufferDiffuse; // constant light buffer (to interface with shader)
 
   bool initialized; // true if initialization was successful
 public:
-  Universe ( ID3D10Device1* );
+  Universe ( ID3D11Device*, ID3D11DeviceContext* );
   const bool& isInitialized ( void ); // get the initialized state
   void renderResources ( void ); // map matrix buffer and update
   Camera* getCamera ( void ); // get the pointer to camera application

@@ -3,18 +3,11 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,02.11.2019</changed>
+/// <changed>ʆϒʅ,03.11.2019</changed>
 // ********************************************************************************
 
 #ifndef DIRECT2D_H
 #define DIRECT2D_H
-
-
-#include <wrl/client.h> // Windows and COM wrappers (calls to DirectX)
-#include <d2d1_1.h> // DirectX includes
-#pragma comment (lib, "d2d1.lib") // linkage to the 'd2d1' library
-#include <dwrite_1.h> // DirectX includes
-#pragma comment (lib, "dwrite.lib") // linkage to the 'dwrite' library
 
 
 #include "Core.h"

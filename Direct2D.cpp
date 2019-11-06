@@ -3,9 +3,10 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,02.11.2019</changed>
+/// <changed>ʆϒʅ,06.11.2019</changed>
 // ********************************************************************************
 
+#include "pch.h"
 #include "Direct2D.h"
 #include "Shared.h"
 
@@ -25,8 +26,8 @@ Direct2D::Direct2D ( TheCore* coreObj ) :
     hR = DWriteCreateFactory ( DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), &writeFac );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"The creation of DirectWrite factory failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "The creation of DirectWrite factory failed!" );
       return;
     }
 
@@ -43,18 +44,18 @@ Direct2D::Direct2D ( TheCore* coreObj ) :
     hR = D2D1CreateFactory ( D2D1_FACTORY_TYPE_MULTI_THREADED, __uuidof(ID2D1Factory1), &options, &factory );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"The creation of Direct2D factory failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "The creation of Direct2D factory failed!" );
       return;
     }
 
     // acquiring the underlying DXGI factory used to create the Dirext3D device (resources needs)
     IDXGIDevice1* dxgiDevice;
-    hR = core->d3d->device->QueryInterface ( __uuidof(IDXGIDevice1), ( void**) & dxgiDevice );
+    hR = core->d3d->device->QueryInterface ( __uuidof(IDXGIDevice1), (void**) &dxgiDevice );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Acquiring the DXGI device failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Acquiring the DXGI device failed!" );
       return;
     }
 
@@ -63,28 +64,28 @@ Direct2D::Direct2D ( TheCore* coreObj ) :
     hR = factory->CreateDevice ( dxgiDevice, &device );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Creation of Direct2D device failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Creation of Direct2D device failed!" );
       return;
     }
     rC = dxgiDevice->Release ();
     dxgiDevice = nullptr;
 
     initialized = true;
-    PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), L"mainThread",
-                                              L"Direct2D is successfully initialized." );
+    PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), "mainThread",
+                                              "Direct2D is successfully initialized." );
 
     allocateResources ();
 
     if (!allocated)
-      PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), L"mainThread",
-                                                L"Allocation of Direct2D resources failed." );
+      PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), "mainThread",
+                                                "Allocation of Direct2D resources failed." );
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
@@ -102,8 +103,8 @@ void Direct2D::allocateResources ( void )
     hR = device->CreateDeviceContext ( D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &deviceCon );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Creation of Direct2D device context failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Creation of Direct2D device context failed!" );
       return;
     }
 
@@ -115,8 +116,8 @@ void Direct2D::allocateResources ( void )
     //auto rC = dcBuffer->Release ();
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Retrieving the back buffer needed for Direct2D failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Retrieving the back buffer needed for Direct2D failed!" );
       return;
     }
 
@@ -135,8 +136,8 @@ void Direct2D::allocateResources ( void )
     hR = deviceCon->CreateBitmapFromDxgiSurface ( dcBuffer.Get (), &bitMap, &dcBitmap );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Creation of Direct2D bitmap from the DXGI surface failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Creation of Direct2D bitmap from the DXGI surface failed!" );
       return;
     }
 
@@ -146,10 +147,10 @@ void Direct2D::allocateResources ( void )
     initializeTextFormats ();
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
@@ -171,8 +172,8 @@ void Direct2D::initializeTextFormats ( void )
       hR = deviceCon->CreateSolidColorBrush ( D2D1::ColorF ( D2D1::ColorF::Black ), &brushBlack );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Creation of one or more brushes failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Creation of one or more brushes failed!" );
       return;
     }
 
@@ -188,8 +189,8 @@ void Direct2D::initializeTextFormats ( void )
                                                DWRITE_FONT_STRETCH_NORMAL, 10.0f, L"en-GB", &textFormatLogs );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Creation of one or more text formats failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Creation of one or more text formats failed!" );
       return;
     }
 
@@ -199,8 +200,8 @@ void Direct2D::initializeTextFormats ( void )
       hR = textFormatLogs->SetTextAlignment ( DWRITE_TEXT_ALIGNMENT_LEADING );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Alignment of one or more text formats failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Alignment of one or more text formats failed!" );
       return;
     }
 
@@ -210,18 +211,18 @@ void Direct2D::initializeTextFormats ( void )
       hR = textFormatLogs->SetParagraphAlignment ( DWRITE_PARAGRAPH_ALIGNMENT_NEAR );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Alignment of one or more text paragraphs failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Alignment of one or more text paragraphs failed!" );
       return;
     }
 
     allocated = true;
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
@@ -237,7 +238,7 @@ void Direct2D::debugInfos ( void )
   try
   {
 
-    if (core->debug && (!core->appWindow->isResized ()) && textLayoutsDebug)
+    if (core->debug /*&& (!core->appWindow->isResized ())*/ && textLayoutsDebug)
     {
       // drawing operations must be issued between a BeginDraw and EndDraw calls
       deviceCon->BeginDraw ();
@@ -250,15 +251,15 @@ void Direct2D::debugInfos ( void )
                                     brushYellow.Get (), D2D1_DRAW_TEXT_OPTIONS_NONE );
       if (FAILED ( deviceCon->EndDraw () ))
       {
-        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                  L"Drawing the FPS information on screen failed!" );
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Drawing the FPS information on screen failed!" );
       }
     }
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };

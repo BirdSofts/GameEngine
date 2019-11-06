@@ -77,7 +77,7 @@ I appreciate any contribution from anyone, who sees that the project deserves hi
 <td><a href="https://en.cppreference.com/">cppreference.com</a></td>
 </tr>
 <tr>
-<td><a href="https://walbourn.github.io/direct3d-game-visual-studio-templates-redux/">Directx C++/WinRT projects templates</a></td>
+<td><a href="https://walbourn.github.io/direct3d-game-visual-studio-templates-redux/">DirectX C++/WinRT project templates</a></td>
 </tr>
 </table>
 

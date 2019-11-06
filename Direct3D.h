@@ -3,19 +3,11 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,02.11.2019</changed>
+/// <changed>ʆϒʅ,05.11.2019</changed>
 // ********************************************************************************
 
 #ifndef DIRECT3D_H
 #define DIRECT3D_H
-
-
-#include <wrl/client.h> // Windows and COM wrappers (calls to DirectX)
-#include <d3d10_1.h> // standard DirectX3D APIs (setting up and 3D drawing)
-#pragma comment (lib, "d3d10_1.lib") // linkage to the 'd3d10_1' library
-//#include <dxgi.h> // standard DXGI APIs (tools to interface with installed hardware)
-#pragma comment (lib, "dxgi.lib") // linkage to the 'dxgi' library
-#include <DirectXMath.h> // standard DirectX3D mathematics APIs
 
 
 #include "Core.h"
@@ -38,10 +30,10 @@ private:
 
   // -- the device object: virtual representation of the video adapter
   // purpose: access to GPU memory and creation of Direct3D COM objects.
-  Microsoft::WRL::ComPtr<ID3D10Device1> device; // Direct3D device
+  Microsoft::WRL::ComPtr<ID3D11Device> device; // Direct3D device
 
 #ifndef _NOT_DEBUGGING
-  Microsoft::WRL::ComPtr<ID3D10Debug> debug; // Device Debug layer
+  Microsoft::WRL::ComPtr<ID3D11Debug> debug; // Device Debug layer
 #endif // !_NOT_DEBUGGING
 
   // -- the device context: the structure defining a set of graphic objects
@@ -49,11 +41,11 @@ private:
   // therefore it can be seen as the control panel of the GPU,
   // through which the transformation of three-dimensional to the final two-dimensional,
   // and the process of rendering that image to screen is controlled.
-  //Microsoft::WRL::ComPtr<ID3D11DeviceContext> devConD11; // Direct3D device context
+  Microsoft::WRL::ComPtr<ID3D11DeviceContext> devCon; // Direct3D device context
 
   // The COM interface representing the swap chain:
   // purpose: swapping the back buffers (double or triple) and drawing to the display surface
-  Microsoft::WRL::ComPtr<IDXGISwapChain> swapChain; // the swap chain
+  Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain; // the swap chain
 
   DXGI_FORMAT colourFormat; // colour format
   unsigned int displayModesCount; // the number of supported display modes
@@ -63,13 +55,13 @@ private:
   unsigned int videoCardMemory; // dedicated video card memory (megabytes)
   std::wstring videoCardDescription; // string representing the physical adapter name
 
-  Microsoft::WRL::ComPtr<ID3D10RenderTargetView> rTview; // render target view
+  Microsoft::WRL::ComPtr<ID3D11RenderTargetView> rTview; // render target view
 
-  Microsoft::WRL::ComPtr<ID3D10Texture2D> dSbuffer; // depth-stencil view buffer
-  Microsoft::WRL::ComPtr<ID3D10DepthStencilState> dSstate; // depth-stencil state
-  Microsoft::WRL::ComPtr<ID3D10DepthStencilView> dSview; // depth-stencil view
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> dSbuffer; // depth-stencil view buffer
+  Microsoft::WRL::ComPtr<ID3D11DepthStencilState> dSstate; // depth-stencil state
+  Microsoft::WRL::ComPtr<ID3D11DepthStencilView> dSview; // depth-stencil view
 
-  Microsoft::WRL::ComPtr<ID3D10RasterizerState> rasterizerState; // rasterizer state
+  Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizerState; // rasterizer state
 
   bool fullscreen; // application configuration
   bool vSync; // application configuration (if true render according installed monitor refresh rate)
@@ -78,7 +70,7 @@ private:
 public:
   Direct3D ( TheCore* ); // creation of the device and resources
   const bool& isInitialized ( void ); // get the initialized state
-  const ID3D10Device1& getDevice ( void ); // get the pointer to application Direct3D
+  const ID3D11Device& getDevice ( void ); // get the pointer to application Direct3D
   const bool& isFullscreen ( void ); // get the display mode state
   void displayModeSetter ( void ); // Direct3D display mode change/adjust
   void allocateResources ( void ); // Direct3D resources resize/creation

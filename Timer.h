@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,02.11.2019</changed>
+/// <changed>ʆϒʅ,06.11.2019</changed>
 // ********************************************************************************
 
 #ifndef TIMER_H
@@ -29,7 +29,7 @@ public:
   const double getTotal ( void ); // total time minus the idle time
   const double& getDelta ( void ); // get the delta time
   const bool& isPaused ( void ); // get the paused state
-  void event ( const char* type ); // start, reset, stop
+  void event ( std::string type ); // start, reset, stop
   void tick ( void ); // the time never stops! (the time of every frame i.e. a cycle of game loop)
 };
 

@@ -3,9 +3,10 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,02.11.2019</changed>
+/// <changed>ʆϒʅ,06.11.2019</changed>
 // ********************************************************************************
 
+#include "pch.h"
 #include "Timer.h"
 #include "Shared.h"
 
@@ -29,27 +30,27 @@ Timer::Timer ( void ) :
     // usable in time-interval measurements.
     // note that the function returns zero if an error is occurred.
     // Todo implement C++ standard chrono
-    if (QueryPerformanceFrequency ( ( LARGE_INTEGER*) & frequency ))
+    if (QueryPerformanceFrequency ( (LARGE_INTEGER*) &frequency ))
     {
       // once calculated seconds per count (reciprocal of the number of counts per seconds)
       // TimeValueInSeconds = ActualTimeValue / Frequency
       secondsPerCount = double ( 1 ) / frequency;
 
       initialized = true;
-      PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), L"mainThread",
-                                                L"The high-precision timer is successfully instantiated." );
+      PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), "mainThread",
+                                                "The high-precision timer is successfully instantiated." );
 
     } else
     {
       initialized = false;
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"The high-precision timer instantiation failed!" );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "The high-precision timer instantiation failed!" );
     }
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
@@ -84,13 +85,13 @@ const bool& Timer::isPaused ( void )
 };
 
 
-void Timer::event ( const char* type )
+void Timer::event ( std::string type )
 {
   long long current;
   try
   {
 
-    if (QueryPerformanceCounter ( ( LARGE_INTEGER*) & current ))
+    if (QueryPerformanceCounter ( (LARGE_INTEGER*) &current ))
     {
       // if start is requested as event (invoked at game reactivation)
       if ((type == "start") && (paused))
@@ -124,16 +125,16 @@ void Timer::event ( const char* type )
 
     } else
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"One timer functionality failed! Requested event: "
-                                                + Converter::strConverter ( type ) );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "One timer functionality failed! Requested event: "
+                                                + type );
     }
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
@@ -147,7 +148,7 @@ void Timer::tick ( void )
     if (paused)
       timeDelta = 0; // the elapsed time in a stopped state (for calculations in an idle time)
     else
-      if (QueryPerformanceCounter ( ( LARGE_INTEGER*) & timeCurrentFrame ))
+      if (QueryPerformanceCounter ( (LARGE_INTEGER*) &timeCurrentFrame ))
       {
         timeDelta = (timeCurrentFrame - timePreviousFrame) * secondsPerCount; // the elapsed time of one frame
         timePreviousFrame = timeCurrentFrame; // preparation for the next tick
@@ -158,14 +159,14 @@ void Timer::tick ( void )
           timeDelta = 0;
       } else
       {
-        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                  L"Timer failed to tick!" );
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Timer failed to tick!" );
       }
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };

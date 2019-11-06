@@ -3,15 +3,16 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,02.11.2019</changed>
+/// <changed>ʆϒʅ,06.11.2019</changed>
 // ********************************************************************************
 
+#include "pch.h"
 #include "Shader.h"
 #include "Shared.h"
 
 
-Shader::Shader ( ID3D10Device1* dev, std::wstring entry ) :
-  device ( dev ), entryPoint ( entry )
+Shader::Shader ( ID3D11Device* dev, std::string entry ) :
+  device ( dev ), entryPoint ( " Entry Point: " + entry )
 {
 
   // shaders, introduced in several different types,
@@ -88,27 +89,27 @@ void Shader::loadCompiled ( std::string& fileName, Buffer* csoBuffer )
         csoFile.read ( reinterpret_cast<char*>(csoBuffer->buffer), csoBuffer->size );
       } else
       {
-        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                  L"Shader buffer allocation for compiled file failed!" + entryPoint );
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Shader buffer allocation for compiled file failed!" + entryPoint );
       }
       csoFile.close ();
     } else
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Loading shader form compiled file failed!" + entryPoint );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Loading shader form compiled file failed!" + entryPoint );
     }
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) + entryPoint );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () + entryPoint );
   }
 };
 
 
 bool Shader::initializeCompiled ( std::string* filePaths,
-                                  D3D10_INPUT_ELEMENT_DESC* polygonLayout,
+                                  D3D11_INPUT_ELEMENT_DESC* polygonLayout,
                                   unsigned short elmCount )
 {
   try
@@ -128,22 +129,22 @@ bool Shader::initializeCompiled ( std::string* filePaths,
     if (vertexBuf.buffer && pixelBuf.buffer)
     {
       hR = device->CreateVertexShader ( vertexBuf.buffer,
-                                        vertexBuf.size, &vertexShader );
+                                        vertexBuf.size, nullptr, &vertexShader );
       if (FAILED ( hR ))
       {
-        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                  L"Creation of vertex shader failed!" + entryPoint );
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Creation of vertex shader failed!" + entryPoint );
         return false;
       }
 
       // Direct3D interface for pixel shaders: pixel shader creation
 
       hR = device->CreatePixelShader ( pixelBuf.buffer,
-                                       pixelBuf.size, &pixelShader );
+                                       pixelBuf.size, nullptr, &pixelShader );
       if (FAILED ( hR ))
       {
-        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                  L"Creation of pixel shader failed!" + entryPoint );
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Creation of pixel shader failed!" + entryPoint );
         return false;
       }
 
@@ -154,8 +155,8 @@ bool Shader::initializeCompiled ( std::string* filePaths,
                                        vertexBuf.size, &inputLayout );
       if (FAILED ( hR ))
       {
-        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                  L"Creation of input layout failed!" + entryPoint );
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Creation of input layout failed!" + entryPoint );
         return false;
       }
     }
@@ -166,10 +167,10 @@ bool Shader::initializeCompiled ( std::string* filePaths,
     return true;
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) + entryPoint );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () + entryPoint );
     return false;
   }
 };
@@ -186,18 +187,18 @@ bool Shader::compile ( LPCWSTR* files )
 
     // directly compile the shader into buffer (DirectX APIs)
     hR = D3DCompileFromFile ( files [0], nullptr, nullptr,
-                              "main", "vs_4_1", D3D10_SHADER_ENABLE_STRICTNESS,
-                              0, &vertexBuffer, &errorMsg );
+                              "main", "vs_4_1", D3DCOMPILE_DEBUG,
+                              D3DCOMPILE_EFFECT_CHILD_EFFECT, &vertexBuffer, &errorMsg );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Compilation of texture vertex shader file failed!" + entryPoint );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Compilation of texture vertex shader file failed!" + entryPoint );
       if (errorMsg)
       {
-        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                  Converter::strConverter ( ( char*) errorMsg->GetBufferPointer () )
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+          (char*) errorMsg->GetBufferPointer ()
                                                   + entryPoint );
-        errorStr = ( char*) errorMsg->GetBufferPointer ();
+        errorStr = (char*) errorMsg->GetBufferPointer ();
         errorMsg->Release ();
         errorMsg = nullptr;
       }
@@ -205,18 +206,18 @@ bool Shader::compile ( LPCWSTR* files )
     }
 
     hR = D3DCompileFromFile ( files [1], nullptr, nullptr,
-                              "main", "ps_4_1", D3D10_SHADER_ENABLE_STRICTNESS,
-                              0, &pixelBuffer, &errorMsg );
+                              "main", "ps_4_1", D3DCOMPILE_DEBUG,
+                              D3DCOMPILE_EFFECT_CHILD_EFFECT, &pixelBuffer, &errorMsg );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Compilation of texture pixel shader file failed!" + entryPoint );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Compilation of texture pixel shader file failed!" + entryPoint );
       if (errorMsg)
       {
-        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                  Converter::strConverter ( ( char*) errorMsg->GetBufferPointer () )
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+          (char*) errorMsg->GetBufferPointer ()
                                                   + entryPoint );
-        errorStr = ( char*) errorMsg->GetBufferPointer ();
+        errorStr = (char*) errorMsg->GetBufferPointer ();
         errorMsg->Release ();
         errorMsg = nullptr;
       }
@@ -226,18 +227,18 @@ bool Shader::compile ( LPCWSTR* files )
     return true;
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) + entryPoint );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () + entryPoint );
     return false;
   }
 };
 
 
-bool Shader::initialize ( D3D10_INPUT_ELEMENT_DESC* polygonLayout,
+bool Shader::initialize ( D3D11_INPUT_ELEMENT_DESC* polygonLayout,
                           unsigned short elmCount,
-                          D3D10_SAMPLER_DESC* sampler )
+                          D3D11_SAMPLER_DESC* sampler )
 {
   try
   {
@@ -246,20 +247,20 @@ bool Shader::initialize ( D3D10_INPUT_ELEMENT_DESC* polygonLayout,
 
     // purpose: invoking the HLSL shaders for drawing the 3D models already on the GPU
     hR = device->CreateVertexShader ( vertexBuffer->GetBufferPointer (),
-                                      vertexBuffer->GetBufferSize (), &vertexShader );
+                                      vertexBuffer->GetBufferSize (), nullptr, &vertexShader );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Creation of texture vertex shader failed!" + entryPoint );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Creation of texture vertex shader failed!" + entryPoint );
       return false;
     }
 
     hR = device->CreatePixelShader ( pixelBuffer->GetBufferPointer (),
-                                     pixelBuffer->GetBufferSize (), &pixelShader );
+                                     pixelBuffer->GetBufferSize (), nullptr, &pixelShader );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Creation of texture pixel shader failed!" + entryPoint );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Creation of texture pixel shader failed!" + entryPoint );
       return false;
     }
 
@@ -270,8 +271,8 @@ bool Shader::initialize ( D3D10_INPUT_ELEMENT_DESC* polygonLayout,
                                      vertexBuffer->GetBufferSize (), &inputLayout );
     if (FAILED ( hR ))
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                L"Creation of texture input layout failed!" + entryPoint );
+      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "Creation of texture input layout failed!" + entryPoint );
       return false;
     }
 
@@ -286,8 +287,8 @@ bool Shader::initialize ( D3D10_INPUT_ELEMENT_DESC* polygonLayout,
       hR = device->CreateSamplerState ( sampler, &samplerState );
       if (FAILED ( hR ))
       {
-        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                                  L"Creation of texture sampler state failed!" + entryPoint );
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Creation of texture sampler state failed!" + entryPoint );
         return false;
       }
     }
@@ -295,34 +296,34 @@ bool Shader::initialize ( D3D10_INPUT_ELEMENT_DESC* polygonLayout,
     return true;
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) + entryPoint );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () + entryPoint );
     return false;
   }
 };
 
 
-ID3D10VertexShader* const Shader::getVertexShader ( void )
+ID3D11VertexShader* const Shader::getVertexShader ( void )
 {
   return vertexShader;
 };
 
 
-ID3D10PixelShader* const Shader::getPixelShader ( void )
+ID3D11PixelShader* const Shader::getPixelShader ( void )
 {
   return pixelShader;
 };
 
 
-ID3D10InputLayout* const Shader::getInputLayout ( void )
+ID3D11InputLayout* const Shader::getInputLayout ( void )
 {
   return inputLayout;
 };
 
 
-ID3D10SamplerState** const Shader::getSamplerState ( void )
+ID3D11SamplerState** const Shader::getSamplerState ( void )
 {
   return &samplerState;
 };
@@ -357,16 +358,16 @@ void Shader::release ( void )
     device = nullptr;
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
 
-ShaderColour::ShaderColour ( ID3D10Device1* dev ) :
-  Shader ( dev, L"ColourShader" ), initialized ( false )
+ShaderColour::ShaderColour ( ID3D11Device* dev ) :
+  Shader ( dev, "ColourShader" ), initialized ( false )
 {
   try
   {
@@ -376,14 +377,14 @@ ShaderColour::ShaderColour ( ID3D10Device1* dev ) :
     // teaching the GPU how to read a custom vertex structure.
     // note that to improve the rendering speed,
     // the GPU can be told what information with each vertex needs to be stored.
-    // note flag D3D10_APPEND_ALIGNED_ELEMENT: the elements are one after each other,
+    // note flag D3D11_APPEND_ALIGNED_ELEMENT: the elements are one after each other,
     // therefore automatically figure the spacing out. (no need to define the offset)
     polygonLayoutDesc [0].SemanticName = "POSITION"; // what a certain value is used for
     polygonLayoutDesc [0].SemanticIndex = 0; // modifies the semantic with an integer index (multiple elements with same semantic)
     polygonLayoutDesc [0].Format = DXGI_FORMAT_R32G32B32_FLOAT; // 32 bits for each x, y and z
     polygonLayoutDesc [0].InputSlot = 0; // imput - assembler or input slot through which data is fed to GPU ( Direct3D supports sixteen input slots )
     polygonLayoutDesc [0].AlignedByteOffset = 0; // the offset between each element in the structure
-    polygonLayoutDesc [0].InputSlotClass = D3D10_INPUT_PER_VERTEX_DATA; // input data class for a single input slot
+    polygonLayoutDesc [0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA; // input data class for a single input slot
     polygonLayoutDesc [0].InstanceDataStepRate = 0; // for now
 
     polygonLayoutDesc [1].SemanticName = "COLOR"; // colour semantic
@@ -391,7 +392,7 @@ ShaderColour::ShaderColour ( ID3D10Device1* dev ) :
     polygonLayoutDesc [1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT; // 32 bits for each x, y and z
     polygonLayoutDesc [1].InputSlot = 0;
     polygonLayoutDesc [1].AlignedByteOffset = 12; // offset: 3*4 byte of float type
-    polygonLayoutDesc [1].InputSlotClass = D3D10_INPUT_PER_VERTEX_DATA;
+    polygonLayoutDesc [1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
     polygonLayoutDesc [1].InstanceDataStepRate = 0;
 
     elementsCount = 2;
@@ -403,10 +404,10 @@ ShaderColour::ShaderColour ( ID3D10Device1* dev ) :
     initialized = initializeCompiled ( files, polygonLayoutDesc, elementsCount );
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
@@ -417,8 +418,8 @@ const bool& ShaderColour::isInitialized ( void )
 };
 
 
-ShaderTexture::ShaderTexture ( ID3D10Device1* dev ) :
-  Shader ( dev, L"TextureShader" ), initialized ( false )
+ShaderTexture::ShaderTexture ( ID3D11Device* dev ) :
+  Shader ( dev, "TextureShader" ), initialized ( false )
 {
   try
   {
@@ -428,7 +429,7 @@ ShaderTexture::ShaderTexture ( ID3D10Device1* dev ) :
     polygonLayoutDesc [0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
     polygonLayoutDesc [0].InputSlot = 0;
     polygonLayoutDesc [0].AlignedByteOffset = 0;
-    polygonLayoutDesc [0].InputSlotClass = D3D10_INPUT_PER_VERTEX_DATA;
+    polygonLayoutDesc [0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
     polygonLayoutDesc [0].InstanceDataStepRate = 0;
 
     polygonLayoutDesc [1].SemanticName = "TEXCOORD"; // texture coordinate semantic
@@ -436,29 +437,29 @@ ShaderTexture::ShaderTexture ( ID3D10Device1* dev ) :
     polygonLayoutDesc [1].SemanticIndex = 0;
     polygonLayoutDesc [1].Format = DXGI_FORMAT_R32G32_FLOAT; // 32 bits for each U (width) and V (height)
     polygonLayoutDesc [1].InputSlot = 0;
-    polygonLayoutDesc [1].AlignedByteOffset = 12; //D3D10_APPEND_ALIGNED_ELEMENT
-    polygonLayoutDesc [1].InputSlotClass = D3D10_INPUT_PER_VERTEX_DATA;
+    polygonLayoutDesc [1].AlignedByteOffset = 12; //D3D11_APPEND_ALIGNED_ELEMENT
+    polygonLayoutDesc [1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
     polygonLayoutDesc [1].InstanceDataStepRate = 0;
 
     // tecture sampler state description (to interface with texture shader):
     // which pixel or what combination of them to use when drawing (near or far away polygon)
     // liner option: the most expensive in processing and the best visual result,
     // unisng linear interpretation for manification, magnification and mip-level sampling.
-    samplerDesc.Filter = D3D10_FILTER_MIN_MAG_MIP_LINEAR; // the most important one
+    samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR; // the most important one
     // wrap: ensures the coordinates stay between 0.0f and 1.0f by wrapping anything already outside,
     // around and within these values
-    samplerDesc.AddressU = D3D10_TEXTURE_ADDRESS_WRAP;
-    samplerDesc.AddressV = D3D10_TEXTURE_ADDRESS_WRAP;
-    samplerDesc.AddressW = D3D10_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
     samplerDesc.MipLODBias = 0.0f;
     samplerDesc.MaxAnisotropy = 1;
-    samplerDesc.ComparisonFunc = D3D10_COMPARISON_ALWAYS;
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
     samplerDesc.BorderColor [0] = 0.0f;
     samplerDesc.BorderColor [1] = 0.0f;
     samplerDesc.BorderColor [2] = 0.0f;
     samplerDesc.BorderColor [3] = 0.0f;
     samplerDesc.MinLOD = 0.0f;
-    samplerDesc.MaxLOD = D3D10_FLOAT32_MAX;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
     elementsCount = 2;
 
@@ -469,10 +470,10 @@ ShaderTexture::ShaderTexture ( ID3D10Device1* dev ) :
       initialized = initialize ( polygonLayoutDesc, elementsCount, &samplerDesc );
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
@@ -483,8 +484,8 @@ const bool& ShaderTexture::isInitialized ( void )
 };
 
 
-ShaderDiffuseLight::ShaderDiffuseLight ( ID3D10Device1* dev ) :
-  Shader ( dev, L"DiffuseLightShader" ), initialized ( false )
+ShaderDiffuseLight::ShaderDiffuseLight ( ID3D11Device* dev ) :
+  Shader ( dev, "DiffuseLightShader" ), initialized ( false )
 {
   try
   {
@@ -494,38 +495,38 @@ ShaderDiffuseLight::ShaderDiffuseLight ( ID3D10Device1* dev ) :
     polygonLayoutDesc [0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
     polygonLayoutDesc [0].InputSlot = 0;
     polygonLayoutDesc [0].AlignedByteOffset = 0;
-    polygonLayoutDesc [0].InputSlotClass = D3D10_INPUT_PER_VERTEX_DATA;
+    polygonLayoutDesc [0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
     polygonLayoutDesc [0].InstanceDataStepRate = 0;
 
     polygonLayoutDesc [1].SemanticName = "TEXCOORD";
     polygonLayoutDesc [1].SemanticIndex = 0;
     polygonLayoutDesc [1].Format = DXGI_FORMAT_R32G32_FLOAT;
     polygonLayoutDesc [1].InputSlot = 0;
-    polygonLayoutDesc [1].AlignedByteOffset = 12; //D3D10_APPEND_ALIGNED_ELEMENT
-    polygonLayoutDesc [1].InputSlotClass = D3D10_INPUT_PER_VERTEX_DATA;
+    polygonLayoutDesc [1].AlignedByteOffset = 12; //D3D11_APPEND_ALIGNED_ELEMENT
+    polygonLayoutDesc [1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
     polygonLayoutDesc [1].InstanceDataStepRate = 0;
 
     polygonLayoutDesc [2].SemanticName = "NORMAL"; // normal light semantic
     polygonLayoutDesc [2].SemanticIndex = 0;
     polygonLayoutDesc [2].Format = DXGI_FORMAT_R32G32B32_FLOAT; // each x, y and z of the normal vector 32 bits
     polygonLayoutDesc [2].InputSlot = 0;
-    polygonLayoutDesc [2].AlignedByteOffset = 20; //D3D10_APPEND_ALIGNED_ELEMENT
-    polygonLayoutDesc [2].InputSlotClass = D3D10_INPUT_PER_VERTEX_DATA;
+    polygonLayoutDesc [2].AlignedByteOffset = 20; //D3D11_APPEND_ALIGNED_ELEMENT
+    polygonLayoutDesc [2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
     polygonLayoutDesc [2].InstanceDataStepRate = 0;
 
-    samplerDesc.Filter = D3D10_FILTER_MIN_MAG_MIP_LINEAR;
-    samplerDesc.AddressU = D3D10_TEXTURE_ADDRESS_WRAP;
-    samplerDesc.AddressV = D3D10_TEXTURE_ADDRESS_WRAP;
-    samplerDesc.AddressW = D3D10_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
     samplerDesc.MipLODBias = 0.0f;
     samplerDesc.MaxAnisotropy = 1;
-    samplerDesc.ComparisonFunc = D3D10_COMPARISON_ALWAYS;
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
     samplerDesc.BorderColor [0] = 0.0f;
     samplerDesc.BorderColor [1] = 0.0f;
     samplerDesc.BorderColor [2] = 0.0f;
     samplerDesc.BorderColor [3] = 0.0f;
     samplerDesc.MinLOD = 0.0f;
-    samplerDesc.MaxLOD = D3D10_FLOAT32_MAX;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
     elementsCount = 3;
 
@@ -536,10 +537,10 @@ ShaderDiffuseLight::ShaderDiffuseLight ( ID3D10Device1* dev ) :
       initialized = initialize ( polygonLayoutDesc, elementsCount, &samplerDesc );
 
   }
-  catch (const std::exception& ex)
+  catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), L"mainThread",
-                                              Converter::strConverter ( ex.what () ) );
+    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                              ex.what () );
   }
 };
 
