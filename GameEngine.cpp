@@ -227,7 +227,8 @@ void View::m_onActivated ( CoreApplicationView const& /*applicationView*/, IActi
 
 void View::m_onVisibilityChanged ( CoreWindow const& /*sender*/, VisibilityChangedEventArgs const& args )
 {
-  m_visible = args.Visible ();
+  m_visible = args.Visible (); ///
+  m_game->isPaused () = !args.Visible ();
 };
 
 
@@ -348,7 +349,9 @@ void View::Run ( void )
 
   // game instantiation
   auto windowPtr = static_cast<::IUnknown*>(winrt::get_abi ( m_appWindow.get () ));
-  m_game = new (std::nothrow) Game ( windowPtr ); ///
+  m_game = new (std::nothrow) Game ( windowPtr,
+                                     static_cast<int>(m_clientWidth),
+                                     static_cast<int>(m_clientHeight) ); ///
 
   if (!m_game->isReady ())
   {
@@ -410,7 +413,7 @@ void View::SetWindow ( CoreWindow const& window )
 
   // size of initialized client window area
   m_clientWidth = window.Bounds ().Width;
-  m_clientWidth = window.Bounds ().Height;
+  m_clientHeight = window.Bounds ().Height;
 
   // DPI of initialized client window area
   m_Dpi = DisplayInformation::GetForCurrentView ().LogicalDpi ();
@@ -420,13 +423,13 @@ void View::SetWindow ( CoreWindow const& window )
                      float ( PointerProvider::getConfiguration ()->getSettings ().Height ) );
   ApplicationView::PreferredLaunchViewSize ( size );
   auto view = ApplicationView::GetForCurrentView ();
-  size.Width = 320.0f; size.Height = 200.0f;
+  size.Width = 480.0f; size.Height = 320.0f;
   view.SetPreferredMinSize ( size );
   // set and save
   view.FullScreenSystemOverlayMode ( FullScreenSystemOverlayMode::Minimal );
   view.TryResizeView ( view.PreferredLaunchViewSize () );
-  m_clientWidth = m_appWindow.get ().Bounds ().Width;
-  m_clientHeight = m_appWindow.get ().Bounds ().Height;
+  m_clientWidth = window.Bounds ().Width;
+  m_clientHeight = window.Bounds ().Height;
 
 };
 

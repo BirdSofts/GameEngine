@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,06.11.2019</changed>
+/// <changed>ʆϒʅ,07.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
@@ -11,9 +11,10 @@
 #include "Shared.h"
 
 
-TheCore::TheCore ( ::IUnknown* window, Game* gameObj ) :
+TheCore::TheCore ( ::IUnknown* window, Game* gameObj, const int& width, const int& height ) :
   timer ( nullptr ), fps ( 0 ), mspf ( 0 ),
-  appWindow ( window ), d3d ( nullptr ), d2d ( nullptr ), game ( gameObj ),
+  appWindow ( window ), outputWidth ( width ), outputHeight ( height ),
+  d3d ( nullptr ), d2d ( nullptr ), game ( gameObj ),
   debug ( false ), initialized ( false ), paused ( false ), resized ( false )
 {
   try
@@ -40,7 +41,7 @@ TheCore::TheCore ( ::IUnknown* window, Game* gameObj ) :
 
     // Direct3D 10 instantiation
     d3d = new (std::nothrow) Direct3D ( this );
-    if (!d3d->isInitialized ())
+    if (!d3d->m_isInitialized ())
     {
       PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 "Direct3D initialization failed!" );
@@ -144,36 +145,36 @@ void TheCore::frameStatistics ( void )
         // FPS information text layouts
         std::wostringstream outFPS;
         outFPS.precision ( 6 );
-        outFPS << "Resolution: " << d3d->displayMode.Width << " x " << d3d->displayMode.Height
-          << " - Display mode #" << d3d->displayModeIndex + 1 << " of " << d3d->displayModesCount << " @ "
-          << d3d->displayMode.RefreshRate.Numerator / d3d->displayMode.RefreshRate.Denominator << " Hz" << std::endl
-          << "Display Adapter: " << d3d->videoCardDescription
-          << " - Dedicated memory: " << d3d->videoCardMemory << "MB" << std::endl
+        outFPS << "Resolution: " << d3d->m_displayMode.Width << " x " << d3d->m_displayMode.Height
+          << " - Display mode #" << d3d->m_displayModeIndex + 1 << " of " << d3d->m_displayModesCount << " @ "
+          << d3d->m_displayMode.RefreshRate.Numerator / d3d->m_displayMode.RefreshRate.Denominator << " Hz" << std::endl
+          << "Display Adapter: " << d3d->m_videoCardDescription
+          << " - Dedicated memory: " << d3d->m_videoCardMemory << "MB" << std::endl
           << "^_^ - FPS: " << fps << L" - mSPF: " << mspf << std::endl;
 
         // before rendering a text to a bitmap: the creation of the text layout
-        //hR = d2d->writeFac->CreateTextLayout ( outFPS.str ().c_str (), (UINT32) outFPS.str ().size (),
-        //                                       d2d->textFormatFPS.Get (), (float) appWindow->clientWidth,
-        //                                       (float) appWindow->clientHeight, &d2d->textLayoutFPS );
-        //if (FAILED ( hR ))
-        //{
-        //  PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-        //                                            "The Creation of text layout for FPS information failed!" );
-        //  return;
-        //}
+        hR = d2d->writeFac->CreateTextLayout ( outFPS.str ().c_str (), (UINT32) outFPS.str ().size (),
+                                               d2d->textFormatFPS.Get (), (float) outputWidth,
+                                               (float) outputHeight, &d2d->textLayoutFPS );
+        if (FAILED ( hR ))
+        {
+          PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                    "The Creation of text layout for FPS information failed!" );
+          return;
+        }
 
-        std::string out { "Last event: " };
-        out += PointerProvider::getFileLogger ()->getLogRawStr ();
-        //hR = d2d->writeFac->CreateTextLayout ( out.c_str (), (UINT32) (UINT32) out.size (),
-        //                                       d2d->textFormatLogs.Get (), (float) appWindow->clientWidth,
-        //                                       (float) appWindow->clientHeight, &d2d->textLayoutLogs );
-        //if (FAILED ( hR ))
-        //{
-        //  PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-        //                                            "The Creation of text layout for Logs failed!" );
-        //  return;
-        //}
-        //d2d->textLayoutsDebug = true;
+        std::wstring out { L"Last event: " };
+        out += Converter::strConverter ( PointerProvider::getFileLogger ()->getLogRawStr () );
+        hR = d2d->writeFac->CreateTextLayout ( out.c_str (), (UINT32) (UINT32) out.size (),
+                                               d2d->textFormatLogs.Get (), (float) outputWidth,
+                                               (float) outputHeight, &d2d->textLayoutLogs );
+        if (FAILED ( hR ))
+        {
+          PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                    "The Creation of text layout for Logs failed!" );
+          return;
+        }
+        d2d->textLayoutsDebug = true;
 
       }
 
@@ -198,19 +199,19 @@ void TheCore::setResolution ( const bool& prm )
 
     if (prm)
     {
-      if (!d3d->fullscreen)
+      if (!d3d->m_fullscreen)
       {
-        d3d->displayModeIndex = d3d->displayModesCount - 1;
-        d3d->displayMode = d3d->displayModes [d3d->displayModeIndex];
-        d3d->fullscreen = true;
+        d3d->m_displayModeIndex = d3d->m_displayModesCount - 1;
+        d3d->m_displayMode = d3d->m_displayModes [d3d->m_displayModeIndex];
+        d3d->m_fullscreen = true;
       }
     } else
     {
-      if (d3d->fullscreen)
+      if (d3d->m_fullscreen)
       {
-        d3d->displayModeIndex = 0;
-        d3d->displayMode = d3d->displayModes [d3d->displayModeIndex];
-        d3d->fullscreen = false;
+        d3d->m_displayModeIndex = 0;
+        d3d->m_displayMode = d3d->m_displayModes [d3d->m_displayModeIndex];
+        d3d->m_fullscreen = false;
       }
     }
 
@@ -255,15 +256,15 @@ void TheCore::resizeResources ( const bool& displayMode )
       }
 
       // free Direct3D resources
-      if (d3d->dSview && d3d->rTview && !rC)
+      if (d3d->m_depthSview && d3d->m_renderTview && !rC)
       {
-        d3d->devCon->ClearState ();
-        rC = d3d->rasterizerState.Reset ();
-        d3d->devCon->OMSetRenderTargets ( 0, nullptr, nullptr );
-        rC = d3d->dSview.Reset ();
-        rC = d3d->dSstate.Reset ();
-        rC = d3d->dSbuffer.Reset ();
-        rC = d3d->rTview.Reset ();
+        d3d->m_devCon->ClearState ();
+        rC = d3d->m_rasterizerState.Reset ();
+        d3d->m_devCon->OMSetRenderTargets ( 0, nullptr, nullptr );
+        rC = d3d->m_depthSview.Reset ();
+        rC = d3d->m_depthSstate.Reset ();
+        rC = d3d->m_depthSbuffer.Reset ();
+        rC = d3d->m_renderTview.Reset ();
         //if (rC)
         //{
         //  rC = 0; // HACK debug
@@ -278,10 +279,10 @@ void TheCore::resizeResources ( const bool& displayMode )
       {
         if (displayMode)
         {
-          d3d->displayModeSetter ();
+          d3d->m_setDisplayMode ();
           std::this_thread::sleep_for ( std::chrono::milliseconds ( 500 ) );
         }
-        d3d->allocateResources ();
+        d3d->m_allocation ();
         if (d2d)
         {
           d2d->allocateResources ();
@@ -318,7 +319,7 @@ void TheCore::shutdown ( void )
 
     if (d3d)
       // to prevent exceptions, switch back to windowed mode
-      d3d->swapChain->SetFullscreenState ( false, nullptr );
+      d3d->m_swapChain->SetFullscreenState ( false, nullptr );
 
     // Direct2D application destruction
     if (d2d)
@@ -339,22 +340,18 @@ void TheCore::shutdown ( void )
     // Direct3D application destruction
     if (d3d)
     {
-      d3d->initialized = false;
-      d3d->devCon->ClearState ();
-      rC = d3d->rasterizerState.Reset ();
-      d3d->devCon->OMSetRenderTargets ( 0, nullptr, nullptr );
-      rC = d3d->dSview.Reset ();
-      rC = d3d->dSstate.Reset ();
-      rC = d3d->dSbuffer.Reset ();
-      rC = d3d->rTview.Reset ();
-      rC = d3d->swapChain.Reset ();
+      d3d->m_initialized = false;
+      d3d->m_devCon->ClearState ();
+      rC = d3d->m_rasterizerState.Reset ();
+      d3d->m_devCon->OMSetRenderTargets ( 0, nullptr, nullptr );
+      rC = d3d->m_depthSview.Reset ();
+      rC = d3d->m_depthSstate.Reset ();
+      rC = d3d->m_depthSbuffer.Reset ();
+      rC = d3d->m_renderTview.Reset ();
+      rC = d3d->m_swapChain.Reset ();
 
-#ifndef _NOT_DEBUGGING
-      rC = d3d->debug.Reset ();
-#endif // !_NOT_DEBUGGING
-
-      rC = d3d->device.Reset ();
-      d3d->core = nullptr;
+      rC = d3d->m_device.Reset ();
+      d3d->m_core = nullptr;
 
       delete d3d;
       PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), "mainThread",

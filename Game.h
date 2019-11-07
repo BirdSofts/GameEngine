@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,03.11.2019</changed>
+/// <changed>ʆϒʅ,07.11.2019</changed>
 // ********************************************************************************
 
 #ifndef GAME_H
@@ -41,14 +41,16 @@ private:
 
   bool initialized; // true if initialization was successful
   bool allocated; // true if resources allocation was successful
+  bool paused; // true if the game is paused
 public:
-  Game ( ::IUnknown* ); // game initialization
+  Game ( ::IUnknown*, const int&, const int& ); // game initialization
   void allocateResources ( void ); // resources creation
   //void validate ( void ); // validate the allocation of game resources
   const bool& isReady ( void ); // get the initialized state
   const bool run ( void ); // game engine loop
   void render ( void ); // render the scene
   void update ( void ); // updating the game world
+  bool& isPaused ( void ); // get the paused state
   Universe* getUniverse ( void ); // get the pointer to game universe
   void shutdown ( void ); // destruction preparations
 };

@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,06.11.2019</changed>
+/// <changed>ʆϒʅ,07.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
@@ -69,13 +69,13 @@ void Shader::loadCompiled ( std::string& fileName, Buffer* csoBuffer )
 
     // load shaders from .cso compiled files
 
-    std::string path { "" };
+    std::string path { "./" };
 
-#ifndef _NOT_DEBUGGING
-    path = { ".//x64//Debug//" };
-#else
-    path = { ".//x64//Release//" };
-#endif // !_NOT_DEBUGGING
+    //#ifndef _NOT_DEBUGGING
+    //    path = { "./x64/Debug/GameEngine/" };
+    //#else
+    //    path = { "./x64/Release/GameEngine/" };
+    //#endif // !_NOT_DEBUGGING
 
     path += fileName;
     std::ifstream csoFile ( path, std::ios::binary | std::ios::ate );

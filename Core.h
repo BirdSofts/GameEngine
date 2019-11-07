@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,05.11.2019</changed>
+/// <changed>ʆϒʅ,07.11.2019</changed>
 // ********************************************************************************
 
 #ifndef CORE_H
@@ -30,6 +30,9 @@ private:
   double mspf; // render time of a frame in milliseconds
 
   ::IUnknown* appWindow; // pointer to main window
+  int outputWidth;
+  int outputHeight;
+  // rotation
 
   Direct3D* d3d; // pointer to Direct3D application
   Direct2D* d2d; // pointer to Direct2D application
@@ -41,7 +44,7 @@ private:
   bool paused; // true if the game is paused
   bool resized; // true if the resizing was successful
 public:
-  TheCore ( ::IUnknown*, Game* ); // constructor and initializer
+  TheCore ( ::IUnknown*, Game*, const int&, const int& ); // constructor and initializer
   const bool& isInitialized ( void ); // get the initialized state
   const bool& isPaused ( void ); // get the paused state
   const ::IUnknown* getWindow ( void ); // get the main window

@@ -3,212 +3,141 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,06.11.2019</changed>
+/// <changed>ʆϒʅ,07.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
 #include "Direct3D.h"
 
 
+using namespace Microsoft::WRL;
+
+
 Direct3D::Direct3D ( TheCore* coreObj ) :
-  core ( coreObj ), colourFormat ( DXGI_FORMAT_B8G8R8A8_UNORM ),
+  m_core ( coreObj ), m_fullscreen ( false ), m_vSync ( false ), m_initialized ( false ), m_allocated ( false )
+{
   // reserve 8 bits for red, green, blue and transparency each in unsigned normalized integer
-  displayModesCount ( 0 ), displayModeIndex ( 0 ), videoCardMemory ( 0 ), videoCardDescription ( L"" ),
-  fullscreen ( false ), vSync ( false ), initialized ( false ), allocated ( false )
+  m_backBufferFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
+  m_depthBufferFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+  m_backBufferCount = 3;
+
+  m_featureLevel = {};
+
+  m_displayModesCount = 0;
+  m_displayModeIndex = 0;
+  m_videoCardMemory = 0;
+  m_videoCardDescription = L"";
+
+  m_creation ();
+};
+
+
+void Direct3D::m_creation ( void )
 {
   try
   {
 
     HRESULT hR; // functions return value
-    unsigned long rC { 0 }; // reference counts
 
-    fullscreen = PointerProvider::getConfiguration ()->getSettings ().fullscreen;
 
+    // clear previous creations
+    m_initialized = false;
+    m_device.Reset ();
+    m_devCon.Reset ();
+
+
+    m_fullscreen = PointerProvider::getConfiguration ()->getSettings ().fullscreen;
     //vSync = PointerProvider::getConfiguration ()->getSettings ().vsync;
 
-    // DXGI (DirectX graphics interface) factory creation
-    IDXGIFactory2* dxgiFactory; // DXGI factory
-    hR = CreateDXGIFactory1 ( __uuidof(IDXGIFactory1), (void**) &dxgiFactory );
-    if (FAILED ( hR ))
-    {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                "Creation of DXGI factory failed!" );
-      return;
-    }
-
-    // adapter creation for physical graphics interface using DXGI factory (0: primary device)
-    IDXGIAdapter1* dxgiAdapter; // DXGI adapter
-    hR = dxgiFactory->EnumAdapters1 ( 0, &dxgiAdapter );
-    if (FAILED ( hR ))
-    {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                "Creation of DXGI adapter failed!" );
-      return;
-    }
-
-    // primary output adapter (monitor) enumeration
-    IDXGIOutput* dxgiOutput; // DXGI output
-    hR = dxgiAdapter->EnumOutputs ( 0, &dxgiOutput );
-    if (FAILED ( hR ))
-    {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                "Acquiring the output device failed!" );
-      return;
-    }
-
-    // two calls to enumerate the number and supported monitor display modes for the colour format:
-    // -- the number of supported display modes (refer to MSDN for flags parameter)
-    hR = dxgiOutput->GetDisplayModeList ( colourFormat, DXGI_ENUM_MODES_INTERLACED, &displayModesCount, nullptr );
-    if (FAILED ( hR ))
-    {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                "Acquiring the number of supported display modes failed!" );
-      return;
-    }
-
-    // -- acquiring all the supported display modes for current monitor / video card combination (refer to MSDN for flags parameter)
-    displayModes = new (std::nothrow) DXGI_MODE_DESC [displayModesCount];
-    if (!displayModes)
-    {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                "Dynamic memory allocation for supported display modes failed!" );
-      return;
-    }
-    hR = dxgiOutput->GetDisplayModeList ( colourFormat, DXGI_ENUM_MODES_INTERLACED, &displayModesCount, displayModes );
-    if (FAILED ( hR ))
-    {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                "Acquiring all the supported display modes failed!" );
-      return;
-    }
-
-    for (unsigned int i = 0; i < displayModesCount; i++)
-    {
-      // support check for current resolution of the client window (input streamed from setting file)
-      if (displayModes [i].Width == PointerProvider::getConfiguration ()->getSettings ().Width) ///
-        if (displayModes [i].Height == PointerProvider::getConfiguration ()->getSettings ().Height)
-        {
-          displayMode = displayModes [i];
-          displayModeIndex = i;
-          break;
-        } else
-        {
-          // not supported: set to the lowest supported resolution
-          displayMode = displayModes [0];
-          displayModeIndex = 0;
-
-          PointerProvider::getFileLogger ()->push ( logType::warning, std::this_thread::get_id (), "mainThread",
-                                                    "The chosen resolution is not supported!" );
-
-          // rewrite a not valid configurations with defaults: the file is probably modified from outside of the application
-          if (!PointerProvider::getConfiguration ()->apply ( PointerProvider::getConfiguration ()->getDefaults () ))
-          {
-            PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                      "Rewriting the Configuration file with default settings failed." );
-          }
-        }
-    }
-    rC = dxgiOutput->Release ();
-    dxgiOutput = nullptr;
-
-    // acquiring the video card description
-    DXGI_ADAPTER_DESC1 dxgiAdapterDesc;
-    hR = dxgiAdapter->GetDesc1 ( &dxgiAdapterDesc );
-    if (FAILED ( hR ))
-    {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                "Acquiring the description of video card failed!" );
-      return;
-    }
-    videoCardMemory = (unsigned int) (dxgiAdapterDesc.DedicatedVideoMemory / 1024 / 1024);
-    videoCardDescription = dxgiAdapterDesc.Description;
-    rC = dxgiAdapter->Release ();
-    dxgiAdapter = nullptr;
 
     // flag: needed to get Direct2D interoperability with Direct3D resources
-    unsigned int deviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-
-    // device creation debug option flag
+    unsigned int creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+    // additional conditioned flag: device creation with debug options
 #ifndef _NOT_DEBUGGING
-    deviceFlags |= D3D11_CREATE_DEVICE_DEBUG; // creation with debug layer
+    creationFlags |= D3D11_CREATE_DEVICE_DEBUG; // creation with debug layer
 #endif // !_NOT_DEBUGGING
+
+
+    // feature levels
+    D3D_FEATURE_LEVEL featureLevels []
+    {
+      D3D_FEATURE_LEVEL_12_1,
+      D3D_FEATURE_LEVEL_12_0,
+      D3D_FEATURE_LEVEL_11_1,
+      D3D_FEATURE_LEVEL_11_0,
+      D3D_FEATURE_LEVEL_10_1,
+      D3D_FEATURE_LEVEL_10_0,
+      D3D_FEATURE_LEVEL_9_3,
+      D3D_FEATURE_LEVEL_9_2,
+      D3D_FEATURE_LEVEL_9_1
+    };
+
 
     // creation of the device
     // first parameter: pointer to the present adapter on system
-    D3D_FEATURE_LEVEL featureLevels { D3D_FEATURE_LEVEL_11_1 };
-    D3D_FEATURE_LEVEL featureLevel {};
+    ComPtr<ID3D11Device> device;
+    ComPtr<ID3D11DeviceContext> devCon;
     hR = D3D11CreateDevice ( nullptr, D3D_DRIVER_TYPE_HARDWARE, NULL,
-                             deviceFlags, &featureLevels, 1, D3D11_SDK_VERSION, &device, &featureLevel, &devCon );
+                             creationFlags, featureLevels, 1, D3D11_SDK_VERSION,
+                             &device, &m_featureLevel, &devCon );
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                "The creation of Direct3D device failed!" );
+                                                "Creation of Direct3D device failed!" );
       return;
     }
+    hR = device.As ( &m_device );
+    if (SUCCEEDED ( hR ))
+    {
+      hR = devCon.As ( &m_devCon );
+      if (FAILED ( hR ))
+      {
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Upgrading Direct3D device and its context failed!" );
+        return;
+      }
+    }
 
-#ifndef _NOT_DEBUGGING
+
+#ifndef NDEBUG
     // acquiring the device's debug layer
-    // note that live report is available from Direct3D 11
-    hR = device->QueryInterface ( __uuidof(ID3D11Debug), &debug );
-
+    ComPtr<ID3D11Debug> debug;
+    hR = m_device.As ( &debug );
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                "The creation of Direct3D device debug layer failed!" );
+                                                "Retrieving Direct3D device debug layer failed!" );
       return;
     }
+    ComPtr<ID3D11InfoQueue> infoQueue;
+    hR = m_device.As ( &infoQueue );
+    if (SUCCEEDED ( hR ))
+    {
+#ifndef _NOT_DEBUGGING
+      //infoQueue->SetBreakOnSeverity ( D3D11_MESSAGE_SEVERITY_CORRUPTION, true );
+      //infoQueue->SetBreakOnSeverity ( D3D11_MESSAGE_SEVERITY_ERROR, true );
 #endif // !_NOT_DEBUGGING
-
-    // filling a swap chain description structure (the type of swap chain)
-    DXGI_SWAP_CHAIN_DESC1 swapChainDesc = { 0 };
-    swapChainDesc.Width = displayMode.Width; // back buffer size, 0: automatic adjustment from already calculated client window area
-    swapChainDesc.Height = displayMode.Height; // the same
-    //if (vSync) // lock to system settings 60Hz
-    //{
-    //  // back buffer to front buffer (screen) draw rate
-    //  swapChainDesc.BufferDesc.RefreshRate.Numerator = displayMode.RefreshRate.Numerator;
-    //  swapChainDesc.BufferDesc.RefreshRate.Denominator = displayMode.RefreshRate.Denominator;
-    //} else // draw as many times as possible (may cause some visual artefacts)
-    //{
-    //  // note that not supported values may cause the DirectX to perform a blit instead of a buffer flip,
-    //  // ending in degraded performance and unknown errors when debugging.
-    //  swapChainDesc.BufferDesc.RefreshRate.Numerator = 0;
-    //  swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
-    //}
-    swapChainDesc.Format = colourFormat; // display format
-    // number of multi samplings per pixel and image quality (1 and 0: disable multi sampling (no anti-aliasing))
-    swapChainDesc.SampleDesc.Count = 1;
-    swapChainDesc.SampleDesc.Quality = 0;
-    swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // back buffer as render output target
-    swapChainDesc.BufferCount = 3; // including the front buffer (one front buffer and two back buffers)
-    //swapChainDesc.OutputWindow = core->getHandle (); // handle to main window
-    //swapChainDesc.Windowed = true; // recommendation: windowed creation and switch to full screen
-    // flip (in windowed mode: blit) and discard the content of back buffer after presentation
-    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-    //swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH; // allow switching the display mode (advanced)
-    //swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED; // scan-line drawing
-    swapChainDesc.Scaling = DXGI_SCALING_ASPECT_RATIO_STRETCH; // image size adjustment to back buffer resolution
-    swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-
-    // swap chain creation
-    hR = dxgiFactory->CreateSwapChainForCoreWindow ( device.Get (), core->appWindow, &swapChainDesc, nullptr, &swapChain );
-    if (FAILED ( hR ))
-    {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                "Creation of swap chain failed!" );
-      return;
+      D3D11_MESSAGE_ID hide [] =
+      {
+        D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS,
+        // needed additional message IDs can be added
+      };
+      D3D11_INFO_QUEUE_FILTER filter = {};
+      filter.DenyList.NumIDs = _countof ( hide );
+      filter.DenyList.pIDList = hide;
+      infoQueue->AddStorageFilterEntries ( &filter );
     }
-    rC = dxgiFactory->Release ();
-    dxgiFactory = nullptr;
+#endif // !NDEBUG
 
-    initialized = true;
+
+    m_initialized = true;
     PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), "mainThread",
                                               "Direct3D is successfully initialized." );
 
-    displayModeSetter ();
-    allocateResources ();
+    //m_displayModeSetter ();
+    m_allocation ();
 
-    if (!allocated)
+    if (!m_allocated)
       PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), "mainThread",
                                                 "Allocation of Direct3D resources failed." );
 
@@ -221,61 +150,76 @@ Direct3D::Direct3D ( TheCore* coreObj ) :
 };
 
 
-const bool& Direct3D::isInitialized ( void )
-{
-  return initialized;
-};
-
-
-const ID3D11Device& Direct3D::getDevice ( void )
-{
-  return *device.Get ();
-};
-
-
-const bool& Direct3D::isFullscreen ( void )
-{
-  return fullscreen;
-};
-
-
-void Direct3D::displayModeSetter ( void )
+void Direct3D::m_setDisplayMode ( void )
 {
   try
   {
 
     HRESULT hR;
 
-    if (fullscreen)
+
+    //if (!m_fullscreen)
+    //{
+    //  // switch to fullscreen mode
+    //  hR = m_swapChain->SetFullscreenState ( true, nullptr );
+    //  if (FAILED ( hR ))
+    //  {
+    //    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+    //                                              "Switching to fullscreen mode failed." );
+    //    m_fullscreen = true;
+    //    return;
+    //  }
+    //} else
+    //{
+    //  // switch to windowed mode
+    //  hR = m_swapChain->SetFullscreenState ( false, nullptr );
+    //  if (FAILED ( hR ))
+    //  {
+    //    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+    //                                              "Switching to windowed mode failed." );
+    //    m_fullscreen = false;
+    //    return;
+    //  }
+    //}
+
+
+    for (unsigned int i = 0; i < m_displayModesCount; i++)
     {
-      // switch to fullscreen mode
-      hR = swapChain->SetFullscreenState ( true, nullptr );
-      if (FAILED ( hR ))
-      {
-        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "Switching to fullscreen mode failed." );
-        fullscreen = false;
-        return;
-      }
-    } else
-    {
-      // switch to windowed mode
-      hR = swapChain->SetFullscreenState ( false, nullptr );
-      if (FAILED ( hR ))
-      {
-        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "Switching to windowed mode failed." );
-        fullscreen = true;
-        return;
-      }
+      // support check for current resolution of the client window (at engine initialization streamed from settings file)
+      if (m_displayModes [i].Width == static_cast<UINT>(m_core->outputWidth))
+        if (m_displayModes [i].Height == static_cast<UINT>(m_core->outputHeight))
+        {
+          m_displayMode = m_displayModes [i];
+          m_displayModeIndex = i;
+          break;
+        } else
+        {
+          // not supported: set to the lowest supported resolution
+          m_displayMode = m_displayModes [0];
+          m_displayModeIndex = 0;
+
+          PointerProvider::getFileLogger ()->push ( logType::warning, std::this_thread::get_id (), "mainThread",
+                                                    "The chosen resolution is not supported!" );
+
+          // rewrite a not valid configurations with defaults: the file is probably modified from outside of the application
+          if (!PointerProvider::getConfiguration ()->apply ( PointerProvider::getConfiguration ()->getDefaults () ))
+          {
+            PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                      "Rewriting the Configuration file with default settings failed." );
+          }
+        }
     }
 
-    // setting the resolution
-    hR = swapChain->ResizeTarget ( &displayMode );
-    if (FAILED ( hR ))
+
+    if (m_swapChain)
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                "Setting a supported resolution failed." );
+      // setting the resolution
+      hR = m_swapChain->ResizeTarget ( &m_displayMode );
+      if (FAILED ( hR ))
+      {
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Setting a supported resolution failed." );
+      }
     }
 
   }
@@ -287,33 +231,188 @@ void Direct3D::displayModeSetter ( void )
 };
 
 
-void Direct3D::allocateResources ( void )
+void Direct3D::m_allocation ( void )
 {
   try
   {
 
-    allocated = false;
     HRESULT hR;
-    unsigned long rC { 0 };
 
-    // resizing the swap chain buffers (on resize of the client window)
-    // BufferCount and SwapChainFlags: 0 do not change the current
-    // 0 for the next two parameters to adjust to the current client window size automatically
-    // next parameter: set to DXGI_FORMAT_UNKNOWN to preserve the current
-    hR = swapChain->ResizeBuffers ( 0, 0, 0, DXGI_FORMAT_UNKNOWN, 0 );
-    if (FAILED ( hR ))
+
+    // clear previous allocations
+    m_allocated = false;
+    ID3D11RenderTargetView* nullViews [] = { nullptr };
+    m_devCon->OMSetRenderTargets ( _countof ( nullViews ), nullViews, nullptr );
+    m_renderTview.Reset ();
+    m_depthSview.Reset ();
+    m_devCon->Flush ();
+
+
+    if (m_swapChain)
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                "Resizing the swap chain failed!" );
-      return;
+
+      // resizing the swap chain buffers (on resize of the client window)
+      // BufferCount and SwapChainFlags: 0 do not change the current
+      // 0 for the next two parameters to adjust to the current client window size automatically
+      // next parameter: set to DXGI_FORMAT_UNKNOWN to preserve the current
+      hR = m_swapChain->ResizeBuffers ( m_backBufferCount, m_displayMode.Width,
+                                        m_displayMode.Height, m_backBufferFormat, 0 );
+      if (hR == DXGI_ERROR_DEVICE_REMOVED || hR == DXGI_ERROR_DEVICE_RESET)
+      {
+        // on device lost/reset, a new device and swap chain is needed
+        //m_OnDeviceLost ();
+        //return; ///
+      } else
+      {
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Resizing the swap chain failed!" );
+      }
+
+    } else
+    {
+
+      // retrieve underlying DXGI device ( display modes + swap chain need)
+      ComPtr<IDXGIDevice1> dxgiDevice; // DXGI device
+      hR = m_device.As ( &dxgiDevice );
+      if (FAILED ( hR ))
+      {
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Retrieving DXGI factory failed!" );
+        return;
+      }
+
+      // present physical adapter (GPU or card) identification
+      ComPtr<IDXGIAdapter> dxgiAdapter; // DXGI adapter
+      hR = dxgiDevice->GetAdapter ( &dxgiAdapter );
+      if (FAILED ( hR ))
+      {
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Identification of DXGI adapter failed!" );
+        return;
+      }
+
+
+      // primary output adapter (monitor) enumeration
+      ComPtr<IDXGIOutput> dxgiOutput; // DXGI output
+      hR = dxgiAdapter->EnumOutputs ( 0, &dxgiOutput );
+      if (FAILED ( hR ))
+      {
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Acquiring the output device failed!" );
+        return;
+      }
+
+      // two calls to enumerate the number and supported monitor display modes for the colour format:
+      // -- the number of supported display modes (refer to MSDN for flags parameter)
+      hR = dxgiOutput->GetDisplayModeList ( m_backBufferFormat, DXGI_ENUM_MODES_INTERLACED, &m_displayModesCount, nullptr );
+      if (FAILED ( hR ))
+      {
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Acquiring the number of supported display modes failed!" );
+        return;
+      }
+
+      // -- acquiring all the supported display modes for current monitor / video card combination (refer to MSDN for flags parameter)
+      m_displayModes = new (std::nothrow) DXGI_MODE_DESC [m_displayModesCount];
+      if (!m_displayModes)
+      {
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Dynamic memory allocation for supported display modes failed!" );
+        return;
+      }
+      hR = dxgiOutput->GetDisplayModeList ( m_backBufferFormat, DXGI_ENUM_MODES_INTERLACED, &m_displayModesCount, m_displayModes );
+      if (FAILED ( hR ))
+      {
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Acquiring all the supported display modes failed!" );
+        return;
+      }
+
+
+      // acquiring the video card description
+      DXGI_ADAPTER_DESC dxgiAdapterDesc;
+      hR = dxgiAdapter->GetDesc ( &dxgiAdapterDesc );
+      if (FAILED ( hR ))
+      {
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Acquiring the description of video card failed!" );
+        return;
+      }
+      m_videoCardMemory = (unsigned int) (dxgiAdapterDesc.DedicatedVideoMemory / 1024 / 1024);
+      m_videoCardDescription = dxgiAdapterDesc.Description;
+
+
+      // obtain DXGI (DirectX graphics interface) factory
+      ComPtr<IDXGIFactory2> dxgiFactory; // DXGI factory
+      hR = dxgiAdapter->GetParent ( IID_PPV_ARGS ( &dxgiFactory ) );
+      if (FAILED ( hR ))
+      {
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Obtaining DXGI factory failed!" );
+        return;
+      }
+
+
+      m_setDisplayMode ();
+
+
+      // filling a swap chain description structure (the type of swap chain)
+      DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
+      swapChainDesc.Width = m_displayMode.Width; // back buffer size, 0: automatic adjustment from already calculated client window area
+      swapChainDesc.Height = m_displayMode.Height; // the same
+      //if (vSync) // lock to system settings 60Hz
+      //{
+      //  // back buffer to front buffer (screen) draw rate
+      //  swapChainDesc.BufferDesc.RefreshRate.Numerator = displayMode.RefreshRate.Numerator;
+      //  swapChainDesc.BufferDesc.RefreshRate.Denominator = displayMode.RefreshRate.Denominator;
+      //} else // draw as many times as possible (may cause some visual artefacts)
+      //{
+      //  // note that not supported values may cause the DirectX to perform a blit instead of a buffer flip,
+      //  // ending in degraded performance and unknown errors when debugging.
+      //  swapChainDesc.BufferDesc.RefreshRate.Numerator = 0;
+      //  swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
+      //}
+      swapChainDesc.Format = m_backBufferFormat; // display format
+      // number of multi samplings per pixel and image quality (1 and 0: disable multi sampling (no anti-aliasing))
+      swapChainDesc.SampleDesc.Count = 1;
+      swapChainDesc.SampleDesc.Quality = 0;
+      swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // back buffer as render output target
+      swapChainDesc.BufferCount = m_backBufferCount; // 3: including the front buffer (one front buffer and two back buffers)
+      //swapChainDesc.OutputWindow = core->getHandle (); // handle to main window
+      //swapChainDesc.Windowed = true; // recommendation: windowed creation and switch to full screen
+      // flip (in windowed mode: blit) and discard the content of back buffer after presentation
+      swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+      //swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH; // allow switching the display mode (advanced)
+      //swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED; // scan-line drawing
+      swapChainDesc.Scaling = DXGI_SCALING_ASPECT_RATIO_STRETCH; // image size adjustment to back buffer resolution
+      swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+
+      Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain;
+
+      // swap chain creation
+      hR = dxgiFactory->CreateSwapChainForCoreWindow ( m_device.Get (), m_core->appWindow, &swapChainDesc, nullptr, &swapChain );
+      if (FAILED ( hR ))
+      {
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Creation of swap chain failed!" );
+        return;
+      }
+      hR = swapChain.As ( &m_swapChain );
+      if (FAILED ( hR ))
+      {
+        PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Upgrading swap chain failed!" );
+        return;
+      }
+
     }
 
     // obtain a pointer to the current back buffer of swap chain
     // the zero-th buffer is accessible, since already created using flip discarding effect.
     // second parameter: interface type (most cases 2D- texture)
     // the last parameter returns a pointer to the actual back buffer
-    ID3D11Texture2D* rtBuffer; // render target view buffer
-    hR = swapChain->GetBuffer ( 0, __uuidof(ID3D11Texture2D), (LPVOID*) &rtBuffer );
+    ComPtr<ID3D11Texture2D> rtBuffer; // render target view buffer
+    hR = m_swapChain->GetBuffer ( 0, IID_PPV_ARGS ( &rtBuffer ) );
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -325,7 +424,8 @@ void Direct3D::allocateResources ( void )
     // first parameter: the resource for which the render target is created for
     // second parameter describes data type of the specified resource (mipmap but 0 for now)
     // the last parameter returns a pointer to the created render target view
-    hR = device->CreateRenderTargetView ( rtBuffer, nullptr, &rTview );
+    hR = m_device->CreateRenderTargetView ( rtBuffer.Get (), nullptr,
+                                            m_renderTview.ReleaseAndGetAddressOf () );
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -337,25 +437,23 @@ void Direct3D::allocateResources ( void )
     // depth buffer purpose: to render polygons properly in 3D space
     // stencil buffer purpose: to achieve effects such as motion blur, volumetric shadows etc.
     CD3D11_TEXTURE2D_DESC depthBufferDesc;
-    rtBuffer->GetDesc ( &depthBufferDesc ); // retrieves the back buffer description and fill
-    //descDepth.Width = ;
-    //descDepth.Height = ;
-    //descDepth.MipLevels = 1;
-    //descDepth.ArraySize = 1;
-    depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; // 24 bits for depth and 8 bits for stencil
-    //descDepth.SampleDesc.Count = 1; // multi-sampling (anti-aliasing) match to settings of render target
-    //descDepth.SampleDesc.Quality = 0;
+    //rtBuffer->GetDesc ( &depthBufferDesc ); // retrieves the back buffer description and fill
+    depthBufferDesc.Format = m_depthBufferFormat; // 24 bits for depth and 8 bits for stencil
+    depthBufferDesc.Width = m_displayMode.Width;
+    depthBufferDesc.Height = m_displayMode.Height;
+    depthBufferDesc.MipLevels = 1;
+    depthBufferDesc.ArraySize = 1;
+    depthBufferDesc.SampleDesc.Count = 1; // multi-sampling (anti-aliasing) match to settings of render target
+    depthBufferDesc.SampleDesc.Quality = 0;
     depthBufferDesc.Usage = D3D11_USAGE_DEFAULT; // value: only GPU will be reading and writing to the resource
     depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL; // how to bind to the different pipeline stages
     depthBufferDesc.CPUAccessFlags = 0;
     depthBufferDesc.MiscFlags = 0;
-    rC = rtBuffer->Release ();
-    rtBuffer = nullptr;
 
     // texture creation:
     // the second parameter: pointer to initial data (zero for any data, since depth-stencil buffer)
     // note texture 2d function: sorted and rasterized polygons are just coloured pixels in 2d representation
-    hR = device->CreateTexture2D ( &depthBufferDesc, nullptr, &dSbuffer );
+    hR = m_device->CreateTexture2D ( &depthBufferDesc, nullptr, &m_depthSbuffer );
     //hR = dsBuffer->QueryInterface ( __uuidof(IDXGISurface1), &dsSurface );
     if (FAILED ( hR ))
     {
@@ -385,7 +483,7 @@ void Direct3D::allocateResources ( void )
     depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 
     // depth stencil state creation
-    hR = device->CreateDepthStencilState ( &depthStencilDesc, &dSstate );
+    hR = m_device->CreateDepthStencilState ( &depthStencilDesc, &m_depthSstate );
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -393,18 +491,18 @@ void Direct3D::allocateResources ( void )
       return;
     }
     // set the active depth stencil state
-    devCon->OMSetDepthStencilState ( dSstate.Get (), 1 );
+    m_devCon->OMSetDepthStencilState ( m_depthSstate.Get (), 1 );
 
     // depth-stencil view description
     // purpose: so the Direct3D use the depth buffer as a depth stencil texture.
     D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
-    depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    depthStencilViewDesc.Format = m_depthBufferFormat;
     depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
     depthStencilViewDesc.Flags = 0;
     depthStencilViewDesc.Texture2D.MipSlice = 0;
     // depth-stencil view creation
     // the second parameter: zero to access the mipmap level 0
-    hR = device->CreateDepthStencilView ( dSbuffer.Get (), &depthStencilViewDesc, &dSview );
+    hR = m_device->CreateDepthStencilView ( m_depthSbuffer.Get (), &depthStencilViewDesc, &m_depthSview );
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -415,7 +513,7 @@ void Direct3D::allocateResources ( void )
     // binding render target view and depth-stencil view to output render pipeline (for now one render target view)
     // purpose: rendered graphics by the pipeline will be drawn to the back buffer.
     // second parameter: pointer to first element of a list of render target view pointers
-    devCon->OMSetRenderTargets ( 1, rTview.GetAddressOf (), dSview.Get () );
+    m_devCon->OMSetRenderTargets ( 1, m_renderTview.GetAddressOf (), m_depthSview.Get () );
 
     // rasterizer description (determines how and which polygons is to be rendered)
     // for example: render scenes in wireframe mode, draw both front and back faces of polygons
@@ -432,7 +530,7 @@ void Direct3D::allocateResources ( void )
     rasterizerDesc.ScissorEnable = false;
     rasterizerDesc.SlopeScaledDepthBias = 0.0f;
     // rasterizer creation
-    hR = device->CreateRasterizerState ( &rasterizerDesc, &rasterizerState );
+    hR = m_device->CreateRasterizerState ( &rasterizerDesc, &m_rasterizerState );
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -440,24 +538,24 @@ void Direct3D::allocateResources ( void )
       return;
     }
     // set the active rasterizer state
-    devCon->RSSetState ( rasterizerState.Get () );
+    m_devCon->RSSetState ( m_rasterizerState.Get () );
 
     // viewport structure: set the viewport to entire back buffer (what area should be rendered to)
     // with other words: so Direct3D can map clip space coordinates to the render target space
     D3D11_VIEWPORT viewPort;
-    viewPort.Width = depthBufferDesc.Width;
-    viewPort.Height = depthBufferDesc.Height;
+    viewPort.Width = float ( m_displayMode.Width );
+    viewPort.Height = float ( m_displayMode.Height );
     viewPort.MinDepth = 0.0f; // minimum and maximum depth buffer values
     viewPort.MaxDepth = 1.0f;
     viewPort.TopLeftX = 0; // first four integers: viewport rectangle (relative to client window rectangle)
     viewPort.TopLeftY = 0;
     // setting the viewport
     // the second parameter is a pointer to an array of viewports
-    devCon->RSSetViewports ( 1, &viewPort );
+    m_devCon->RSSetViewports ( 1, &viewPort );
 
-    clearBuffers ();
+    m_clearBuffers ();
 
-    allocated = true;
+    m_allocated = true;
 
   }
   catch (const std::exception & ex)
@@ -468,19 +566,18 @@ void Direct3D::allocateResources ( void )
 };
 
 
-void Direct3D::clearBuffers ( void )
+void Direct3D::m_clearBuffers ( void )
 {
   try
   {
 
-    //const float blue [] { 0.11f, 0.33f, 0.55f, 1.0f };
-    const float blue [] { 0.0f, 0.0f, 0.0f, 1.0f };
+    const float blue [] { 0.11f, 0.33f, 0.55f, 1.0f };
     // filling the entire back buffer with a single colour
-    devCon->ClearRenderTargetView ( rTview.Get (), blue );
+    m_devCon->ClearRenderTargetView ( m_renderTview.Get (), blue );
     // second parameter: the type of data to clear (obviously set to clear both depth-stencil)
     // the values are used to override the entire depth-stencil buffer with
-    if (dSview)
-      devCon->ClearDepthStencilView ( dSview.Get (), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0 );
+    if (m_depthSview)
+      m_devCon->ClearDepthStencilView ( m_depthSview.Get (), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0 );
 
   }
   catch (const std::exception & ex)
@@ -491,7 +588,7 @@ void Direct3D::clearBuffers ( void )
 };
 
 
-void Direct3D::present ( void )
+void Direct3D::m_present ( void )
 {
   try
   {
@@ -503,10 +600,10 @@ void Direct3D::present ( void )
     // and discard this frame if a newer frame is on the queue. (screen tearing might occur)
     // the n = 1 to 4 values: synchronize the presentation after n-th vertical blank.
     // the second parameter: not waiting for v-sync.
-    if (vSync)
-      hR = { swapChain->Present ( 1, DXGI_PRESENT_DO_NOT_WAIT ) }; // consider screen refresh rate
+    if (m_vSync)
+      hR = { m_swapChain->Present ( 1, DXGI_PRESENT_DO_NOT_WAIT ) }; // consider screen refresh rate
     else
-      hR = { swapChain->Present ( 0, DXGI_PRESENT_DO_NOT_WAIT ) }; // as fast as possible
+      hR = { m_swapChain->Present ( 0, DXGI_PRESENT_DO_NOT_WAIT ) }; // as fast as possible
 
     if ((FAILED ( hR )) &&
       (hR != DXGI_ERROR_WAS_STILL_DRAWING)) // occurs, if the calling thread is blocked
@@ -516,8 +613,8 @@ void Direct3D::present ( void )
     }
 
     // rebind: the process is needed after each call to present, since in flip and discard mode the view targets are released.
-    if (dSview)
-      devCon->OMSetRenderTargets ( 1, rTview.GetAddressOf (), dSview.Get () );
+    if (m_depthSview)
+      m_devCon->OMSetRenderTargets ( 1, m_renderTview.GetAddressOf (), m_depthSview.Get () );
 
   }
   catch (const std::exception & ex)
@@ -525,4 +622,22 @@ void Direct3D::present ( void )
     PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
                                               ex.what () );
   }
+};
+
+
+const ID3D11Device& Direct3D::m_getDevice ( void )
+{
+  return *m_device.Get ();
+};
+
+
+const bool& Direct3D::m_isInitialized ( void )
+{
+  return m_initialized;
+};
+
+
+const bool& Direct3D::m_isFullscreen ( void )
+{
+  return m_fullscreen;
 };

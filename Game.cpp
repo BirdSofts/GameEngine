@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,06.11.2019</changed>
+/// <changed>ʆϒʅ,07.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
@@ -14,9 +14,9 @@
 using namespace winrt::Windows::UI::Core;
 
 
-Game::Game ( ::IUnknown* window ) :
+Game::Game ( ::IUnknown* window, const int& width, const int& height ) :
   core ( nullptr ), universe ( nullptr ),
-  initialized ( false ), allocated ( false )
+  initialized ( false ), allocated ( false ), paused ( false )
 {
   try
   {
@@ -32,7 +32,7 @@ Game::Game ( ::IUnknown* window ) :
     _2DlightedTriangle = nullptr;
 
     // the game framework instantiation
-    core = new (std::nothrow) TheCore ( window, this );
+    core = new (std::nothrow) TheCore ( window, this, width, height );
 
     if (!core->isInitialized ())
     {
@@ -67,7 +67,7 @@ void Game::allocateResources ( void )
     allocated = false;
 
     // the game framework instantiation
-    universe = new (std::nothrow) Universe ( core->d3d->device.Get (), core->d3d->devCon.Get () );
+    universe = new (std::nothrow) Universe ( core->d3d->m_device.Get (), core->d3d->m_devCon.Get () );
 
     if (!universe->isInitialized ())
     {
@@ -75,29 +75,29 @@ void Game::allocateResources ( void )
                                                 "Initialization of game universe failed!" );
     }
 
-    shaderColour = new (std::nothrow) ShaderColour ( core->d3d->device.Get () );
+    shaderColour = new (std::nothrow) ShaderColour ( core->d3d->m_device.Get () );
 
-    shaderTexture = new (std::nothrow) ShaderTexture ( core->d3d->device.Get () );
+    shaderTexture = new (std::nothrow) ShaderTexture ( core->d3d->m_device.Get () );
 
-    _2Dtriangles = new (std::nothrow) Triangles ( core->d3d->device.Get (), core->d3d->devCon.Get () );
+    _2Dtriangles = new (std::nothrow) Triangles ( core->d3d->m_device.Get (), core->d3d->m_devCon.Get () );
 
-    _2Dline = new (std::nothrow) Line ( core->d3d->device.Get (), core->d3d->devCon.Get () );
+    _2Dline = new (std::nothrow) Line ( core->d3d->m_device.Get (), core->d3d->m_devCon.Get () );
 
     texture = new (std::nothrow) Texture<TargaHeader>
-      ( core->d3d->device.Get (), core->d3d->devCon.Get (), "./textures/clouds.tga" ); // a texture file
+      ( core->d3d->m_device.Get (), core->d3d->m_devCon.Get (), "./textures/clouds.tga" ); // a texture file
     if (!texture)
     {
       PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 "Instantiation of texture failed!" );
       return;
     }
-    _2DtexturedTriangles = new (std::nothrow) TexturedTriangles ( core->d3d->device.Get (), core->d3d->devCon.Get () );
+    _2DtexturedTriangles = new (std::nothrow) TexturedTriangles ( core->d3d->m_device.Get (), core->d3d->m_devCon.Get () );
 
-    shaderDiffuseLight = new (std::nothrow) ShaderDiffuseLight ( core->d3d->device.Get () );
+    shaderDiffuseLight = new (std::nothrow) ShaderDiffuseLight ( core->d3d->m_device.Get () );
 
-    _2DlightedTriangle = new (std::nothrow) LightedTriangle ( core->d3d->device.Get (), core->d3d->devCon.Get () );
+    _2DlightedTriangle = new (std::nothrow) LightedTriangle ( core->d3d->m_device.Get (), core->d3d->m_devCon.Get () );
 
-    _3Dcube = new (std::nothrow) Cube ( core->d3d->device.Get (), core->d3d->devCon.Get () );
+    _3Dcube = new (std::nothrow) Cube ( core->d3d->m_device.Get (), core->d3d->m_devCon.Get () );
 
     allocated = true;
 
@@ -166,7 +166,7 @@ const bool Game::run ( void )
       // -- fps calculation
       core->frameStatistics ();
 
-      if (!core->paused)
+      if (!paused)
       {
 
         // -----------------------------------------------------------------------------------------------------------
@@ -179,7 +179,7 @@ const bool Game::run ( void )
 
         // -----------------------------------------------------------------------------------------------------------
         // -- output a frame
-        core->d3d->present ();
+        core->d3d->m_present ();
 
 
         // -----------------------------------------------------------------------------------------------------------
@@ -228,7 +228,7 @@ void Game::render ( void )
   try
   {
 
-    core->d3d->clearBuffers ();
+    core->d3d->m_clearBuffers ();
 
     universe->renderResources ();
     universe->getCamera ()->renderCamera ();
@@ -239,11 +239,11 @@ void Game::render ( void )
 
 
     // setting the active vertex/pixel shaders (active shader technique)
-    core->d3d->devCon->VSSetShader ( shaderColour->getVertexShader (), nullptr, 0 );
-    core->d3d->devCon->PSSetShader ( shaderColour->getPixelShader (), nullptr, 0 );
+    core->d3d->m_devCon->VSSetShader ( shaderColour->getVertexShader (), nullptr, 0 );
+    core->d3d->m_devCon->PSSetShader ( shaderColour->getPixelShader (), nullptr, 0 );
 
     // setting the active input layout
-    core->d3d->devCon->IASetInputLayout ( shaderColour->getInputLayout () );
+    core->d3d->m_devCon->IASetInputLayout ( shaderColour->getInputLayout () );
 
     // set the active vertex and index buffers (binds an array of vertex/index buffers to input-assembler stage)
     // basically, which vertices to put to graphics pipeline when rendering
@@ -251,62 +251,62 @@ void Game::render ( void )
     unsigned int offset = 0;
     // fourth parameter: constant array of stride values (one stride for each buffer in the vertex-buffer array)
     // fifth parameter: number of bytes between the first element and the element to use (usually zero)
-    core->d3d->devCon->IASetVertexBuffers ( 0, 1, _2Dtriangles->getVertexBuffer (), &strides, &offset );
+    core->d3d->m_devCon->IASetVertexBuffers ( 0, 1, _2Dtriangles->getVertexBuffer (), &strides, &offset );
     // set the active corresponding index buffer in the input assembler
-    core->d3d->devCon->IASetIndexBuffer ( _2Dtriangles->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
+    core->d3d->m_devCon->IASetIndexBuffer ( _2Dtriangles->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
 
     // set primitive topology (Direct3D has no idea about the mathematical conventions to use)
     // basically how to render the resource (vertex data) to screen
-    core->d3d->devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+    core->d3d->m_devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 
     // draw indexed vertices, starting from vertex 0
-    core->d3d->devCon->DrawIndexed ( _2Dtriangles->verticesCount, 0, 0 );
+    core->d3d->m_devCon->DrawIndexed ( _2Dtriangles->verticesCount, 0, 0 );
 
 
 
-    core->d3d->devCon->IASetVertexBuffers ( 0, 1, _2Dline->getVertexBuffer (), &strides, &offset );
-    core->d3d->devCon->IASetIndexBuffer ( _2Dline->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
-    core->d3d->devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_LINELIST );
-    core->d3d->devCon->DrawIndexed ( _2Dline->verticesCount, 0, 0 );
+    core->d3d->m_devCon->IASetVertexBuffers ( 0, 1, _2Dline->getVertexBuffer (), &strides, &offset );
+    core->d3d->m_devCon->IASetIndexBuffer ( _2Dline->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
+    core->d3d->m_devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_LINELIST );
+    core->d3d->m_devCon->DrawIndexed ( _2Dline->verticesCount, 0, 0 );
 
 
 
     // setting the active texture
-    core->d3d->devCon->PSSetShaderResources ( 0, 1, texture->getTexture () );
+    core->d3d->m_devCon->PSSetShaderResources ( 0, 1, texture->getTexture () );
 
-    core->d3d->devCon->VSSetShader ( shaderTexture->getVertexShader (), nullptr, 0 );
-    core->d3d->devCon->PSSetShader ( shaderTexture->getPixelShader (), nullptr, 0 );
+    core->d3d->m_devCon->VSSetShader ( shaderTexture->getVertexShader (), nullptr, 0 );
+    core->d3d->m_devCon->PSSetShader ( shaderTexture->getPixelShader (), nullptr, 0 );
 
-    core->d3d->devCon->IASetInputLayout ( shaderTexture->getInputLayout () );
+    core->d3d->m_devCon->IASetInputLayout ( shaderTexture->getInputLayout () );
 
     // setting the active sampler
-    core->d3d->devCon->PSSetSamplers ( 0, 1, shaderTexture->getSamplerState () );
+    core->d3d->m_devCon->PSSetSamplers ( 0, 1, shaderTexture->getSamplerState () );
 
     strides = sizeof ( VertexT );
-    core->d3d->devCon->IASetVertexBuffers ( 0, 1, _2DtexturedTriangles->getVertexBuffer (), &strides, &offset );
-    core->d3d->devCon->IASetIndexBuffer ( _2DtexturedTriangles->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
+    core->d3d->m_devCon->IASetVertexBuffers ( 0, 1, _2DtexturedTriangles->getVertexBuffer (), &strides, &offset );
+    core->d3d->m_devCon->IASetIndexBuffer ( _2DtexturedTriangles->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
 
-    core->d3d->devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-    core->d3d->devCon->DrawIndexed ( _2DtexturedTriangles->verticesCount, 0, 0 );
+    core->d3d->m_devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+    core->d3d->m_devCon->DrawIndexed ( _2DtexturedTriangles->verticesCount, 0, 0 );
 
 
 
-    core->d3d->devCon->VSSetShader ( shaderDiffuseLight->getVertexShader (), nullptr, 0 );
-    core->d3d->devCon->PSSetShader ( shaderDiffuseLight->getPixelShader (), nullptr, 0 );
-    core->d3d->devCon->IASetInputLayout ( shaderDiffuseLight->getInputLayout () );
-    core->d3d->devCon->PSSetSamplers ( 0, 1, shaderDiffuseLight->getSamplerState () );
+    core->d3d->m_devCon->VSSetShader ( shaderDiffuseLight->getVertexShader (), nullptr, 0 );
+    core->d3d->m_devCon->PSSetShader ( shaderDiffuseLight->getPixelShader (), nullptr, 0 );
+    core->d3d->m_devCon->IASetInputLayout ( shaderDiffuseLight->getInputLayout () );
+    core->d3d->m_devCon->PSSetSamplers ( 0, 1, shaderDiffuseLight->getSamplerState () );
     strides = sizeof ( VertexL );
-    core->d3d->devCon->IASetVertexBuffers ( 0, 1, _2DlightedTriangle->getVertexBuffer (), &strides, &offset );
-    core->d3d->devCon->IASetIndexBuffer ( _2DlightedTriangle->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
-    core->d3d->devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-    core->d3d->devCon->DrawIndexed ( _2DlightedTriangle->verticesCount, 0, 0 );
+    core->d3d->m_devCon->IASetVertexBuffers ( 0, 1, _2DlightedTriangle->getVertexBuffer (), &strides, &offset );
+    core->d3d->m_devCon->IASetIndexBuffer ( _2DlightedTriangle->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
+    core->d3d->m_devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+    core->d3d->m_devCon->DrawIndexed ( _2DlightedTriangle->verticesCount, 0, 0 );
 
 
 
-    core->d3d->devCon->IASetVertexBuffers ( 0, 1, _3Dcube->getVertexBuffer (), &strides, &offset );
-    core->d3d->devCon->IASetIndexBuffer ( _3Dcube->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
-    core->d3d->devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-    core->d3d->devCon->DrawIndexed ( _3Dcube->verticesCount, 0, 0 );
+    core->d3d->m_devCon->IASetVertexBuffers ( 0, 1, _3Dcube->getVertexBuffer (), &strides, &offset );
+    core->d3d->m_devCon->IASetIndexBuffer ( _3Dcube->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
+    core->d3d->m_devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+    core->d3d->m_devCon->DrawIndexed ( _3Dcube->verticesCount, 0, 0 );
 
   }
   catch (const std::exception & ex)
@@ -331,6 +331,12 @@ void Game::update ( void )
     PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
                                               ex.what () );
   }
+};
+
+
+bool& Game::isPaused ( void )
+{
+  return paused;
 };
 
 

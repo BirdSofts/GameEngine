@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,06.11.2019</changed>
+/// <changed>ʆϒʅ,07.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
@@ -51,7 +51,7 @@ Direct2D::Direct2D ( TheCore* coreObj ) :
 
     // acquiring the underlying DXGI factory used to create the Dirext3D device (resources needs)
     IDXGIDevice1* dxgiDevice;
-    hR = core->d3d->device->QueryInterface ( __uuidof(IDXGIDevice1), (void**) &dxgiDevice );
+    hR = core->d3d->m_device->QueryInterface ( __uuidof(IDXGIDevice1), (void**) &dxgiDevice );
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -111,7 +111,7 @@ void Direct2D::allocateResources ( void )
     // setting the render target of Direct2D to the same back buffer as Direct3D
 
     // --retrieving the DXGI version of the Direct3D back buffer (Direct2D needs)
-    hR = core->d3d->swapChain->GetBuffer ( 0, __uuidof(IDXGISurface1), &dcBuffer );
+    hR = core->d3d->m_swapChain->GetBuffer ( 0, __uuidof(IDXGISurface1), &dcBuffer );
     //hR = dcBuffer->QueryInterface ( __uuidof(IDXGISurface1), &dcBuffer );
     //auto rC = dcBuffer->Release ();
     if (FAILED ( hR ))
@@ -123,7 +123,7 @@ void Direct2D::allocateResources ( void )
 
     // --bitmap (the actual rendering surface) properties (Direct2D needs)
     D2D1_BITMAP_PROPERTIES1 bitMap;
-    bitMap.pixelFormat.format = core->d3d->colourFormat; // the same as Direct3D back buffer
+    bitMap.pixelFormat.format = core->d3d->m_backBufferFormat; // the same as Direct3D back buffer
     bitMap.pixelFormat.alphaMode = D2D1_ALPHA_MODE_IGNORE;
     bitMap.dpiX = 0.0f; // dots per inch of the bitmap
     bitMap.dpiY = 0.0f;
