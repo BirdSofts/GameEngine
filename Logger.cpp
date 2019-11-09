@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,06.11.2019</created>
-/// <changed>ʆϒʅ,07.11.2019</changed>
+/// <changed>ʆϒʅ,09.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
@@ -16,28 +16,41 @@ using namespace winrt::Windows::Storage;
 
 LogEntity::LogEntity ( void )
 {
-  id = 0;
-  type = logType::info;
-  threadId = std::this_thread::get_id ();
-  threadName = "";
-  message = "";
+
+  m_id = 0;
+  m_type = logType::info;
+  m_threadId = std::this_thread::get_id ();
+  m_threadName = "";
+  m_message = "";
+
 };
+
+
+//LogEntity::~LogEntity ( void )
+//{
+//
+//};
 
 
 LogEntity LogEntity::operator=( LogEntity& logObj )
 {
+
   LogEntity temp;
-  temp.id = logObj.id;
-  temp.arrivedAt = logObj.arrivedAt;
-  temp.type = logObj.type;
-  temp.threadId = logObj.threadId;
-  temp.threadName = logObj.threadName;
-  temp.message = logObj.message;
+
+  temp.m_id = logObj.m_id;
+  temp.m_arrivedAt = logObj.m_arrivedAt;
+  temp.m_type = logObj.m_type;
+  temp.m_threadId = logObj.m_threadId;
+  temp.m_threadName = logObj.m_threadName;
+  temp.m_message = logObj.m_message;
+
   return temp;
+
 };
 
 
-ToFile::ToFile ( void ) : path ( L"" ), ready ( false )
+ToFile::ToFile ( void ) :
+  m_path ( L"" ), m_ready ( false )
 {
   try
   {
@@ -46,11 +59,11 @@ ToFile::ToFile ( void ) : path ( L"" ), ready ( false )
     //StorageFile file = DownloadsFolder::CreateFileAsync ( L"sample.txt" ) ;
     //StorageFile file ( folder.CreateFileAsync ( L"sample.txt" ) );
 
-    path = folder.Path () + L"\\dump.log";
+    m_path = folder.Path () + L"\\dump.log";
 
-    fileStream.open ( path, std::ofstream::binary );
-    if (fileStream.is_open ())
-      ready = true;
+    m_fileStream.open ( m_path, std::ofstream::binary );
+    if (m_fileStream.is_open ())
+      m_ready = true;
     else
     {
       //MessageBoxA ( NULL, "The log file could not be opened for writing.", "Error", MB_OK | MB_ICONERROR );
@@ -64,193 +77,218 @@ ToFile::ToFile ( void ) : path ( L"" ), ready ( false )
 };
 
 
-const bool& ToFile::state ( void )
+//ToFile::~ToFile ( void )
+//{
+//
+//};
+
+
+const bool& ToFile::m_isReady ( void )
 {
-  return ready;
+  return m_ready;
 }
 
 
-void ToFile::close ( void )
+void ToFile::m_close ( void )
 {
-  fileStream.close ();
+  m_fileStream.close ();
 };
 
 
-bool ToFile::write ( const std::string& line )
+bool ToFile::m_write ( const std::string& line )
 {
   try
   {
 
-    if (ready)
+    if (m_ready)
     {
-      fileStream << line;
+      m_fileStream << line;
       return true;
     } else
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                "Failed to output to log file!" );
+      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Failed to output to log file!" );
       return false;
     }
 
   }
   catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                              ex.what () );
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                ex.what () );
     return false;
   }
 };
 
 
 template<class tType>
-unsigned int Logger<tType>::counter { 0 };
+unsigned int Logger<tType>::m_counter { 0 };
 
 
 template<class tType>
 void loggerEngine ( Logger<tType>* engine );
 template<class tType>
-Logger<tType>::Logger ( void ) : theLogRawStr ( "" ), filePolicy (), writeGuard ()
+Logger<tType>::Logger ( void ) : m_theLogRawStr ( "" ), m_filePolicy (), m_writeGuard ()
 {
   try
   {
 
-    if (filePolicy.state ())
+    if (m_filePolicy.m_isReady ())
     {
-      operating.test_and_set (); // mark the write engine as running
-      commit = std::move ( std::thread { loggerEngine<tType>, this } );
+      m_operating.test_and_set (); // mark the write engine as running
+      m_commit = std::move ( std::thread { loggerEngine<tType>, this } );
     }
 
-    state = 0;
+    m_state = 0;
 
   }
   catch (const std::exception & ex)
   {
-
     //MessageBoxA ( NULL, ex.what (), "Error", MB_OK | MB_ICONERROR );
-
   }
 };
 
 
+//template<class tType>
+//Logger<tType>::~Logger ( void )
+//{
+//
+//};
+
+
 template<class tType>
-void Logger<tType>::push ( const logType& t,
-                           const std::thread::id& tId,
-                           const std::string& tName,
-                           const std::string& msg )
+void Logger<tType>::m_push ( const logType& t, const std::thread::id& tId,
+                             const std::string& tName, const std::string& msg )
 {
   try
   {
 
     std::stringstream moment;
+
     SYSTEMTIME cDateT;
-    GetLocalTime ( &cDateT );
-    // date and time format: xx/xx/xx xx:xx:xx
-    moment << cDateT.wDay << '/' << cDateT.wMonth << '/' << cDateT.wYear << ' ';
+    GetLocalTime ( &cDateT ); // date and time format: xx/xx/xx xx:xx:xx
+
+    moment
+      << cDateT.wDay << '/'
+      << cDateT.wMonth << '/'
+      << cDateT.wYear << ' ';
+
     if (cDateT.wHour > 9)
       moment << cDateT.wHour << ':';
     else
       moment << "0" << cDateT.wHour << ':';
+
     if (cDateT.wMinute > 9)
       moment << cDateT.wMinute << ':';
     else
       moment << "0" << cDateT.wMinute << ':';
+
     if (cDateT.wSecond > 9)
       moment << cDateT.wSecond;
     else
       moment << "0" << cDateT.wSecond;
 
-    counter++;
-    theLog.id = counter;
-    theLog.arrivedAt = moment.str ();
-    theLog.type = t;
-    theLog.threadId = tId;
-    theLog.threadName = tName;
-    theLog.message = msg;
+    m_counter++;
+    m_theLog.m_id = m_counter;
+    m_theLog.m_arrivedAt = moment.str ();
+    m_theLog.m_type = t;
+    m_theLog.m_threadId = tId;
+    m_theLog.m_threadName = tName;
+    m_theLog.m_message = msg;
 
-    std::stringstream temp;
-    temp << theLog.id << " - " << theLog.arrivedAt << " - ";
-    std::stringstream line;
+    std::stringstream lineRaw;
+    lineRaw << m_theLog.m_id << " - " << m_theLog.m_arrivedAt << " - ";
+
+    std::stringstream lineFormatted;
+
+    // line formatting: add some space to recognize the different application state in log file
     if (
       (PointerProvider::getVariables ()->running == false) &&
       (PointerProvider::getVariables ()->currentState == "shutting down") &&
-      (state == 0))
+      (m_state == 0))
     {
-      line << "\r\n\n";
-      state = 1;
+      lineFormatted << "\r\n\n";
+      m_state = 1;
     } else
-      line << "\r\n";
-    if (theLog.id < 1000)
-      line << theLog.id << "\t\t";
-    else
-      line << theLog.id << '\t';
+      lineFormatted << "\r\n";
 
-    line << theLog.arrivedAt << '\t';
-    switch (theLog.type)
+    if (m_theLog.m_id < 1000)
+      lineFormatted << m_theLog.m_id << "\t\t";
+    else
+      lineFormatted << m_theLog.m_id << '\t';
+
+    lineFormatted << m_theLog.m_arrivedAt << '\t';
+
+    switch (m_theLog.m_type)
     {
       case 0:
-        temp << "INFO: - ";
-        line << "INFO:    ";
+        lineRaw << "INFO: - ";
+        lineFormatted << "INFO:    ";
         break;
       case 1:
-        temp << "DEBUG: - ";
-        line << "DEBUG:   ";
+        lineRaw << "DEBUG: - ";
+        lineFormatted << "DEBUG:   ";
         break;
       case 2:
-        temp << "WARNING: - ";
-        line << "WARNING: ";
+        lineRaw << "WARNING: - ";
+        lineFormatted << "WARNING: ";
         break;
       case 3:
-        temp << "ERROR: - ";
-        line << "ERROR:   ";
+        lineRaw << "ERROR: - ";
+        lineFormatted << "ERROR:   ";
         break;
     }
-    temp << theLog.threadId << " - " << theLog.threadName << " - " << theLog.message;
-    theLogRawStr = temp.str ();
-    line << theLog.threadId << '\t' << theLog.threadName << '\t' << theLog.message;
 
-    // after
+    lineRaw << m_theLog.m_threadId << " - " << m_theLog.m_threadName << " - " << m_theLog.m_message;
+    m_theLogRawStr = lineRaw.str ();
+
+    lineFormatted << m_theLog.m_threadId << '\t' << m_theLog.m_threadName << '\t' << m_theLog.m_message;
+
+    // line formatting: add some space to recognize the different application state in log file
     if (
       (PointerProvider::getVariables ()->running == true) &&
       (PointerProvider::getVariables ()->currentState == "initialized") &&
-      (state == 1))
+      (m_state == 1))
     {
-      line << '\n';
-      state = 2;
+      lineFormatted << '\n';
+      m_state = 2;
     }
 
-    std::lock_guard<std::timed_mutex> lock ( writeGuard );
-    buffer.push_back ( line.str () );
+    std::lock_guard<std::timed_mutex> lock ( m_writeGuard );
+    m_buffer.push_back ( lineFormatted.str () );
 
   }
   catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                              ex.what () );
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                ex.what () );
   }
 };
 
 
 template<class tType>
-const LogEntity& Logger<tType>::getLog ( void )
+const LogEntity& Logger<tType>::m_getLog ( void )
 {
-  return theLog;
+  return m_theLog;
 };
 
 
 template<class tType>
-const std::string& Logger<tType>::getLogRawStr ( void )
+const std::string& Logger<tType>::m_getLogRawStr ( void )
 {
-  return theLogRawStr;
+  return m_theLogRawStr;
 };
 
 
 template<class tType>
-void Logger<tType>::shutdown ( void )
+void Logger<tType>::m_shutdown ( void )
 {
-  buffer.clear ();
-  filePolicy.close ();
-  operating.clear ();
-  commit.join ();
+
+  m_buffer.clear ();
+  m_filePolicy.m_close ();
+  m_operating.clear ();
+  m_commit.join ();
+
 };
 
 
@@ -260,43 +298,47 @@ void loggerEngine ( Logger<tType>* engine )
   try
   {
 
-    // dump engine: write the present logs' data
+    // dump engine: write any present logs' data
     std::this_thread::sleep_for ( std::chrono::milliseconds { 20 } );
 
-    PointerProvider::getFileLogger ()->push (
+    PointerProvider::getFileLogger ()->m_push (
       logType::info, std::this_thread::get_id (), "logThread",
-      "Logging engine is successfully started:\n\nFull-featured surveillance is the utter most goal in a digital world, and frankly put, it is well justified! ^,^\n" );
+      "Logging engine is successfully started:\n\nFull-featured surveillance \
+      is the utter most goal in a digital world, and frankly put, it is well justified! ^,^\n" );
 
     // Todo robust lock
     // initializing and not locking the mutex object (mark as not owing a lock)
-    std::unique_lock<std::timed_mutex> lock ( engine->writeGuard, std::defer_lock );
+    std::unique_lock<std::timed_mutex> lock ( engine->m_writeGuard, std::defer_lock );
 
     do
     {
       std::this_thread::sleep_for ( std::chrono::milliseconds ( 100 ) );
-      if (engine->buffer.size ())
+
+      if (engine->m_buffer.size ())
       {
         if (!lock.try_lock_for ( std::chrono::milliseconds { 50 } ))
           continue;
-        for (auto& element : engine->buffer)
+
+        for (auto& element : engine->m_buffer)
         {
-          if (!engine->filePolicy.write ( element ))
+          if (!engine->m_filePolicy.m_write ( element ))
           {
-            PointerProvider::getFileLogger ()->push ( logType::warning, std::this_thread::get_id (), "logThread",
-                                                      "Writing to file wasn't possible." );
+            PointerProvider::getFileLogger ()->m_push ( logType::warning, std::this_thread::get_id (),
+                                                        "logThread", "Writing to file wasn't possible." );
           }
         }
 
-        engine->buffer.clear ();
+        engine->m_buffer.clear ();
         lock.unlock ();
       }
-    } while (engine->operating.test_and_set () || engine->buffer.size ());
+
+    } while (engine->m_operating.test_and_set () || engine->m_buffer.size ());
 
   }
   catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "logThread",
-                                              ex.what () );
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "logThread",
+                                                ex.what () );
   }
 };
 
@@ -305,9 +347,9 @@ void LoggerClassLinker ( void ) // don't call this function: solution for linker
 {
 
   Logger<ToFile> tempObj;
-  tempObj.push ( logType::error, std::this_thread::get_id (), "mainThread", "The problem solver... :)" );
-  tempObj.getLog ();
-  tempObj.getLogRawStr ();
-  tempObj.shutdown ();
+  tempObj.m_push ( logType::error, std::this_thread::get_id (), "mainThread", "The problem solver... :)" );
+  tempObj.m_getLog ();
+  tempObj.m_getLogRawStr ();
+  tempObj.m_shutdown ();
 
 }

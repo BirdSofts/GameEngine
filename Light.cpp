@@ -3,52 +3,52 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,03.11.2019</changed>
+/// <changed>ʆϒʅ,09.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
 #include "Light.h"
 
 
-DiffuseLight::DiffuseLight () : initialized ( false )
+DiffuseLight::DiffuseLight () : m_initialized ( false )
 {
-  diffuseColour = DirectX::XMFLOAT4 ( 0.0f, 0.0f, 0.0f, 1.0f );
-  diffuseDirection = DirectX::XMFLOAT3 ( 0.0f, 0.0f, 0.0f );
-  initialized = true;
+  m_diffuseColour = DirectX::XMFLOAT4 ( 0.0f, 0.0f, 0.0f, 1.0f );
+  m_diffuseDirection = DirectX::XMFLOAT3 ( 0.0f, 0.0f, 0.0f );
+  m_initialized = true;
 };
 
 
-const bool& DiffuseLight::isInitialized ( void )
-{
-  return initialized;
-};
-
-
-void DiffuseLight::setColour ( float red, float green, float blue, float alpha )
-{
-  diffuseColour = DirectX::XMFLOAT4 { red, green, blue, alpha };
-};
-
-
-void DiffuseLight::setDirection ( float x, float y, float z )
-{
-  diffuseDirection = DirectX::XMFLOAT3 { x, y, z };
-};
-
-
-DirectX::XMFLOAT4 DiffuseLight::getColour ( void )
-{
-  return diffuseColour;
-};
-
-
-DirectX::XMFLOAT3 DiffuseLight::getDirection ( void )
-{
-  return diffuseDirection;
-};
-
-
-//const bool& DiffuseLight::isInitialized ( void )
+//DiffuseLight::~DiffuseLight ( void )
 //{
-//  return initialized;
+//
 //};
+
+
+const bool& DiffuseLight::m_isInitialized ( void )
+{
+  return m_initialized;
+};
+
+
+void DiffuseLight::m_setColour ( const float* colour )
+{
+  m_diffuseColour = DirectX::XMFLOAT4 { colour [0], colour [1], colour [2], colour [3] };
+};
+
+
+void DiffuseLight::m_setDirection ( const float* direction )
+{
+  m_diffuseDirection = DirectX::XMFLOAT3 { direction [0], direction [1], direction [2] };
+};
+
+
+DirectX::XMFLOAT4 DiffuseLight::m_getColour ( void )
+{
+  return m_diffuseColour;
+};
+
+
+DirectX::XMFLOAT3 DiffuseLight::m_getDirection ( void )
+{
+  return m_diffuseDirection;
+};

@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,05.11.2019</changed>
+/// <changed>ʆϒʅ,08.11.2019</changed>
 // ********************************************************************************
 
 #ifndef GAMEENGINE_H
@@ -48,7 +48,10 @@
 #include <d3dcompiler.h> // standard DirectX3D compiler APIs (shader compiler)
 #pragma comment (lib, "d3dcompiler.lib") // linkage to the 'd3dcompiler' library
 
+//#define _DEBUG_SEVERITY // deeper debugging
+
 //#define _NOT_DEBUGGING // shipping time definition
+
 #ifndef _NOT_DEBUGGING
 #include <dxgidebug.h> // additional DirectX debug APIs
 #endif // _NOT_DEBUGGING

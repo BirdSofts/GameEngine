@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,06.11.2019</changed>
+/// <changed>ʆϒʅ,09.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
@@ -29,37 +29,21 @@ Camera::Camera ( void )
   }
   catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                              ex.what () );
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                ex.what () );
   }
 };
+
+
+//Camera::~Camera ( void )
+//{
+//
+//};
 
 
 const bool& Camera::isInitialized ( void )
 {
   return initialized;
-};
-
-
-void Camera::setPosition ( DirectX::XMFLOAT3& pos )
-{
-  position.x = pos.x;
-  position.y = pos.y;
-  position.z = pos.z;
-};
-
-
-void Camera::setPosition ( float x, float y, float z )
-{
-  position.x = x;
-  position.y = y;
-  position.z = z;
-};
-
-
-void Camera::forwardBackward ( float z )
-{
-  position.z += z;
 };
 
 
@@ -116,9 +100,31 @@ void Camera::renderCamera ( void )
   }
   catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                              ex.what () );
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                ex.what () );
   }
+};
+
+
+void Camera::setPosition ( DirectX::XMFLOAT3& pos )
+{
+  position.x = pos.x;
+  position.y = pos.y;
+  position.z = pos.z;
+};
+
+
+void Camera::setPosition ( float x, float y, float z )
+{
+  position.x = x;
+  position.y = y;
+  position.z = z;
+};
+
+
+void Camera::forwardBackward ( float z )
+{
+  position.z += z;
 };
 
 

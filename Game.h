@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,07.11.2019</changed>
+/// <changed>ʆϒʅ,08.11.2019</changed>
 // ********************************************************************************
 
 #ifndef GAME_H
@@ -20,39 +20,41 @@
 class Game
 {
   friend class TheCore;
-  friend class Direct3D;
-  friend class Direct2D;
 private:
-  TheCore* core; // pointer to the framework core
+  TheCore* m_core; // pointer to the framework core
 
-  Universe* universe; // world, camera, lights...
+  Universe* m_universe; // world, camera, lights...
 
-  ShaderColour* shaderColour;
-  ShaderTexture* shaderTexture;
-  Texture<TargaHeader>* texture; // texture resource
-  ShaderDiffuseLight* shaderDiffuseLight;
+  ShaderColour* m_shaderColour;
+  ShaderTexture* m_shaderTexture;
+  Texture<TargaHeader>* m_texture; // texture resource
+  ShaderDiffuseLight* m_shaderDiffuseLight;
 
-  Triangles* _2Dtriangles; // three triangles
-  Line* _2Dline; // a line (clockwise turn, dynamic rewrite)
-  TexturedTriangles* _2DtexturedTriangles; // two textured triangles
-  LightedTriangle* _2DlightedTriangle; // one triangle illuminated by diffuse light
+  // 2D models:
+  Triangles* _2d_triangles; // three triangles
+  Line* _2d_line; // a line (clockwise turn, dynamic rewrite)
+  TexturedTriangles* _2d_texturedTriangles; // two textured triangles
+  LightedTriangle* _2d_lightedTriangle; // one triangle illuminated by diffuse light
 
-  Cube* _3Dcube;
+  // 3D models
+  Cube* _3d_cube;
 
-  bool initialized; // true if initialization was successful
-  bool allocated; // true if resources allocation was successful
-  bool paused; // true if the game is paused
+  bool m_allocated; // true if resources allocation was successful
+  bool m_paused; // true if the game is paused
+  bool m_initialized; // true if initialization was successful
+
+  void m_allocateResources ( void ); // resources creation
 public:
   Game ( ::IUnknown*, const int&, const int& ); // game initialization
-  void allocateResources ( void ); // resources creation
-  //void validate ( void ); // validate the allocation of game resources
-  const bool& isReady ( void ); // get the initialized state
-  const bool run ( void ); // game engine loop
-  void render ( void ); // render the scene
-  void update ( void ); // updating the game world
-  bool& isPaused ( void ); // get the paused state
-  Universe* getUniverse ( void ); // get the pointer to game universe
-  void shutdown ( void ); // destruction preparations
+  //~Game ( void );
+  const bool& m_isReady ( void ); // get the initialized state
+
+  const bool m_run ( void ); // game engine loop
+  void m_render ( void ); // render the scene
+  void m_update ( void ); // updating the game world
+  bool& m_isPaused ( void ); // get the paused state
+  Universe* m_getUniverse ( void ); // get the pointer to game universe
+  void m_release ( void ); // destruction preparations
 };
 
 

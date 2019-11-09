@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,07.11.2019</changed>
+/// <changed>ʆϒʅ,09.11.2019</changed>
 // ********************************************************************************
 
 #ifndef DIRECT3D_H
@@ -11,15 +11,12 @@
 
 
 #include "Core.h"
-#include "Shared.h"
 
 
 // Direct3D wrapper
 class Direct3D
 {
   friend class TheCore;
-  friend class Direct2D;
-  friend class Game;
 private:
   TheCore* m_core; // pointer to the framework core
 
@@ -37,7 +34,7 @@ private:
   // therefore it can be seen as the control panel of the GPU,
   // through which the transformation of three-dimensional to the final two-dimensional,
   // and the process of rendering that image to screen is controlled.
-  Microsoft::WRL::ComPtr<ID3D11DeviceContext3> m_devCon; // Direct3D device context
+  Microsoft::WRL::ComPtr<ID3D11DeviceContext3> m_deviceContext; // Direct3D device context
 
   // The COM interface representing the swap chain:
   // purpose: swapping the back buffers (double or triple) and drawing to the display surface
@@ -58,24 +55,32 @@ private:
   Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_depthSview; // depth-stencil view
 
   DXGI_FORMAT m_backBufferFormat; // back buffer colour format
+  UINT m_backBufferCount; // back buffers count
   DXGI_FORMAT m_depthBufferFormat; // depth buffer format
-  UINT m_backBufferCount;
 
   Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_rasterizerState; // rasterizer state
 
   bool m_fullscreen; // application configuration
   bool m_vSync; // application configuration (if true render according installed monitor refresh rate)
-  bool m_initialized; // true if initialization was successful
   bool m_allocated; // true if resources allocation was successful
-public:
-  Direct3D ( TheCore* ); // creation of the device and resources
+  bool m_initialized; // true if initialization was successful
+
   void m_creation ( void ); // Direct3D device creation
   void m_allocation ( void ); // Direct3D resources resize/creation
   void m_setDisplayMode ( void ); // Direct3D display mode change/adjust
+  void m_validate ( void ); // validate the allocation of game resources
+  void m_onDeviceLost ( void ); // clean and reallocate
+public:
+  Direct3D ( TheCore* );
+  //~Direct3D ( void );
+  const bool& m_isInitialized ( void ); // get the initialized state
+
   void m_clearBuffers ( void ); // clear depth-stencil buffers
   void m_present ( void ); // swapping: present the buffer chain by flipping the buffers
-  const ID3D11Device& m_getDevice ( void ); // get the pointer to application Direct3D
-  const bool& m_isInitialized ( void ); // get the initialized state
+  const Microsoft::WRL::ComPtr<ID3D11Device> m_getDevice ( void ); // get the pointer to D3D device
+  const Microsoft::WRL::ComPtr<ID3D11DeviceContext3> m_getDevCon ( void ); // get the pointer to D3D device context
+  const Microsoft::WRL::ComPtr<IDXGISwapChain3> m_getSwapChain ( void ); // get the pointer to D3D swap chain
+  const DXGI_FORMAT& m_getBackBufferFormat (); // get current format of back/depth buffers
   const bool& m_isFullscreen ( void ); // get the display mode state
 };
 

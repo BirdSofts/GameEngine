@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,07.11.2019</changed>
+/// <changed>ʆϒʅ,10.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
@@ -42,6 +42,9 @@ protected:
   void m_onActivated ( CoreApplicationView const& /*applicationView*/,
                        IActivatedEventArgs const& /*args*/ ); // on application window activation
 
+  void m_onFocused ( CoreWindow const& /*sender*/,
+                     WindowActivatedEventArgs const& /*args*/ ); // on application window focused/unfocused
+
   void m_onVisibilityChanged ( CoreWindow const& /*sender*/,
                                VisibilityChangedEventArgs const& /*args*/ ); // on application window resize
 
@@ -57,7 +60,7 @@ protected:
   void m_onResuming ( IInspectable const& /*sender*/,
                       IInspectable const& /*args*/ ); // on application window resuming from suspended state
 
-  void m_shutdown (); // release the application resources
+  void m_release (); // release the application resources
 
   //void m_on Key Pressed
   //void m_on Orientation Changed
@@ -85,6 +88,22 @@ public:
 
   static bool exitedWith ( void ); // application exit state provider
 };
+
+
+View::View ( void ) :
+  m_visible ( false ), m_inResizeMove ( false )
+{
+  m_Dpi = 96.0f;
+
+  m_clientWidth = 0;
+  m_clientHeight = 0;
+};
+
+
+//View::~View ( void )
+//{
+//
+//};
 
 
 int WINAPI wWinMain ( _In_ HINSTANCE /*hInstance*/,
@@ -128,8 +147,8 @@ int WINAPI wWinMain ( _In_ HINSTANCE /*hInstance*/,
 
     if (fileLoggerEngine)
     {
-      PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), "mainThread",
-                                                "Exception, file logger and configuration providers are successfully initialized." );
+      PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
+                                                  "Exception, file logger and configuration providers are successfully initialized." );
     } else
     {
       // failure, shut down the game properly
@@ -188,8 +207,8 @@ int WINAPI wWinMain ( _In_ HINSTANCE /*hInstance*/,
           //MessageBoxA ( NULL, ex.what (), "Error", MB_OK | MB_ICONERROR );
           if (PointerProvider::getFileLogger ())
           {
-            PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                      ex.what () );
+            PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                        ex.what () );
 
             // failure or success, the logs are somehow to be saved, so give its thread some time
             std::this_thread::sleep_for ( std::chrono::milliseconds { 100 } );
@@ -202,22 +221,6 @@ int WINAPI wWinMain ( _In_ HINSTANCE /*hInstance*/,
 }
 
 
-View::View ( void ) :
-  m_visible ( false ), m_inResizeMove ( false )
-{
-  m_Dpi = 96.0f;
-
-  m_clientWidth = 0;
-  m_clientHeight = 0;
-};
-
-
-//View::~View ( void )
-//{
-//
-//};
-
-
 void View::m_onActivated ( CoreApplicationView const& /*applicationView*/, IActivatedEventArgs const& /*args*/ )
 {
   // visible the activated application window and enables it to receive events
@@ -225,10 +228,19 @@ void View::m_onActivated ( CoreApplicationView const& /*applicationView*/, IActi
 };
 
 
+void View::m_onFocused ( CoreWindow const& /*sender*/, WindowActivatedEventArgs const& /*args*/ )
+{
+  if (m_appWindow.get ().ActivationMode () == CoreWindowActivationMode::ActivatedInForeground)
+    m_game->m_isPaused () = false;
+  else
+    m_game->m_isPaused () = true;
+};
+
+
 void View::m_onVisibilityChanged ( CoreWindow const& /*sender*/, VisibilityChangedEventArgs const& args )
 {
   m_visible = args.Visible (); ///
-  m_game->isPaused () = !args.Visible ();
+  m_game->m_isPaused () = !args.Visible ();
 };
 
 
@@ -259,7 +271,7 @@ void View::m_onSuspending ( IInspectable const& /*sender*/, SuspendingEventArgs 
   auto task = std::async (
     std::launch::async, [this, deferral]()
     {
-      m_shutdown ();
+      m_release ();
       deferral.Complete ();
     }
   );
@@ -273,7 +285,7 @@ void View::m_onResuming ( IInspectable const& /*sender*/, IInspectable const& /*
 };
 
 
-void View::m_shutdown ( void )
+void View::m_release ( void )
 {
 
   PointerProvider::getVariables ()->currentState = "shutting down";
@@ -282,7 +294,7 @@ void View::m_shutdown ( void )
 
   std::this_thread::sleep_for ( std::chrono::milliseconds { 1000 } );
 
-  m_game->shutdown ();
+  m_game->m_release ();
 
   PointerProvider::getVariables ()->currentState = "uninitialized";
 
@@ -294,13 +306,13 @@ void View::m_shutdown ( void )
 
   if (PointerProvider::getFileLogger ())
   {
-    PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), "mainThread",
-                                              "The logging engine is set to shut down..." );
+    PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
+                                                "The logging engine is set to shut down..." );
 
     // failure or success, the logs are somehow to be saved, so give its thread some time
     std::this_thread::sleep_for ( std::chrono::milliseconds { 100 } );
 
-    PointerProvider::getFileLogger ()->shutdown ();
+    PointerProvider::getFileLogger ()->m_shutdown ();
     PointerProvider::providerFileLogger ( nullptr );
   }
 
@@ -353,12 +365,12 @@ void View::Run ( void )
                                      static_cast<int>(m_clientWidth),
                                      static_cast<int>(m_clientHeight) ); ///
 
-  if (!m_game->isReady ())
+  if (!m_game->m_isReady ())
   {
-    m_game->shutdown (); // failure, shut the application down properly.
+    m_game->m_release (); // failure, shut the application down properly.
 
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                              "The game initialization failed!" );
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                "The game initialization failed!" );
 
     //MessageBoxA ( NULL, "The Game functionality failed to start...", "Critical-Error", MB_OK | MB_ICONERROR );
 
@@ -367,14 +379,14 @@ void View::Run ( void )
   {
     PointerProvider::getVariables ()->currentState = "initialized";
 
-    PointerProvider::getFileLogger ()->push ( logType::warning, std::this_thread::get_id (), "mainThread",
-                                              "Entering the game loop..." );
+    PointerProvider::getFileLogger ()->m_push ( logType::warning, std::this_thread::get_id (), "mainThread",
+                                                "Entering the game loop..." );
 
-    if (!m_game->run ())
+    if (!m_game->m_run ())
     {
       failure = true;
-      PointerProvider::getFileLogger ()->push ( logType::warning, std::this_thread::get_id (), "mainThread",
-                                                "One or more errors occurred while running the game!" );
+      PointerProvider::getFileLogger ()->m_push ( logType::warning, std::this_thread::get_id (), "mainThread",
+                                                  "One or more errors occurred while running the game!" );
     }
   }
 
@@ -401,6 +413,9 @@ void View::SetWindow ( CoreWindow const& window )
   catch (...) {}
 #endif // requires Windows 10 Creators Update (10.0.15063) or later
 
+  // response to window focus events
+  window.Activated ( { this, &View::m_onFocused } );
+
   // response to window close events
   window.VisibilityChanged ( { this, &View::m_onVisibilityChanged } );
 
@@ -419,8 +434,8 @@ void View::SetWindow ( CoreWindow const& window )
   m_Dpi = DisplayInformation::GetForCurrentView ().LogicalDpi ();
 
   // preferred and minimum client window size
-  auto size = Size ( float ( PointerProvider::getConfiguration ()->getSettings ().Width ),
-                     float ( PointerProvider::getConfiguration ()->getSettings ().Height ) );
+  auto size = Size ( float ( PointerProvider::getConfiguration ()->m_getSettings ().Width ),
+                     float ( PointerProvider::getConfiguration ()->m_getSettings ().Height ) );
   ApplicationView::PreferredLaunchViewSize ( size );
   auto view = ApplicationView::GetForCurrentView ();
   size.Width = 480.0f; size.Height = 320.0f;
@@ -436,7 +451,7 @@ void View::SetWindow ( CoreWindow const& window )
 
 void View::Uninitialize ( void )
 {
-  m_shutdown ();
+  m_release ();
 };
 
 
@@ -445,6 +460,32 @@ bool View::exitedWith ( void )
 {
   return failure;
 };
+
+
+
+//if (!m_fullscreen)
+    //{
+    //  // switch to fullscreen mode
+    //  hR = m_swapChain->SetFullscreenState ( true, nullptr );
+    //  if (FAILED ( hR ))
+    //  {
+    //    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+    //                                              "Switching to fullscreen mode failed." );
+    //    m_fullscreen = true;
+    //    return;
+    //  }
+    //} else
+    //{
+    //  // switch to windowed mode
+    //  hR = m_swapChain->SetFullscreenState ( false, nullptr );
+    //  if (FAILED ( hR ))
+    //  {
+    //    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+    //                                              "Switching to windowed mode failed." );
+    //    m_fullscreen = false;
+    //    return;
+    //  }
+    //}
 
 
 

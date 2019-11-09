@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,06.11.2019</changed>
+/// <changed>ʆϒʅ,09.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
@@ -19,6 +19,7 @@ unsigned int VertexTexDiffuseL::read ( const char* path, VertexL** vertices )
     std::ifstream file ( path );
     unsigned int count { 0 };
     std::string type { "" };
+
     if (file.is_open ())
     {
       std::string input;
@@ -35,9 +36,11 @@ unsigned int VertexTexDiffuseL::read ( const char* path, VertexL** vertices )
       unsigned int index { 0 };
       for (unsigned int i = 3; i <= count; i += 3)
       {
+
         std::getline ( file, input );
         stream << input;
         index = i - 3;
+
         // read one triangle
         while (index != i)
         {
@@ -46,7 +49,9 @@ unsigned int VertexTexDiffuseL::read ( const char* path, VertexL** vertices )
           stream >> (*vertices) [index].normal.x >> (*vertices) [index].normal.y >> (*vertices) [index].normal.z;
           index++;
         }
+
         stream.clear ();
+
       }
     }
     file.close ();
@@ -56,14 +61,14 @@ unsigned int VertexTexDiffuseL::read ( const char* path, VertexL** vertices )
   }
   catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                              ex.what () );
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                ex.what () );
     return 0;
   }
 };
 
 
-void VertexTexDiffuseL::write ( VertexL* data, unsigned int& count )
+void VertexTexDiffuseL::write ( VertexL* /*data*/, unsigned int& /*count*/ )
 {
   try
   {

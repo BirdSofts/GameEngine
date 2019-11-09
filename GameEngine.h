@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,02.11.2019</changed>
+/// <changed>ʆϒʅ,09.11.2019</changed>
 // ********************************************************************************
 
 #ifndef GAMEENGINE_H
@@ -28,10 +28,13 @@
 //
 //#include <list> // C++ standard list container
 //
+//#include <future> // C++ future header
+//
 //
 //#include <wrl/client.h> // Windows and COM wrappers (calls to DirectX)
 //
-//#include <d3d11_4.h> // standard DirectX3D APIs (setting up and 3D drawing) // 1_3
+////#include <d3d10_1.h> // standard DirectX3D 10 APIs (setting up and 3D drawing)
+//#include <d3d11_4.h> // standard DirectX3D 11 APIs (setting up and 3D drawing) // 11_3
 ////#pragma comment (lib, "d3d11.lib") // linkage to the 'd3d10_1' library
 //#include <dxgi1_6.h> // standard DXGI APIs (tools to interface with installed hardware) // 1_6
 ////#pragma comment (lib, "dxgi.lib") // linkage to the 'dxgi' library
@@ -47,7 +50,10 @@
 //#include <d3dcompiler.h> // standard DirectX3D compiler APIs (shader compiler)
 //#pragma comment (lib, "d3dcompiler.lib") // linkage to the 'd3dcompiler' library
 //
+////#define _DEBUG_SEVERITY // deeper debugging
+//
 ////#define _NOT_DEBUGGING // shipping time definition
+//
 //#ifndef _NOT_DEBUGGING
 //#include <dxgidebug.h> // additional DirectX debug APIs
 //#endif // _NOT_DEBUGGING
@@ -60,22 +66,32 @@
 //#include <winrt/Windows.Foundation.h>
 //#include <winrt/Windows.Graphics.Display.h>
 //#include <winrt/Windows.System.h>
+//#include <winrt/Windows.Storage.h>
 //#include <winrt/Windows.UI.Core.h>
 //#include <winrt/Windows.UI.Input.h>
 //#include <winrt/Windows.UI.ViewManagement.h>
 //
+////#include <winrt/Windows.Foundation.Collections.h>
+////#include <winrt/Windows.UI.Xaml.h>
+////#include <winrt/Windows.UI.Xaml.Controls.h>
+////#include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
+////#include <winrt/Windows.UI.Xaml.Data.h>
+////#include <winrt/Windows.UI.Xaml.Interop.h>
+////#include <winrt/Windows.UI.Xaml.Markup.h>
+////#include <winrt/Windows.UI.Xaml.Navigation.h>
 //
+////#include <windows.h> // Windows standard APIs
 //#include <ShlObj.h> // Windows standard control APIs
 //#include <Shlwapi.h> // Windows standard lightweight utility APIs
 //#pragma comment(lib, "Shlwapi.lib")
-
-//#include <PathCch.h> // Windows standard shell APIs
-//#pragma comment(lib, "PathCch.lib")
-
-//#include <lua.h> // Lua scripting language engine header file
-//#include <c:\src\vcpkg\installed\x64-windows\include\sol\sol\sol.hpp> ///
+//
+////#include <PathCch.h> // Windows standard shell APIs
+////#pragma comment(lib, "PathCch.lib")
+//
+////#include <lua.h> // Lua scripting language engine header file
+//#include <sol/sol/sol.hpp>
 //#define SOL_ALL_SAFETIES_ON 1
-//#pragma comment (lib, "lua.lib") // Lua scripting language engine library
+////#pragma comment (lib, "lua.lib") // Lua scripting language engine library
 
 
 #endif // !GAMEENGINE_H

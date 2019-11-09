@@ -3,11 +3,11 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,05.11.2019</changed>
+/// <changed>ʆϒʅ,09.11.2019</changed>
 // ********************************************************************************
 
-#ifndef SPACE_H
-#define SPACE_H
+#ifndef UNIVERSE_H
+#define UNIVERSE_H
 
 
 #include "Camera.h"
@@ -36,31 +36,33 @@ struct LightBuffer
 class Universe
 {
 private:
-  ID3D11Device* device; // pointer to DirecX device
-  ID3D11DeviceContext* devCon; // pointer to DirectX device context
+  ID3D11Device* m_device; // pointer to DirecX device
+  ID3D11DeviceContext* m_deviceContext; // pointer to DirectX device context
 
-  Camera* camera; // pointer to the camera application
-  DirectX::XMMATRIX matrixProjection; // projection matrix (translation of 3D scene into the 2D viewport space)
-  DirectX::XMMATRIX matrixWorld; // world matrix (to convert into 3D scenes' vertices)
-  float matrixWorldRotation; // world matrix rotation factor
-  DirectX::XMMATRIX matrixOrthographic; // orthographic matrix (2D rendering)
-  const float screenDepth { 1000.0f }; // depth settings
-  const float screenNear { 0.1f }; // depth settings
-  ID3D11Buffer* matrixBuffer; // constant matrix buffer (to interface with shader)
+  Camera* m_camera; // pointer to the camera application
+  DirectX::XMMATRIX m_projectionMatrix; // projection matrix (translation of 3D scene into the 2D viewport space)
+  DirectX::XMMATRIX m_worldMatrix; // world matrix (to convert into 3D scenes' vertices)
+  float m_worldRotationMatrix; // world matrix rotation factor
+  DirectX::XMMATRIX m_orthographicMatrix; // orthographic matrix (2D rendering)
+  const float m_screenDepth { 1000.0f }; // depth settings
+  const float m_screenNear { 0.1f }; // depth settings
+  ID3D11Buffer* m_matrixBuffer; // constant matrix buffer (to interface with shader)
 
-  DiffuseLight* lightDiffuse; // pointer to the diffuse light application
-  ID3D11Buffer* lightBufferDiffuse; // constant light buffer (to interface with shader)
+  DiffuseLight* m_diffuseLight; // pointer to the diffuse light application
+  ID3D11Buffer* m_diffuseLightBuffer; // constant light buffer (to interface with shader)
 
-  bool initialized; // true if initialization was successful
+  bool m_initialized; // true if initialization was successful
 public:
   Universe ( ID3D11Device*, ID3D11DeviceContext* );
-  const bool& isInitialized ( void ); // get the initialized state
-  void renderResources ( void ); // map matrix buffer and update
-  Camera* getCamera ( void ); // get the pointer to camera application
-  DiffuseLight* getDiffuseLight ( void ); // get the pointer to diffuse light application
-  void update ( void ); // update the game universe
-  void release ( void ); // release the resource
+  //~Universe ( void );
+  const bool& m_isInitialized ( void ); // get the initialized state
+
+  void m_renderResources ( void ); // map matrix buffer and update
+  Camera* m_getCamera ( void ); // get the pointer to camera application
+  DiffuseLight* m_getDiffuseLight ( void ); // get the pointer to diffuse light application
+  void m_update ( void ); // update the game universe
+  void m_release ( void ); // release the resource
 };
 
 
-#endif // !SPACE_H
+#endif // !UNIVERSE_H

@@ -26,7 +26,6 @@
     <ClInclude Include="Direct2D.h" />
     <ClInclude Include="Direct3D.h" />
     <ClInclude Include="Game.h" />
-    <ClInclude Include="GameEngine.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="ModelFormats.h" />

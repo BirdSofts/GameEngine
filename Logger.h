@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,06.11.2019</created>
-/// <changed>ʆϒʅ,07.11.2019</changed>
+/// <changed>ʆϒʅ,09.11.2019</changed>
 // ********************************************************************************
 
 #ifndef LOGGER_H
@@ -17,13 +17,15 @@ enum logType { info = 0, debug, warning, error };
 // log container structure
 struct LogEntity
 {
-  unsigned int id;
-  std::string arrivedAt;
-  logType type;
-  std::thread::id threadId;
-  std::string threadName;
-  std::string message;
+  unsigned int m_id;
+  std::string m_arrivedAt;
+  logType m_type;
+  std::thread::id m_threadId;
+  std::string m_threadName;
+  std::string m_message;
+
   LogEntity ( void );
+  //~LogEntity ( void );
   LogEntity operator=( LogEntity& );
 };
 
@@ -32,14 +34,17 @@ struct LogEntity
 class ToFile
 {
 private:
-  std::ofstream fileStream;
-  std::wstring path;
-  bool ready;
+  std::ofstream m_fileStream;
+  std::wstring m_path;
+
+  bool m_ready;
 public:
   ToFile ( void );
-  const bool& state ( void );
-  void close ( void );
-  bool write ( const std::string& );
+  //~ToFile ( void );
+  const bool& m_isReady ( void );
+
+  void m_close ( void );
+  bool m_write ( const std::string& );
 };
 
 
@@ -52,26 +57,27 @@ template<class tType>
 class Logger
 {
 private:
-  LogEntity theLog;
-  std::string theLogRawStr;
-  std::list<std::string> buffer; // buffer list container
-  tType filePolicy; // output stream policy
-  std::timed_mutex writeGuard; // write guard
-  std::thread commit; // write engine thread
+  LogEntity m_theLog;
+  std::string m_theLogRawStr;
+  std::list<std::string> m_buffer; // buffer list container
+  tType m_filePolicy; // output stream policy
+  std::timed_mutex m_writeGuard; // write guard
+  std::thread m_commit; // write engine thread
   // lock-free atomic flag (checking the running state) (standard initialization):
-  std::atomic_flag operating { ATOMIC_FLAG_INIT };
+  std::atomic_flag m_operating { ATOMIC_FLAG_INIT };
 
-  int state;
-  static unsigned int counter;
+  int m_state;
+
+  static unsigned int m_counter;
 public:
   Logger ( void );
-  void push ( const logType&,
-              const std::thread::id&,
-              const std::string&,
-              const std::string& );
-  const LogEntity& getLog ( void );
-  const std::string& getLogRawStr ( void );
-  void shutdown ( void );
+  //~Logger ( void );
+
+  void m_push ( const logType&, const std::thread::id&,
+                const std::string&, const std::string& );
+  const LogEntity& m_getLog ( void );
+  const std::string& m_getLogRawStr ( void );
+  void m_shutdown ( void );
 
   template<class tType>
   friend void loggerEngine ( Logger<tType>* ); // write engine

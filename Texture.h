@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,05.11.2019</changed>
+/// <changed>ʆϒʅ,09.11.2019</changed>
 // ********************************************************************************
 
 #ifndef TEXTURE_H
@@ -30,19 +30,24 @@ template <typename fileType>
 class Texture
 {
 private:
-  ID3D11Device* device; // pointer to DirecX device
-  ID3D11DeviceContext* devCon; // pointer to DirectX device context
+  ID3D11Device* m_device; // pointer to DirecX device
+  ID3D11DeviceContext* m_deviceContext; // pointer to DirectX device context
 
-  fileType file; // different file formats
-  unsigned char* data; // raw file data holder
-  ID3D11Texture2D* texture; // structured texture data, rendered by DirectX
-  ID3D11ShaderResourceView* textureView; // resource view, holder of texture data drawn by shader
+  fileType m_file; // different file formats
+  unsigned char* m_data; // raw file data holder
+  ID3D11Texture2D* m_texture; // structured texture data, rendered by DirectX
+  ID3D11ShaderResourceView* m_textureView; // resource view, holder of texture data drawn by shader
 
-  bool Load ( const char* ); // specialized defined file loader
+  bool m_initialized; // true in case of a successful procedure
+
+  bool m_load ( const char* ); // specialized defined file loader
 public:
   Texture ( ID3D11Device*, ID3D11DeviceContext*, const char* );
-  ID3D11ShaderResourceView** const getTexture ( void ); // get texture data (unsuccessful texture file loading: nullptr)
-  void release ( void ); // resource releaser
+  //~Texture ( void );
+  const bool& m_isInitialized ( void ); // get the initialized state
+
+  ID3D11ShaderResourceView** const m_getTexture ( void ); // get texture data (unsuccessful texture file loading: nullptr)
+  void m_release ( void ); // resource releaser
 };
 void TextureClassLinker ( void ); // don't call this function: solution for linker error, when using templates.
 

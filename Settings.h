@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,06.11.2019</created>
-/// <changed>ʆϒʅ,07.11.2019</changed>
+/// <changed>ʆϒʅ,09.11.2019</changed>
 // ********************************************************************************
 
 #ifndef SETTINGS_H
@@ -11,7 +11,7 @@
 
 
 // configurations container
-struct ConfigsContainer
+struct Configs
 {
   unsigned int Width;
   unsigned int Height;
@@ -19,21 +19,24 @@ struct ConfigsContainer
 };
 
 
-// application configurations class
+// application configurations wrapper
 class Configurations
 {
 private:
-  std::wstring path;
-  bool valid;
-  ConfigsContainer defaults;
-  ConfigsContainer currents;
+  std::wstring m_path;
+  Configs m_defaults;
+  Configs m_currents;
+
+  bool m_valid;
 public:
   Configurations ( void );
+  //~Configurations ( void );
   const bool& isValid ( void );
-  const ConfigsContainer& getDefaults ( void );
-  const ConfigsContainer& getSettings ( void );
-  const bool apply ( const ConfigsContainer& ); // apply method
-};// application configurations container
+
+  const Configs& m_getDefaults ( void );
+  const Configs& m_getSettings ( void );
+  const bool m_apply ( const Configs& ); // apply method
+};
 
 
 #endif // !SETTINGS_H

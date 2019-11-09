@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,07.11.2019</changed>
+/// <changed>ʆϒʅ,09.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
@@ -15,112 +15,117 @@ using namespace winrt::Windows::UI::Core;
 
 
 Game::Game ( ::IUnknown* window, const int& width, const int& height ) :
-  core ( nullptr ), universe ( nullptr ),
-  initialized ( false ), allocated ( false ), paused ( false )
+  m_core ( nullptr ), m_universe ( nullptr ),
+  m_allocated ( false ), m_paused ( false ), m_initialized ( false )
 {
   try
   {
 
-    shaderColour = nullptr;
-    shaderTexture = nullptr;
-    texture = nullptr;
-    shaderDiffuseLight = nullptr;
+    m_shaderColour = nullptr;
+    m_shaderTexture = nullptr;
+    m_texture = nullptr;
+    m_shaderDiffuseLight = nullptr;
 
-    _2Dtriangles = nullptr;
-    _2Dline = nullptr;
-    _2DtexturedTriangles = nullptr;
-    _2DlightedTriangle = nullptr;
+    _2d_triangles = nullptr;
+    _2d_line = nullptr;
+    _2d_texturedTriangles = nullptr;
+    _2d_lightedTriangle = nullptr;
 
     // the game framework instantiation
-    core = new (std::nothrow) TheCore ( window, this, width, height );
+    m_core = new (std::nothrow) TheCore ( window, width, height );
 
-    if (!core->isInitialized ())
+    if (!m_core->m_isInitialized ())
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                "Initialization of framework failed!" );
+      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Initialization of framework failed!" );
     }
 
-    initialized = true;
-    PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), "mainThread",
-                                              "The game is successfully initialized." );
+    m_initialized = true;
+    PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
+                                                "The game is successfully initialized." );
 
-    allocateResources ();
+    m_allocateResources ();
 
-    if (!allocated)
-      PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), "mainThread",
-                                                "The game resources is successfully allocated." );
+    if (!m_allocated)
+      PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
+                                                  "The game resources is successfully allocated." );
 
   }
   catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                              ex.what () );
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                ex.what () );
   }
 };
 
 
-void Game::allocateResources ( void )
+//Game::~Game ( void )
+//{
+//
+//};
+
+
+void Game::m_allocateResources ( void )
 {
   try
   {
 
-    allocated = false;
+    m_allocated = false;
 
     // the game framework instantiation
-    universe = new (std::nothrow) Universe ( core->d3d->m_device.Get (), core->d3d->m_devCon.Get () );
+    m_universe = new (std::nothrow) Universe ( m_core->m_getD3D ()->m_getDevice ().Get (), m_core->m_getD3D ()->m_getDevCon ().Get () );
 
-    if (!universe->isInitialized ())
+    if (!m_universe->m_isInitialized ())
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                "Initialization of game universe failed!" );
+      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Initialization of game universe failed!" );
     }
 
-    shaderColour = new (std::nothrow) ShaderColour ( core->d3d->m_device.Get () );
+    m_shaderColour = new (std::nothrow) ShaderColour ( m_core->m_getD3D ()->m_getDevice ().Get () );
 
-    shaderTexture = new (std::nothrow) ShaderTexture ( core->d3d->m_device.Get () );
+    m_shaderTexture = new (std::nothrow) ShaderTexture ( m_core->m_getD3D ()->m_getDevice ().Get () );
 
-    _2Dtriangles = new (std::nothrow) Triangles ( core->d3d->m_device.Get (), core->d3d->m_devCon.Get () );
+    _2d_triangles = new (std::nothrow) Triangles ( m_core->m_getD3D ()->m_getDevice ().Get (), m_core->m_getD3D ()->m_getDevCon ().Get () );
 
-    _2Dline = new (std::nothrow) Line ( core->d3d->m_device.Get (), core->d3d->m_devCon.Get () );
+    _2d_line = new (std::nothrow) Line ( m_core->m_getD3D ()->m_getDevice ().Get (), m_core->m_getD3D ()->m_getDevCon ().Get () );
 
-    texture = new (std::nothrow) Texture<TargaHeader>
-      ( core->d3d->m_device.Get (), core->d3d->m_devCon.Get (), "./textures/clouds.tga" ); // a texture file
-    if (!texture)
+    m_texture = new (std::nothrow) Texture<TargaHeader>
+      ( m_core->m_getD3D ()->m_getDevice ().Get (), m_core->m_getD3D ()->m_getDevCon ().Get (), "./textures/clouds.tga" ); // a texture file
+    if (!m_texture)
     {
-      PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                "Instantiation of texture failed!" );
+      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Instantiation of texture failed!" );
       return;
     }
-    _2DtexturedTriangles = new (std::nothrow) TexturedTriangles ( core->d3d->m_device.Get (), core->d3d->m_devCon.Get () );
+    _2d_texturedTriangles = new (std::nothrow) TexturedTriangles ( m_core->m_getD3D ()->m_getDevice ().Get (), m_core->m_getD3D ()->m_getDevCon ().Get () );
 
-    shaderDiffuseLight = new (std::nothrow) ShaderDiffuseLight ( core->d3d->m_device.Get () );
+    m_shaderDiffuseLight = new (std::nothrow) ShaderDiffuseLight ( m_core->m_getD3D ()->m_getDevice ().Get () );
 
-    _2DlightedTriangle = new (std::nothrow) LightedTriangle ( core->d3d->m_device.Get (), core->d3d->m_devCon.Get () );
+    _2d_lightedTriangle = new (std::nothrow) LightedTriangle ( m_core->m_getD3D ()->m_getDevice ().Get (), m_core->m_getD3D ()->m_getDevCon ().Get () );
 
-    _3Dcube = new (std::nothrow) Cube ( core->d3d->m_device.Get (), core->d3d->m_devCon.Get () );
+    _3d_cube = new (std::nothrow) Cube ( m_core->m_getD3D ()->m_getDevice ().Get (), m_core->m_getD3D ()->m_getDevCon ().Get () );
 
-    allocated = true;
+    m_allocated = true;
 
   }
   catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                              ex.what () );
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                ex.what () );
   }
 };
 
 
-const bool& Game::isReady ( void )
+const bool& Game::m_isReady ( void )
 {
-  return initialized;
+  return m_initialized;
 };
 
 
-const bool Game::run ( void )
+const bool Game::m_run ( void )
 {
   try
   {
-
 
     PointerProvider::getVariables ()->currentState = "gaming";
 
@@ -129,12 +134,15 @@ const bool Game::run ( void )
     unsigned short counter { 1 };
 
     // setting the needed starting points
-    core->timer->event ( "reset" ); // reset (start)
+    m_core->m_getTimer ()->m_event ( "reset" ); // reset (start)
 
-    universe->getCamera ()->setPosition ( 0.0f, 0.0f, -2.0f ); // set the start view
+    m_universe->m_getCamera ()->setPosition ( 0.0f, 0.0f, -2.0f ); // set the start view
 
-    universe->getDiffuseLight ()->setColour ( 0.2f, 0.6f, 0.6f, 1.0f ); // diffuse light colour
-    universe->getDiffuseLight ()->setDirection ( 0.0f, 0.0f, 1.0f ); // light direction: point down the positive Z axis
+    const float colour [] { 0.2f, 0.6f, 0.6f, 1.0f };
+    m_universe->m_getDiffuseLight ()->m_setColour ( colour ); // diffuse light colour
+
+    const float direction [] { 0.0f, 0.0f, 1.0f };
+    m_universe->m_getDiffuseLight ()->m_setDirection ( direction ); // light direction: point down the positive Z axis
 
 
 
@@ -162,11 +170,11 @@ const bool Game::run ( void )
 
 
       // tick the timer to calculate a frame
-      core->timer->tick ();
+      m_core->m_getTimer ()->m_tick ();
       // -- fps calculation
-      core->frameStatistics ();
+      m_core->m_frameStatistics ();
 
-      if (!paused)
+      if (!m_paused)
       {
 
         // -----------------------------------------------------------------------------------------------------------
@@ -174,18 +182,18 @@ const bool Game::run ( void )
         // -- process inputted data
         // Todo add input processes so far
 
-        render ();
+        m_render ();
 
 
         // -----------------------------------------------------------------------------------------------------------
         // -- output a frame
-        core->d3d->m_present ();
+        m_core->m_getD3D ()->m_present ();
 
 
         // -----------------------------------------------------------------------------------------------------------
         // -- update the game universe/logic
         // Note the needed delta time
-        update ();
+        m_update ();
 
       } else
       {
@@ -211,39 +219,39 @@ const bool Game::run ( void )
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-
     return true;
+
   }
   catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                              ex.what () );
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                ex.what () );
     return false;
   }
 };
 
 
-void Game::render ( void )
+void Game::m_render ( void )
 {
   try
   {
 
-    core->d3d->m_clearBuffers ();
+    m_core->m_getD3D ()->m_clearBuffers ();
 
-    universe->renderResources ();
-    universe->getCamera ()->renderCamera ();
+    m_universe->m_renderResources ();
+    m_universe->m_getCamera ()->renderCamera ();
 
-    if (core->d2d && core->debug)
-      core->d2d->debugInfos (); // -- fps on screen representation
+    if (m_core->m_getD2D () && m_core->m_isDebugging ())
+      m_core->m_getD2D ()->m_debugInfos (); // -- fps on screen representation
 
 
 
     // setting the active vertex/pixel shaders (active shader technique)
-    core->d3d->m_devCon->VSSetShader ( shaderColour->getVertexShader (), nullptr, 0 );
-    core->d3d->m_devCon->PSSetShader ( shaderColour->getPixelShader (), nullptr, 0 );
+    m_core->m_getD3D ()->m_getDevCon ()->VSSetShader ( m_shaderColour->m_getVertexShader (), nullptr, 0 );
+    m_core->m_getD3D ()->m_getDevCon ()->PSSetShader ( m_shaderColour->m_getPixelShader (), nullptr, 0 );
 
     // setting the active input layout
-    core->d3d->m_devCon->IASetInputLayout ( shaderColour->getInputLayout () );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetInputLayout ( m_shaderColour->m_getInputLayout () );
 
     // set the active vertex and index buffers (binds an array of vertex/index buffers to input-assembler stage)
     // basically, which vertices to put to graphics pipeline when rendering
@@ -251,102 +259,102 @@ void Game::render ( void )
     unsigned int offset = 0;
     // fourth parameter: constant array of stride values (one stride for each buffer in the vertex-buffer array)
     // fifth parameter: number of bytes between the first element and the element to use (usually zero)
-    core->d3d->m_devCon->IASetVertexBuffers ( 0, 1, _2Dtriangles->getVertexBuffer (), &strides, &offset );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetVertexBuffers ( 0, 1, _2d_triangles->m_getVertexBuffer (), &strides, &offset );
     // set the active corresponding index buffer in the input assembler
-    core->d3d->m_devCon->IASetIndexBuffer ( _2Dtriangles->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetIndexBuffer ( _2d_triangles->m_getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
 
     // set primitive topology (Direct3D has no idea about the mathematical conventions to use)
     // basically how to render the resource (vertex data) to screen
-    core->d3d->m_devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 
     // draw indexed vertices, starting from vertex 0
-    core->d3d->m_devCon->DrawIndexed ( _2Dtriangles->verticesCount, 0, 0 );
+    m_core->m_getD3D ()->m_getDevCon ()->DrawIndexed ( _2d_triangles->m_getVerticesCount (), 0, 0 );
 
 
 
-    core->d3d->m_devCon->IASetVertexBuffers ( 0, 1, _2Dline->getVertexBuffer (), &strides, &offset );
-    core->d3d->m_devCon->IASetIndexBuffer ( _2Dline->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
-    core->d3d->m_devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_LINELIST );
-    core->d3d->m_devCon->DrawIndexed ( _2Dline->verticesCount, 0, 0 );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetVertexBuffers ( 0, 1, _2d_line->m_getVertexBuffer (), &strides, &offset );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetIndexBuffer ( _2d_line->m_getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_LINELIST );
+    m_core->m_getD3D ()->m_getDevCon ()->DrawIndexed ( _2d_line->m_getVerticesCount (), 0, 0 );
 
 
 
     // setting the active texture
-    core->d3d->m_devCon->PSSetShaderResources ( 0, 1, texture->getTexture () );
+    m_core->m_getD3D ()->m_getDevCon ()->PSSetShaderResources ( 0, 1, m_texture->m_getTexture () );
 
-    core->d3d->m_devCon->VSSetShader ( shaderTexture->getVertexShader (), nullptr, 0 );
-    core->d3d->m_devCon->PSSetShader ( shaderTexture->getPixelShader (), nullptr, 0 );
+    m_core->m_getD3D ()->m_getDevCon ()->VSSetShader ( m_shaderTexture->m_getVertexShader (), nullptr, 0 );
+    m_core->m_getD3D ()->m_getDevCon ()->PSSetShader ( m_shaderTexture->m_getPixelShader (), nullptr, 0 );
 
-    core->d3d->m_devCon->IASetInputLayout ( shaderTexture->getInputLayout () );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetInputLayout ( m_shaderTexture->m_getInputLayout () );
 
     // setting the active sampler
-    core->d3d->m_devCon->PSSetSamplers ( 0, 1, shaderTexture->getSamplerState () );
+    m_core->m_getD3D ()->m_getDevCon ()->PSSetSamplers ( 0, 1, m_shaderTexture->m_getSamplerState () );
 
     strides = sizeof ( VertexT );
-    core->d3d->m_devCon->IASetVertexBuffers ( 0, 1, _2DtexturedTriangles->getVertexBuffer (), &strides, &offset );
-    core->d3d->m_devCon->IASetIndexBuffer ( _2DtexturedTriangles->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetVertexBuffers ( 0, 1, _2d_texturedTriangles->m_getVertexBuffer (), &strides, &offset );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetIndexBuffer ( _2d_texturedTriangles->m_getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
 
-    core->d3d->m_devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-    core->d3d->m_devCon->DrawIndexed ( _2DtexturedTriangles->verticesCount, 0, 0 );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+    m_core->m_getD3D ()->m_getDevCon ()->DrawIndexed ( _2d_texturedTriangles->m_getVerticesCount (), 0, 0 );
 
 
 
-    core->d3d->m_devCon->VSSetShader ( shaderDiffuseLight->getVertexShader (), nullptr, 0 );
-    core->d3d->m_devCon->PSSetShader ( shaderDiffuseLight->getPixelShader (), nullptr, 0 );
-    core->d3d->m_devCon->IASetInputLayout ( shaderDiffuseLight->getInputLayout () );
-    core->d3d->m_devCon->PSSetSamplers ( 0, 1, shaderDiffuseLight->getSamplerState () );
+    m_core->m_getD3D ()->m_getDevCon ()->VSSetShader ( m_shaderDiffuseLight->m_getVertexShader (), nullptr, 0 );
+    m_core->m_getD3D ()->m_getDevCon ()->PSSetShader ( m_shaderDiffuseLight->m_getPixelShader (), nullptr, 0 );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetInputLayout ( m_shaderDiffuseLight->m_getInputLayout () );
+    m_core->m_getD3D ()->m_getDevCon ()->PSSetSamplers ( 0, 1, m_shaderDiffuseLight->m_getSamplerState () );
     strides = sizeof ( VertexL );
-    core->d3d->m_devCon->IASetVertexBuffers ( 0, 1, _2DlightedTriangle->getVertexBuffer (), &strides, &offset );
-    core->d3d->m_devCon->IASetIndexBuffer ( _2DlightedTriangle->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
-    core->d3d->m_devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-    core->d3d->m_devCon->DrawIndexed ( _2DlightedTriangle->verticesCount, 0, 0 );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetVertexBuffers ( 0, 1, _2d_lightedTriangle->m_getVertexBuffer (), &strides, &offset );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetIndexBuffer ( _2d_lightedTriangle->m_getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+    m_core->m_getD3D ()->m_getDevCon ()->DrawIndexed ( _2d_lightedTriangle->m_getVerticesCount (), 0, 0 );
 
 
 
-    core->d3d->m_devCon->IASetVertexBuffers ( 0, 1, _3Dcube->getVertexBuffer (), &strides, &offset );
-    core->d3d->m_devCon->IASetIndexBuffer ( _3Dcube->getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
-    core->d3d->m_devCon->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-    core->d3d->m_devCon->DrawIndexed ( _3Dcube->verticesCount, 0, 0 );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetVertexBuffers ( 0, 1, _3d_cube->m_getVertexBuffer (), &strides, &offset );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetIndexBuffer ( _3d_cube->m_getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+    m_core->m_getD3D ()->m_getDevCon ()->DrawIndexed ( _3d_cube->m_getVerticesCount (), 0, 0 );
 
   }
   catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                              ex.what () );
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                ex.what () );
   }
 };
 
 
-void Game::update ( void )
+void Game::m_update ( void )
 {
   try
   {
 
-    _2Dline->update ();
-    universe->update ();
+    _2d_line->m_update ();
+    m_universe->m_update ();
 
   }
   catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                              ex.what () );
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                ex.what () );
   }
 };
 
 
-bool& Game::isPaused ( void )
+bool& Game::m_isPaused ( void )
 {
-  return paused;
+  return m_paused;
 };
 
 
-Universe* Game::getUniverse ( void )
+Universe* Game::m_getUniverse ( void )
 {
-  return universe;
+  return m_universe;
 };
 
 
-void Game::shutdown ( void )
+void Game::m_release ( void )
 {
   try
   {
@@ -354,84 +362,84 @@ void Game::shutdown ( void )
     //unsigned long rC { 0 };
     //HRESULT hR;
 
-    initialized = false;
+    m_initialized = false;
 
-    if (_3Dcube)
+    if (_3d_cube)
     {
-      _3Dcube->release ();
-      delete _3Dcube;
-      _3Dcube = nullptr;
+      _3d_cube->m_release ();
+      delete _3d_cube;
+      _3d_cube = nullptr;
     }
-    if (_2Dtriangles)
+    if (_2d_triangles)
     {
-      _2Dtriangles->release ();
-      delete _2Dtriangles;
-      _2Dtriangles = nullptr;
+      _2d_triangles->m_release ();
+      delete _2d_triangles;
+      _2d_triangles = nullptr;
     }
-    if (_2Dline)
+    if (_2d_line)
     {
-      _2Dline->release ();
-      delete _2Dline;
-      _2Dline = nullptr;
+      _2d_line->m_release ();
+      delete _2d_line;
+      _2d_line = nullptr;
     }
-    if (_2DtexturedTriangles)
+    if (_2d_texturedTriangles)
     {
-      _2DtexturedTriangles->release ();
-      delete _2DtexturedTriangles;
-      _2DtexturedTriangles = nullptr;
+      _2d_texturedTriangles->m_release ();
+      delete _2d_texturedTriangles;
+      _2d_texturedTriangles = nullptr;
     }
-    if (_2DlightedTriangle)
+    if (_2d_lightedTriangle)
     {
-      _2DlightedTriangle->release ();
-      delete _2DlightedTriangle;
-      _2DlightedTriangle = nullptr;
-    }
-
-    if (shaderTexture)
-    {
-      shaderTexture->release ();
-      delete shaderTexture;
-      shaderTexture = nullptr;
-    }
-    if (texture)
-    {
-      texture->release ();
-      delete texture;
-      texture = nullptr;
-    }
-    if (shaderColour)
-    {
-      shaderColour->release ();
-      delete shaderColour;
-      shaderColour = nullptr;
-    }
-    if (shaderDiffuseLight)
-    {
-      shaderDiffuseLight;
-      delete shaderDiffuseLight;
-      shaderDiffuseLight = nullptr;
+      _2d_lightedTriangle->m_release ();
+      delete _2d_lightedTriangle;
+      _2d_lightedTriangle = nullptr;
     }
 
-    if (universe)
+    if (m_shaderTexture)
     {
-      universe->release ();
-      delete universe;
-      universe = nullptr;
+      m_shaderTexture->m_release ();
+      delete m_shaderTexture;
+      m_shaderTexture = nullptr;
     }
-    if (core)
+    if (m_texture)
     {
-      core->shutdown ();
-      delete core;
-      core = nullptr;
+      m_texture->m_release ();
+      delete m_texture;
+      m_texture = nullptr;
+    }
+    if (m_shaderColour)
+    {
+      m_shaderColour->m_release ();
+      delete m_shaderColour;
+      m_shaderColour = nullptr;
+    }
+    if (m_shaderDiffuseLight)
+    {
+      m_shaderDiffuseLight;
+      delete m_shaderDiffuseLight;
+      m_shaderDiffuseLight = nullptr;
     }
 
-    PointerProvider::getFileLogger ()->push ( logType::info, std::this_thread::get_id (), "mainThread",
-                                              "The Game is successfully shut down." );
+    if (m_universe)
+    {
+      m_universe->m_release ();
+      delete m_universe;
+      m_universe = nullptr;
+    }
+    if (m_core)
+    {
+      m_core->m_release ();
+      delete m_core;
+      m_core = nullptr;
+    }
+
+    PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
+                                                "The Game is successfully shut down." );
 
   }
   catch (const std::exception & ex)
   {
-    PointerProvider::getFileLogger ()->push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                              ex.what () );
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                ex.what () );
   }
 };
