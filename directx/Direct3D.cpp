@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,09.11.2019</changed>
+/// <changed>ʆϒʅ,12.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
@@ -16,7 +16,7 @@ using namespace Microsoft::WRL;
 
 Direct3D::Direct3D ( TheCore* coreObj ) :
   m_core ( coreObj ),
-  m_fullscreen ( false ), m_vSync ( false ), m_allocated ( false ), m_initialized ( false )
+  m_vSync ( false ), m_allocated ( false ), m_initialized ( false )
 {
 
   // reserve 8 bits for red, green, blue and transparency each in unsigned normalized integer
@@ -27,7 +27,9 @@ Direct3D::Direct3D ( TheCore* coreObj ) :
 
   m_featureLevel = {};
 
+  m_displayModes = nullptr;
   m_displayModesCount = 0;
+  m_displayMode = {};
   m_displayModeIndex = 0;
   m_videoCardMemory = 0;
   m_videoCardDescription = L"";
@@ -64,7 +66,6 @@ void Direct3D::m_creation ( void )
 
 
 
-    m_fullscreen = PointerProvider::getConfiguration ()->m_getSettings ().fullscreen;
     //vSync = PointerProvider::getConfiguration ()->getSettings ().vsync;
 
 
@@ -543,44 +544,47 @@ void Direct3D::m_setDisplayMode ( void )
     HRESULT hR;
 
 
-    for (unsigned int i = 0; i < m_displayModesCount; i++)
+    if (m_displayMode.Width == 0)
     {
-      // support check for current resolution of the client window (at engine initialization streamed from settings file)
-      if (m_displayModes [i].Width == static_cast<UINT>(m_core->m_outputWidth))
-        if (m_displayModes [i].Height == static_cast<UINT>(m_core->m_outputHeight))
-        {
-          m_displayMode = m_displayModes [i];
-          m_displayModeIndex = i;
-          break;
-        } else
-        {
-          // not supported: set to the lowest supported resolution
-          m_displayMode = m_displayModes [0];
-          m_displayModeIndex = 0;
-
-          PointerProvider::getFileLogger ()->m_push ( logType::warning, std::this_thread::get_id (), "mainThread",
-                                                      "The chosen resolution is not supported!" );
-
-          // rewrite a not valid configurations with defaults: the file is probably modified from outside of the application
-          if (!PointerProvider::getConfiguration ()->m_apply ( PointerProvider::getConfiguration ()->m_getDefaults () ))
-          {
-            PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                        "Rewriting the Configuration file with default settings failed." );
-          }
-        }
-    }
-
-
-    if (m_swapChain)
-    {
-      // setting the resolution
-      hR = m_swapChain->ResizeTarget ( &m_displayMode );
-      if (FAILED ( hR ))
+      for (unsigned int i = 0; i < m_displayModesCount; i++)
       {
-        PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                    "Setting a supported resolution failed." );
+        // support check for current resolution of the client window (at engine initialization streamed from settings file)
+        if (m_displayModes [i].Width == static_cast<UINT>(m_core->m_outputWidth))
+          if (m_displayModes [i].Height == static_cast<UINT>(m_core->m_outputHeight))
+          {
+            m_displayMode = m_displayModes [i];
+            m_displayModeIndex = i;
+            break;
+          } else
+          {
+            // not supported: set to the lowest supported resolution
+            m_displayMode = m_displayModes [0];
+            m_displayModeIndex = 0;
+
+            PointerProvider::getFileLogger ()->m_push ( logType::warning, std::this_thread::get_id (), "mainThread",
+                                                        "The chosen resolution is not supported!" );
+
+            // rewrite a not valid configurations with defaults: the file is probably modified from outside of the application
+            if (!PointerProvider::getConfiguration ()->m_apply ( PointerProvider::getConfiguration ()->m_getDefaults () ))
+            {
+              PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                          "Rewriting the Configuration file with default settings failed." );
+            }
+          }
       }
     }
+
+
+    //if (m_swapChain)
+    //{
+    //  // setting the resolution
+    //  hR = m_swapChain->ResizeTarget ( &m_displayMode );
+    //  if (FAILED ( hR ))
+    //  {
+    //    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+    //                                                "Setting a supported resolution failed." );
+    //  }
+    //}
 
   }
   catch (const std::exception & ex)
@@ -593,13 +597,111 @@ void Direct3D::m_setDisplayMode ( void )
 
 void Direct3D::m_validate ( void )
 {
-  //
+
+  // if default adapter since creation of D3D device is changed or removed, the device is not valid any more
+
+  HRESULT hR;
+
+
+  // first test preparation
+  DXGI_ADAPTER_DESC t_previousDesc;
+  {
+
+    ComPtr<IDXGIDevice3> t_dxgiDevice;
+    hR = m_device.As ( &t_dxgiDevice );
+    if (SUCCEEDED ( hR ))
+    {
+
+      ComPtr<IDXGIAdapter> t_deviceAdapter;
+      hR = t_dxgiDevice->GetAdapter ( &t_deviceAdapter );
+      if (SUCCEEDED ( hR ))
+      {
+
+        ComPtr<IDXGIFactory2> t_dxgiFactory;
+        t_deviceAdapter->GetParent ( IID_PPV_ARGS ( &t_dxgiFactory ) );
+        if (SUCCEEDED ( hR ))
+        {
+
+          ComPtr<IDXGIAdapter1> t_previousDefaultAdapter;
+          hR = t_dxgiFactory->EnumAdapters1 ( 0, &t_previousDefaultAdapter );
+
+          if (SUCCEEDED ( hR ))
+            t_previousDefaultAdapter->GetDesc ( &t_previousDesc );
+
+
+          if (FAILED ( hR ))
+          {
+            PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                        "Device Validation on stage one failed." );
+          }
+
+        }
+      }
+    }
+  }
+
+
+  // second test preparation
+  DXGI_ADAPTER_DESC t_currentDesc;
+  {
+
+    ComPtr<IDXGIFactory2> t_currentFactory;
+    CreateDXGIFactory1 ( IID_PPV_ARGS ( &t_currentFactory ) );
+    if (SUCCEEDED ( hR ))
+    {
+
+      ComPtr<IDXGIAdapter1> t_currentDefaultAdapter;
+      hR = t_currentFactory->EnumAdapters1 ( 0, &t_currentDefaultAdapter );
+
+      if (SUCCEEDED ( hR ))
+        t_currentDefaultAdapter->GetDesc ( &t_currentDesc );
+
+      if (FAILED ( hR ))
+      {
+        PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                    "Device Validation on stage two failed." );
+      }
+
+    }
+  }
+
+
+  // test: compare adapter LUIDs additionally to enumeration of devices's removal reason
+  if (t_previousDesc.AdapterLuid.LowPart != t_currentDesc.AdapterLuid.LowPart
+       || t_previousDesc.AdapterLuid.HighPart != t_currentDesc.AdapterLuid.HighPart
+       || FAILED ( m_device->GetDeviceRemovedReason () ))
+  {
+    // one is enough for a new creation! :)
+    m_onDeviceLost ();
+  }
+
 };
 
 
 void Direct3D::m_onDeviceLost ( void )
 {
-  //
+
+  //m_core->m_D2D->m_initialized = false;
+  //m_core->m_D2D->m_dcBitmap.Reset ();
+  //m_core->m_D2D->m_deviceContext.Reset ();
+  //m_core->m_D2D->m_dcBuffer.Reset ();
+  //m_core->m_D2D->m_device.Reset ();
+  //m_core->m_D2D->m_factory.Reset ();
+  //m_core->m_D2D->m_writeFactory.Reset ();
+
+  m_initialized = false;
+  m_deviceContext->ClearState ();
+  m_rasterizerState.Reset ();
+  m_deviceContext->OMSetRenderTargets ( 0, nullptr, nullptr );
+  m_depthSview.Reset ();
+  m_depthSstate.Reset ();
+  m_depthSbuffer.Reset ();
+  m_renderTview.Reset ();
+  m_swapChain.Reset ();
+  m_device.Reset ();
+
+  m_creation ();
+
 };
 
 
@@ -683,10 +785,4 @@ const Microsoft::WRL::ComPtr<IDXGISwapChain3> Direct3D::m_getSwapChain ( void )
 const DXGI_FORMAT& Direct3D::m_getBackBufferFormat ()
 {
   return m_backBufferFormat;
-};
-
-
-const bool& Direct3D::m_isFullscreen ( void )
-{
-  return m_fullscreen;
 };

@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,08.11.2019</changed>
+/// <changed>ʆϒʅ,11.11.2019</changed>
 // ********************************************************************************
 
 #ifndef DIRECT2D_H
@@ -11,12 +11,14 @@
 
 
 #include "Core.h"
+#include "Direct3D.h"
 
 
 // Direct2D wrapper
 class Direct2D
 {
   friend class TheCore;
+  friend class Direct3D;
 private:
   TheCore* m_core; // pointer to the framework core
 

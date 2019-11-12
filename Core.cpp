@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,09.11.2019</changed>
+/// <changed>ʆϒʅ,11.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
@@ -206,21 +206,13 @@ void TheCore::m_setResolution ( const bool& prm )
     if (prm)
     {
       // highest supported resolution + fullscreen
-      if (!m_D3D->m_fullscreen)
-      {
-        m_D3D->m_displayModeIndex = m_D3D->m_displayModesCount - 1;
-        m_D3D->m_displayMode = m_D3D->m_displayModes [m_D3D->m_displayModeIndex];
-        m_D3D->m_fullscreen = true;
-      }
+      m_D3D->m_displayModeIndex = m_D3D->m_displayModesCount - 1;
+      m_D3D->m_displayMode = m_D3D->m_displayModes [m_D3D->m_displayModeIndex];
     } else
     {
-      if (m_D3D->m_fullscreen)
-      {
-        // lowest supported resolution
-        m_D3D->m_displayModeIndex = 0;
-        m_D3D->m_displayMode = m_D3D->m_displayModes [m_D3D->m_displayModeIndex];
-        m_D3D->m_fullscreen = false;
-      }
+      // lowest supported resolution
+      m_D3D->m_displayModeIndex = 0;
+      m_D3D->m_displayMode = m_D3D->m_displayModes [m_D3D->m_displayModeIndex];
     }
 
     m_resizeResources ( true );

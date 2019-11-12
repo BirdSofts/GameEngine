@@ -3,14 +3,14 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,09.11.2019</changed>
+/// <changed>ʆϒʅ,12.11.2019</changed>
 // ********************************************************************************
 
 #ifndef SHADER_H
 #define SHADER_H
 
 
-#include "Universe.h"
+#include "../directx/Universe.h"
 
 
 // shader buffer

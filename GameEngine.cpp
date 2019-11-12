@@ -3,12 +3,12 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,10.11.2019</changed>
+/// <changed>ʆϒʅ,12.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
 //#include "GameEngine.h"
-#include "Utilities.h" // string + s,f streams + exception + threads + list + Windows standards
+#include "common/Utilities.h" // string + s,f streams + exception + threads + list + Windows standards
 #include "Shared.h"
 #include "Game.h"
 
@@ -35,9 +35,13 @@ private:
   float m_clientWidth; // current client window width
   float m_clientHeight; // current client window height
   bool m_inResizeMove; // true if client window is set to resize and/or move
+  bool m_fullscreen; // current full screen state (additionally fed from configuration)
   // Orientation
   //std::unique_ptr <Game> game;
-  Game* m_game;
+
+  Game* m_game; // pointer to game wrapper
+
+  bool m_initialized; // true in case of successful initialization
 protected:
   void m_onActivated ( CoreApplicationView const& /*applicationView*/,
                        IActivatedEventArgs const& /*args*/ ); // on application window activation
@@ -60,9 +64,11 @@ protected:
   void m_onResuming ( IInspectable const& /*sender*/,
                       IInspectable const& /*args*/ ); // on application window resuming from suspended state
 
+  void m_onAcceleratorKeyActivated ( CoreDispatcher const& /*sender*/,
+                                     AcceleratorKeyEventArgs const& /*args*/ ); // on accelerator key pressed
+
   void m_release (); // release the application resources
 
-  //void m_on Key Pressed
   //void m_on Orientation Changed
   //void m_on Display Content Invalidated
   //
@@ -91,12 +97,15 @@ public:
 
 
 View::View ( void ) :
-  m_visible ( false ), m_inResizeMove ( false )
+  m_appWindow ( nullptr ), m_visible ( false ),
+  m_inResizeMove ( false ), m_fullscreen ( false ),
+  m_game ( nullptr ), m_initialized ( false )
 {
-  m_Dpi = 96.0f;
 
-  m_clientWidth = 0;
-  m_clientHeight = 0;
+  m_Dpi = 0.0f;
+  m_clientWidth = 0.0f;
+  m_clientHeight = 0.0f;
+
 };
 
 
@@ -175,9 +184,9 @@ int WINAPI wWinMain ( _In_ HINSTANCE /*hInstance*/,
     }
 
 
-    auto view = winrt::make<View> ();
-    CoreApplication::Run ( view );
-    //CoreApplication::Run ( View () );
+    //auto view = winrt::make<View> ();
+    //CoreApplication::Run ( view );
+    CoreApplication::Run ( View () );
 
     if (View::exitedWith ())
     {
@@ -230,10 +239,17 @@ void View::m_onActivated ( CoreApplicationView const& /*applicationView*/, IActi
 
 void View::m_onFocused ( CoreWindow const& /*sender*/, WindowActivatedEventArgs const& /*args*/ )
 {
+
   if (m_appWindow.get ().ActivationMode () == CoreWindowActivationMode::ActivatedInForeground)
+  {
     m_game->m_isPaused () = false;
-  else
+    m_game->m_getCore ()->m_getTimer ()->m_event ( "start" );
+  } else
+  {
     m_game->m_isPaused () = true;
+    m_game->m_getCore ()->m_getTimer ()->m_event ( "pause" );
+  }
+
 };
 
 
@@ -244,16 +260,20 @@ void View::m_onVisibilityChanged ( CoreWindow const& /*sender*/, VisibilityChang
 };
 
 
-void View::m_onWindowResized ( CoreWindow const& /*sender*/, WindowSizeChangedEventArgs const& /*args*/ )
+void View::m_onWindowResized ( CoreWindow const& /*sender*/, WindowSizeChangedEventArgs const& args )
 {
 
   m_clientWidth = m_appWindow.get ().Bounds ().Width;
   m_clientHeight = m_appWindow.get ().Bounds ().Height;
-  if (!m_inResizeMove)
-  {
-    // Todo: resize the DirectX resources
 
-  }
+  // Todo: drag and drop resizing (resolution needs to be sent)
+  //if (!m_inResizeMove && m_initialized)
+  //{
+  //  if (m_fullscreen)
+  //    m_game->m_getCore ()->m_setResolution ( true );
+  //  else
+  //    m_game->m_getCore ()->m_resizeResources ( false );
+  //}
 
 };
 
@@ -282,6 +302,64 @@ void View::m_onSuspending ( IInspectable const& /*sender*/, SuspendingEventArgs 
 void View::m_onResuming ( IInspectable const& /*sender*/, IInspectable const& /*args*/ )
 {
   //
+};
+
+
+void View::m_onAcceleratorKeyActivated ( CoreDispatcher const& /*sender*/, AcceleratorKeyEventArgs const& args )
+{
+
+  // ALT+Enter: fullscreen + highest/lowest resolution switch
+  if (args.EventType () == CoreAcceleratorKeyEventType::SystemKeyDown
+       && args.VirtualKey () == VirtualKey::Enter
+       && args.KeyStatus ().IsMenuKeyDown)
+  {
+    auto view = ApplicationView::GetForCurrentView ();
+
+    if (view.IsFullScreen ())
+    {
+      view.ExitFullScreenMode ();
+      m_game->m_getCore ()->m_setResolution ( false );
+    } else
+    {
+      view.TryEnterFullScreenMode ();
+      m_game->m_getCore ()->m_setResolution ( true );
+    }
+
+    args.Handled ( true );
+  }
+
+
+  // Todo: DirectInput
+  if (args.EventType () == CoreAcceleratorKeyEventType::KeyDown)
+  {
+
+    // Escape: up
+    if (args.VirtualKey () == VirtualKey::Up)
+    {
+      m_game->m_getUniverse ()->m_getCamera ()->forwardBackward ( 0.05f );
+    }
+
+    // Escape: down
+    if (args.VirtualKey () == VirtualKey::Down)
+    {
+      m_game->m_getUniverse ()->m_getCamera ()->forwardBackward ( -0.05f );
+    }
+
+    // Escape: exit
+    if (args.VirtualKey () == VirtualKey::Escape)
+    {
+      m_game->m_isPaused () = true;
+      m_game->m_getCore ()->m_getTimer ()->m_event ( "pause" );
+      //if (MessageBoxA ( handle, "Exit the Game?", "Exit", MB_YESNO | MB_ICONQUESTION ) == IDYES)
+      //{
+      CoreApplication::Exit (); ///
+      //} else
+      //{
+      //  m_game->m_getCore ()->m_getTimer ()->m_event ( "start" );
+      //}
+    }
+  }
+
 };
 
 
@@ -354,6 +432,8 @@ void View::Load ( winrt::hstring const& /*entryPoint*/ )
 void View::Run ( void )
 {
 
+  m_initialized = true;
+
   PointerProvider::getVariables ()->running = true;
 
   // Todo: make unique research
@@ -419,6 +499,9 @@ void View::SetWindow ( CoreWindow const& window )
   // response to window close events
   window.VisibilityChanged ( { this, &View::m_onVisibilityChanged } );
 
+  //auto dispatcher = CoreWindow
+  window.Dispatcher ().AcceleratorKeyActivated ( { this, &View::m_onAcceleratorKeyActivated } );
+
   // response to window close events // because of suspension procedure, following event rarely occurs.
   //window.Closed ( [this]( auto&&, auto&& ) { PointerProvider::getVariables ()->running = false; } );
 
@@ -426,25 +509,40 @@ void View::SetWindow ( CoreWindow const& window )
   auto currentDisplayInfos = DisplayInformation::GetForCurrentView ();
   currentDisplayInfos.DpiChanged ( { this, &View::m_onDpiChanged } );
 
-  // size of initialized client window area
-  m_clientWidth = window.Bounds ().Width;
-  m_clientHeight = window.Bounds ().Height;
-
   // DPI of initialized client window area
   m_Dpi = DisplayInformation::GetForCurrentView ().LogicalDpi ();
 
-  // preferred and minimum client window size
-  auto size = Size ( float ( PointerProvider::getConfiguration ()->m_getSettings ().Width ),
-                     float ( PointerProvider::getConfiguration ()->m_getSettings ().Height ) );
+
+  // size of initialized client window area (save in case of procedure failure)
+  m_clientWidth = float ( PointerProvider::getConfiguration ()->m_getSettings ().Width );
+  m_clientHeight = float ( PointerProvider::getConfiguration ()->m_getSettings ().Height );
+
+
+  // preferred (current configuration) client window size
+  auto size = Size ( float ( m_clientWidth ),
+                     float ( m_clientHeight ) );
+  m_fullscreen = PointerProvider::getConfiguration ()->m_getSettings ().fullscreen;
+
+  if (m_fullscreen)
+  {
+    auto view = ApplicationView::GetForCurrentView ();
+
+    if (view.IsFullScreen ())
+      view.ExitFullScreenMode ();
+    else
+      view.TryEnterFullScreenMode ();
+  }
+
   ApplicationView::PreferredLaunchViewSize ( size );
   auto view = ApplicationView::GetForCurrentView ();
+
+  // minimum client window size
   size.Width = 480.0f; size.Height = 320.0f;
   view.SetPreferredMinSize ( size );
+
   // set and save
   view.FullScreenSystemOverlayMode ( FullScreenSystemOverlayMode::Minimal );
   view.TryResizeView ( view.PreferredLaunchViewSize () );
-  m_clientWidth = window.Bounds ().Width;
-  m_clientHeight = window.Bounds ().Height;
 
 };
 
@@ -460,207 +558,3 @@ bool View::exitedWith ( void )
 {
   return failure;
 };
-
-
-
-//if (!m_fullscreen)
-    //{
-    //  // switch to fullscreen mode
-    //  hR = m_swapChain->SetFullscreenState ( true, nullptr );
-    //  if (FAILED ( hR ))
-    //  {
-    //    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-    //                                              "Switching to fullscreen mode failed." );
-    //    m_fullscreen = true;
-    //    return;
-    //  }
-    //} else
-    //{
-    //  // switch to windowed mode
-    //  hR = m_swapChain->SetFullscreenState ( false, nullptr );
-    //  if (FAILED ( hR ))
-    //  {
-    //    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-    //                                              "Switching to windowed mode failed." );
-    //    m_fullscreen = false;
-    //    return;
-    //  }
-    //}
-
-
-
-//switch (msg)
-//{
-//  case WM_ACTIVATE: // if window activation state changes
-//    if (PointerProvider::getVariables ()->currentState == "gaming")
-//    {
-//      if ((LOWORD ( wPrm ) == WA_INACTIVE)) // activation flag
-//      {
-//        core->paused = true; // the game is paused
-//        core->timer->event ( "pause" );
-//      } else
-//      {
-//        core->timer->event ( "start" );
-//        core->paused = false; // the game is running
-//      }
-//    }
-//    break;
-//
-//  case WM_KEYDOWN: // if a key is pressed
-//    if (wPrm == VK_ESCAPE) // the ESC key identification
-//    {
-//      core->paused = true;
-//      core->timer->event ( "pause" );
-//      if (MessageBoxA ( handle, "Exit the Game?", "Exit", MB_YESNO | MB_ICONQUESTION ) == IDYES)
-//      {
-//        // next expression simply indicates to the system intention to terminate the window,
-//        // which puts a WM_QUIT message in the message queue, subsequently causing the main event loop to bail.
-//        PostQuitMessage ( 0 ); // send the corresponding quite message
-//        PointerProvider::getVariables()->running = false;
-//        PointerProvider::getVariables ()->currentState = "shutting down";
-//      } else
-//      {
-//        core->timer->event ( "start" );
-//        core->paused = false;
-//      }
-//      break;
-//    }
-//
-//    if (wPrm == VK_PRIOR) // the page up key identification
-//    {
-//      if (!core->d3d->isFullscreen ())
-//        core->setResolution ( true ); // switch to fullscreen mode and set to highest resolution
-//      break;
-//    }
-//
-//    if (wPrm == VK_NEXT) // the page down key identification
-//    {
-//      if (core->d3d->isFullscreen ())
-//        core->setResolution ( false ); // switch to windowed mode and set the lowest resolution
-//      break;
-//    }
-//
-//    if (wPrm == VK_UP) // the up arrow key identification
-//    {
-//      // for the time being till introduction of DirectInput
-//      core->game->getUniverse ()->getCamera ()->forwardBackward ( 0.05f );
-//      break;
-//    }
-//
-//    if (wPrm == VK_DOWN) // the down arrow key identification
-//    {
-//      core->game->getUniverse ()->getCamera ()->forwardBackward ( -0.05f );
-//      break;
-//    }
-//
-//  case WM_CLOSE: // the user tries to somehow close the application
-//  //case WM_DESTROY: // window is flagged to be destroyed (the close button is clicked)
-//    core->paused = true;
-//    core->timer->event ( "pause" );
-//    if (MessageBoxA ( handle, "Exit the Game?", "Exit", MB_YESNO | MB_ICONQUESTION ) == IDYES)
-//    {
-//      PostQuitMessage ( 0 );
-//      PointerProvider::getVariables()->running = false;
-//      PointerProvider::getVariables ()->currentState = "shutting down";
-//    } else
-//    {
-//      core->timer->event ( "start" );
-//      core->paused = false;
-//    }
-//    break;
-//
-//    //case WM_MENUCHAR: // handling none mnemonic or accelerator key and preventing constant beeping
-//    //  // the games don't have a menu, this fact can easily be used to deceive the Windows,
-//    //  // binding this not-needed feature to close the non-existent menu.
-//    //  return MAKELRESULT ( 0, MNC_CLOSE );
-//    //  break;
-//
-//  case WM_SIZE: // important for games in windowed mode (resizing the client size and game universe)
-//    if (PointerProvider::getVariables ()->currentState == "gaming")
-//    {
-//      if (wPrm == SIZE_MINIMIZED) // window is minimized
-//      {
-//        minimized = true;
-//        core->timer->event ( "pause" );
-//        core->paused = true;
-//      } else
-//        if (wPrm == SIZE_MAXIMIZED) // window is maximized
-//        {
-//          maximized = true;
-//          if (!minimized)
-//          {
-//            resized = true;
-//            core->resizeResources ( false );
-//          }
-//          minimized = false;
-//          core->paused = false;
-//          core->timer->event ( "start" );
-//        } else
-//          if (wPrm == SIZE_RESTORED) // window is restored, find the previous state:
-//          {
-//            if (minimized)
-//            {
-//              minimized = false;
-//              core->timer->event ( "pause" );
-//              core->paused = true;
-//            } else
-//              if (maximized)
-//              {
-//                maximized = false;
-//                resized = true;
-//                core->resizeResources ( false );
-//                core->paused = false;
-//                core->timer->event ( "start" );
-//              } else
-//                if (resizing)
-//                {
-//                  if (PointerProvider::getVariables ()->currentState == "gaming")
-//                    if (!core->paused)
-//                    {
-//                      core->timer->event ( "pause" );
-//                      core->paused = true;
-//                    }
-//                  // a game window get seldom resized or dragged, even when such a case occur,
-//                  // constant response to so many WM_SIZE messages while resizing, dragging is pointless.
-//                } else // response when resized
-//                {
-//                  resized = true;
-//                  core->resizeResources ( false );
-//                  if (PointerProvider::getVariables ()->currentState == "gaming")
-//                  {
-//                    core->paused = false;
-//                    core->timer->event ( "start" );
-//                  }
-//                }
-//          }
-//    }
-//    break;
-//
-//  case WM_ENTERSIZEMOVE: // the edge of the window is being dragged around to resize it
-//    resizing = true;
-//    if (PointerProvider::getVariables ()->currentState == "gaming")
-//    {
-//      core->timer->event ( "pause" );
-//      core->paused = true;
-//    }
-//    break;
-//
-//  case WM_EXITSIZEMOVE: // the dragging is finished and the window is now resized
-//    resizing = false;
-//    resized = true;
-//    core->resizeResources ( false );
-//    if (PointerProvider::getVariables ()->currentState == "gaming")
-//    {
-//      core->paused = false;
-//      core->timer->event ( "start" );
-//    }
-//    break;
-//
-//    // setting the possible minimum size of the window (the message is sent when a window size is about to changed)
-//  case WM_GETMINMAXINFO:
-//    // a pointer to the 'MINMAXINFO' structure is provided by the message parameter 'lPrm'
-//    ((MINMAXINFO*) lPrm)->ptMinTrackSize.x = PointerProvider::getConfiguration ()->getDefaults ().Width;
-//    ((MINMAXINFO*) lPrm)->ptMinTrackSize.y = PointerProvider::getConfiguration ()->getDefaults ().Height;
-//    break;
-//
-//}

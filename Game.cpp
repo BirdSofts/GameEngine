@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,09.11.2019</changed>
+/// <changed>ʆϒʅ,12.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
@@ -136,7 +136,7 @@ const bool Game::m_run ( void )
     // setting the needed starting points
     m_core->m_getTimer ()->m_event ( "reset" ); // reset (start)
 
-    m_universe->m_getCamera ()->setPosition ( 0.0f, 0.0f, -2.0f ); // set the start view
+    m_universe->m_getCamera ()->setPosition ( 0.0f, 0.0f, -2.2f ); // set the start view
 
     const float colour [] { 0.2f, 0.6f, 0.6f, 1.0f };
     m_universe->m_getDiffuseLight ()->m_setColour ( colour ); // diffuse light colour
@@ -155,7 +155,6 @@ const bool Game::m_run ( void )
     do // continuous loop
     {
 
-#pragma region peekLoop
       if ((counter % 10) == 0)
       {
 
@@ -165,8 +164,6 @@ const bool Game::m_run ( void )
           CoreProcessEventsOption::ProcessAllIfPresent );
 
       }
-#pragma endregion
-
 
 
       // tick the timer to calculate a frame
@@ -201,7 +198,6 @@ const bool Game::m_run ( void )
         // Todo add additional suitable procedure can be done in paused state
 
 
-
         CoreWindow::GetForCurrentThread ().Dispatcher ().ProcessEvents (
           CoreProcessEventsOption::ProcessOneIfPresent );
         // if no task go to hibernation
@@ -217,6 +213,7 @@ const bool Game::m_run ( void )
     } while (PointerProvider::getVariables ()->running == true);
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 
     return true;
@@ -348,6 +345,13 @@ bool& Game::m_isPaused ( void )
 };
 
 
+
+TheCore* Game::m_getCore ( void )
+{
+  return m_core;
+};
+
+
 Universe* Game::m_getUniverse ( void )
 {
   return m_universe;
@@ -363,6 +367,7 @@ void Game::m_release ( void )
     //HRESULT hR;
 
     m_initialized = false;
+
 
     if (_3d_cube)
     {
@@ -395,6 +400,7 @@ void Game::m_release ( void )
       _2d_lightedTriangle = nullptr;
     }
 
+
     if (m_shaderTexture)
     {
       m_shaderTexture->m_release ();
@@ -419,6 +425,7 @@ void Game::m_release ( void )
       delete m_shaderDiffuseLight;
       m_shaderDiffuseLight = nullptr;
     }
+
 
     if (m_universe)
     {

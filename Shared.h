@@ -3,16 +3,16 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,09.11.2019</changed>
+/// <changed>ʆϒʅ,12.11.2019</changed>
 // ********************************************************************************
 
 #ifndef SHARED_H
 #define SHARED_H
 
 
-#include "Logger.h"
-#include "Settings.h"
-#include "Utilities.h"
+#include "common/Logger.h"
+#include "common/Settings.h"
+#include "common/Utilities.h"
 
 
 // application common variables container

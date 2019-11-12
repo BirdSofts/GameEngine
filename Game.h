@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,08.11.2019</changed>
+/// <changed>ʆϒʅ,12.11.2019</changed>
 // ********************************************************************************
 
 #ifndef GAME_H
@@ -11,10 +11,10 @@
 
 
 #include "Core.h"
-#include "Universe.h"
-#include "Shader.h"
-#include "Texture.h"
-#include "Polygons.h"
+#include "directx/Universe.h"
+#include "resources/Shader.h"
+#include "resources/Texture.h"
+#include "objects/Polygons.h"
 
 
 class Game
@@ -53,6 +53,7 @@ public:
   void m_render ( void ); // render the scene
   void m_update ( void ); // updating the game world
   bool& m_isPaused ( void ); // get the paused state
+  TheCore* m_getCore ( void ); // get the pointer to D3D core
   Universe* m_getUniverse ( void ); // get the pointer to game universe
   void m_release ( void ); // destruction preparations
 };

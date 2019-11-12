@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,09.11.2019</changed>
+/// <changed>ʆϒʅ,12.11.2019</changed>
 // ********************************************************************************
 
 #ifndef UNIVERSE_H
@@ -11,7 +11,7 @@
 
 
 #include "Camera.h"
-#include "Light.h"
+#include "../resources/Light.h"
 
 
 // matrix buffer (matching the global cbuffer type introduced in vertex shader)

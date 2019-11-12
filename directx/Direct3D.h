@@ -3,14 +3,14 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,09.11.2019</changed>
+/// <changed>ʆϒʅ,12.11.2019</changed>
 // ********************************************************************************
 
 #ifndef DIRECT3D_H
 #define DIRECT3D_H
 
 
-#include "Core.h"
+#include "../Core.h"
 
 
 // Direct3D wrapper
@@ -60,7 +60,6 @@ private:
 
   Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_rasterizerState; // rasterizer state
 
-  bool m_fullscreen; // application configuration
   bool m_vSync; // application configuration (if true render according installed monitor refresh rate)
   bool m_allocated; // true if resources allocation was successful
   bool m_initialized; // true if initialization was successful
@@ -81,7 +80,6 @@ public:
   const Microsoft::WRL::ComPtr<ID3D11DeviceContext3> m_getDevCon ( void ); // get the pointer to D3D device context
   const Microsoft::WRL::ComPtr<IDXGISwapChain3> m_getSwapChain ( void ); // get the pointer to D3D swap chain
   const DXGI_FORMAT& m_getBackBufferFormat (); // get current format of back/depth buffers
-  const bool& m_isFullscreen ( void ); // get the display mode state
 };
 
 

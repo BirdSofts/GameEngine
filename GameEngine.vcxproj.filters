@@ -1,45 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="Core.cpp" />
-    <ClCompile Include="Direct2D.cpp" />
-    <ClCompile Include="Direct3D.cpp" />
-    <ClCompile Include="Game.cpp" />
-    <ClCompile Include="GameEngine.cpp" />
-    <ClCompile Include="Light.cpp" />
-    <ClCompile Include="Logger.cpp" />
-    <ClCompile Include="ModelFormats.cpp" />
-    <ClCompile Include="pch.cpp" />
-    <ClCompile Include="Polygons.cpp" />
-    <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="Shared.cpp" />
-    <ClCompile Include="Settings.cpp" />
-    <ClCompile Include="Texture.cpp" />
-    <ClCompile Include="Timer.cpp" />
-    <ClCompile Include="Universe.cpp" />
-    <ClCompile Include="Utilities.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Camera.h" />
-    <ClInclude Include="Core.h" />
-    <ClInclude Include="Direct2D.h" />
-    <ClInclude Include="Direct3D.h" />
-    <ClInclude Include="Game.h" />
-    <ClInclude Include="Light.h" />
-    <ClInclude Include="Logger.h" />
-    <ClInclude Include="ModelFormats.h" />
-    <ClInclude Include="pch.h" />
-    <ClInclude Include="Polygons.h" />
-    <ClInclude Include="Shader.h" />
-    <ClInclude Include="Shared.h" />
-    <ClInclude Include="Settings.h" />
-    <ClInclude Include="Texture.h" />
-    <ClInclude Include="Timer.h" />
-    <ClInclude Include="Universe.h" />
-    <ClInclude Include="Utilities.h" />
-  </ItemGroup>
-  <ItemGroup>
     <Image Include="Assets\Logo.scale-200.png" />
     <Image Include="Assets\SmallLogo.scale-200.png" />
     <Image Include="Assets\SplashScreen.scale-200.png" />
@@ -67,5 +28,45 @@
   <ItemGroup>
     <FxCompile Include="graphics\pixel.hlsl" />
     <FxCompile Include="graphics\vertex.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Core.cpp" />
+    <ClCompile Include="Game.cpp" />
+    <ClCompile Include="GameEngine.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="Shared.cpp" />
+    <ClCompile Include="common\Logger.cpp" />
+    <ClCompile Include="common\Settings.cpp" />
+    <ClCompile Include="common\Utilities.cpp" />
+    <ClCompile Include="directx\Camera.cpp" />
+    <ClCompile Include="directx\Direct2D.cpp" />
+    <ClCompile Include="directx\Direct3D.cpp" />
+    <ClCompile Include="directx\Timer.cpp" />
+    <ClCompile Include="directx\Universe.cpp" />
+    <ClCompile Include="objects\ModelFormats.cpp" />
+    <ClCompile Include="objects\Polygons.cpp" />
+    <ClCompile Include="resources\Light.cpp" />
+    <ClCompile Include="resources\Shader.cpp" />
+    <ClCompile Include="resources\Texture.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Core.h" />
+    <ClInclude Include="Game.h" />
+    <ClInclude Include="GameEngine.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="Shared.h" />
+    <ClInclude Include="common\Logger.h" />
+    <ClInclude Include="common\Settings.h" />
+    <ClInclude Include="common\Utilities.h" />
+    <ClInclude Include="directx\Camera.h" />
+    <ClInclude Include="directx\Direct2D.h" />
+    <ClInclude Include="directx\Direct3D.h" />
+    <ClInclude Include="directx\Timer.h" />
+    <ClInclude Include="directx\Universe.h" />
+    <ClInclude Include="objects\ModelFormats.h" />
+    <ClInclude Include="objects\Polygons.h" />
+    <ClInclude Include="resources\Light.h" />
+    <ClInclude Include="resources\Shader.h" />
+    <ClInclude Include="resources\Texture.h" />
   </ItemGroup>
 </Project>

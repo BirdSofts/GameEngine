@@ -3,16 +3,16 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,08.11.2019</changed>
+/// <changed>ʆϒʅ,12.11.2019</changed>
 // ********************************************************************************
 
 #ifndef CORE_H
 #define CORE_H
 
 
-#include "Timer.h"
-#include "Direct3D.h"
-#include "Direct2D.h"
+#include "directx/Timer.h"
+#include "directx/Direct3D.h"
+#include "directx/Direct2D.h"
 
 
 // game engine framework wrapper
