@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,12.11.2019</changed>
+/// <changed>ʆϒʅ,13.11.2019</changed>
 // ********************************************************************************
 
 #ifndef DIRECT3D_H
@@ -65,9 +65,10 @@ private:
   bool m_initialized; // true if initialization was successful
 
   void m_creation ( void ); // Direct3D device creation
-  void m_allocation ( void ); // Direct3D resources resize/creation
-  void m_setDisplayMode ( void ); // Direct3D display mode change/adjust
-  void m_validate ( void ); // validate the allocation of game resources
+  void m_allocation (); // Direct3D resources resize/creation
+  void m_setDisplayMode ( void ); // Direct3D display mode change/adjus
+  void m_onSuspending ( void ); // suspension preparation
+  void m_validate ( void ); // validate the correct state of Direct3D resources
   void m_onDeviceLost ( void ); // clean and reallocate
 public:
   Direct3D ( TheCore* );

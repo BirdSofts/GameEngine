@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,12.11.2019</changed>
+/// <changed>ʆϒʅ,13.11.2019</changed>
 // ********************************************************************************
 
 #ifndef GAME_H
@@ -55,7 +55,9 @@ public:
   bool& m_isPaused ( void ); // get the paused state
   TheCore* m_getCore ( void ); // get the pointer to D3D core
   Universe* m_getUniverse ( void ); // get the pointer to game universe
-  void m_release ( void ); // destruction preparations
+  void m_onSuspending ( void ); // suspension preparation
+  void m_validate ( void ); // game's resources/objects validation/reallocation
+
 };
 
 

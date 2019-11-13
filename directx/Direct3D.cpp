@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,12.11.2019</changed>
+/// <changed>ʆϒʅ,13.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
@@ -175,7 +175,7 @@ void Direct3D::m_creation ( void )
 };
 
 
-void Direct3D::m_allocation ( void )
+void Direct3D::m_allocation ()
 {
   try
   {
@@ -200,17 +200,18 @@ void Direct3D::m_allocation ( void )
       // BufferCount and SwapChainFlags: 0 do not change the current
       // 0 for the next two parameters to adjust to the current client window size automatically
       // next parameter: set to DXGI_FORMAT_UNKNOWN to preserve the current
-      hR = m_swapChain->ResizeBuffers ( m_backBufferCount, m_displayMode.Width,
-                                        m_displayMode.Height, m_backBufferFormat, 0 );
+      hR = m_swapChain->ResizeBuffers ( m_backBufferCount, m_core->m_outputWidth,
+                                        m_core->m_outputHeight, m_backBufferFormat, 0 );
       if (hR == DXGI_ERROR_DEVICE_REMOVED || hR == DXGI_ERROR_DEVICE_RESET)
       {
         // on device lost/reset, a new device and swap chain is needed
         m_onDeviceLost ();
-        //return; ///
+        return;
       } else
       {
-        PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                    "Resizing the swap chain failed!" );
+        if (FAILED ( hR ))
+          PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                      "Resizing the swap chain failed!" );
       }
 
     } else
@@ -541,7 +542,7 @@ void Direct3D::m_setDisplayMode ( void )
   try
   {
 
-    HRESULT hR;
+    //HRESULT hR;
 
 
     if (m_displayMode.Width == 0)
@@ -595,6 +596,48 @@ void Direct3D::m_setDisplayMode ( void )
 };
 
 
+void Direct3D::m_onSuspending ( void )
+{
+
+  // power suspension procedure
+
+  m_deviceContext->ClearState ();
+
+  ComPtr<IDXGIDevice3> dxgiDevice;
+  if (SUCCEEDED ( m_device.As ( &dxgiDevice ) ))
+  {
+    dxgiDevice->Trim ();
+    PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
+                                                "Direct3D is successfully suspended." );
+  }
+
+
+  //unsigned long rC { 0 };
+  //HRESULT hR;
+  // Direct3D application destruction
+  //if (m_D3D)
+  //{
+  //  m_D3D->m_initialized = false;
+  //  m_D3D->m_deviceContext->ClearState ();
+  //  rC = m_D3D->m_rasterizerState.Reset ();
+  //  m_D3D->m_deviceContext->OMSetRenderTargets ( 0, nullptr, nullptr );
+  //  rC = m_D3D->m_depthSview.Reset ();
+  //  rC = m_D3D->m_depthSstate.Reset ();
+  //  rC = m_D3D->m_depthSbuffer.Reset ();
+  //  rC = m_D3D->m_renderTview.Reset ();
+  //  rC = m_D3D->m_swapChain.Reset ();
+
+  //  rC = m_D3D->m_device.Reset ();
+  //  m_D3D->m_core = nullptr;
+
+  //  delete m_D3D;
+  //  PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
+  //                                              "Direct3D is successfully destructed." );
+  //}
+
+};
+
+
 void Direct3D::m_validate ( void )
 {
 
@@ -604,7 +647,7 @@ void Direct3D::m_validate ( void )
 
 
   // first test preparation
-  DXGI_ADAPTER_DESC t_previousDesc;
+  DXGI_ADAPTER_DESC t_previousDesc {};
   {
 
     ComPtr<IDXGIDevice3> t_dxgiDevice;
@@ -612,7 +655,7 @@ void Direct3D::m_validate ( void )
     if (SUCCEEDED ( hR ))
     {
 
-      ComPtr<IDXGIAdapter> t_deviceAdapter;
+      ComPtr<IDXGIAdapter> t_deviceAdapter {};
       hR = t_dxgiDevice->GetAdapter ( &t_deviceAdapter );
       if (SUCCEEDED ( hR ))
       {
@@ -642,7 +685,7 @@ void Direct3D::m_validate ( void )
 
 
   // second test preparation
-  DXGI_ADAPTER_DESC t_currentDesc;
+  DXGI_ADAPTER_DESC t_currentDesc {};
   {
 
     ComPtr<IDXGIFactory2> t_currentFactory;

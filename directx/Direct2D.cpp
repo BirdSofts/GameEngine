@@ -3,12 +3,15 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,12.11.2019</changed>
+/// <changed>ʆϒʅ,13.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
 #include "Direct2D.h"
 #include "Shared.h"
+
+
+using namespace Microsoft::WRL;
 
 
 Direct2D::Direct2D ( TheCore* coreObj ) :
@@ -69,7 +72,6 @@ Direct2D::Direct2D ( TheCore* coreObj ) :
       return;
     }
     rC = dxgiDevice->Release ();
-    dxgiDevice = nullptr;
 
     m_initialized = true;
     PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
@@ -102,6 +104,66 @@ const bool& Direct2D::m_isInitialized ()
 };
 
 
+void Direct2D::m_creation ( void )
+{
+
+};
+
+
+void Direct2D::m_allocation ( void )
+{
+
+};
+
+
+void Direct2D::m_onSuspending ( void )
+{
+
+  // power suspension procedure
+
+  // Todo: research
+  //ComPtr<IDXGIDevice3> dxgiDevice;
+  //if (SUCCEEDED ( m_device.As ( &dxgiDevice ) ))
+  //{
+  //  dxgiDevice->Trim ();
+  //  PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
+  //                                              "Direct2D is successfully suspended." );
+  //}
+
+
+  //unsigned long rC { 0 };
+  //HRESULT hR;
+  //Direct2D application destruction
+  //if (m_D2D)
+  //{
+  //  m_D2D->m_initialized = false;
+  //  rC = m_D2D->m_dcBitmap.Reset ();
+  //  rC = m_D2D->m_deviceContext.Reset ();
+  //  //rC = d2d->dcBuffer.Reset ();
+  //  rC = m_D2D->m_device.Reset ();
+  //  rC = m_D2D->m_factory.Reset ();
+  //  //rC = d2d->writeFac.Reset ();
+  //  m_D2D->m_core = nullptr;
+  //  delete m_D2D;
+  //  PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
+  //                                              "Direct2D is successfully destructed." );
+  //}
+
+};
+
+
+void Direct2D::m_validate ( void )
+{
+
+};
+
+
+//void Direct2D::m_onDeviceLost ( void )
+//{
+//
+//};
+
+
 void Direct2D::m_allocateResources ( void )
 {
   try
@@ -124,8 +186,6 @@ void Direct2D::m_allocateResources ( void )
 
     // --retrieving the DXGI version of the Direct3D back buffer (Direct2D needs)
     hR = m_core->m_getD3D ()->m_getSwapChain ()->GetBuffer ( 0, __uuidof(IDXGISurface1), &m_dcBuffer );
-    //hR = dcBuffer->QueryInterface ( __uuidof(IDXGISurface1), &dcBuffer );
-    //auto rC = dcBuffer->Release ();
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",

@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,11.11.2019</changed>
+/// <changed>ʆϒʅ,13.11.2019</changed>
 // ********************************************************************************
 
 #ifndef DIRECT2D_H
@@ -44,6 +44,11 @@ private:
 
   void m_allocateResources ( void ); // Direct2D resources resize/creation
   void m_initializeTextFormats ( void ); // different formats initialization
+  void m_creation ( void ); // Direct2D device creation
+  void m_allocation ( void ); // Direct2D resources resize/creation
+  void m_onSuspending ( void ); // suspension preparation
+  void m_validate ( void ); // validate the correct state of Direct2D resources
+  //void m_onDeviceLost ( void ); // clean and reallocate
 public:
   Direct2D ( TheCore* ); // creation of the device
   //~Direct2D ( void );

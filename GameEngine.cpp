@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,12.11.2019</changed>
+/// <changed>ʆϒʅ,13.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
@@ -37,9 +37,9 @@ private:
   bool m_inResizeMove; // true if client window is set to resize and/or move
   bool m_fullscreen; // current full screen state (additionally fed from configuration)
   // Orientation
-  //std::unique_ptr <Game> game;
 
-  Game* m_game; // pointer to game wrapper
+  std::unique_ptr <Game> m_game; // unique pointer to game wrapper
+  //Game* m_game; // pointer to game wrapper
 
   bool m_initialized; // true in case of successful initialization
 protected:
@@ -55,6 +55,9 @@ protected:
   void m_onWindowResized ( CoreWindow const& /*sender*/,
                            WindowSizeChangedEventArgs const& /*args*/ ); // on application window resize
 
+  void m_onDisplayContentInvalidated ( DisplayInformation const& /*sender*/,
+                                       IInspectable const& /*args*/ ); // on application window content invalidation
+
   void m_onDpiChanged ( DisplayInformation const& /*sender*/,
                         IInspectable const& /*args*/ ); // on client display DPI changed
 
@@ -67,7 +70,7 @@ protected:
   void m_onAcceleratorKeyActivated ( CoreDispatcher const& /*sender*/,
                                      AcceleratorKeyEventArgs const& /*args*/ ); // on accelerator key pressed
 
-  void m_release (); // release the application resources
+  void m_suspend (); // release the application resources
 
   //void m_on Orientation Changed
   //void m_on Display Content Invalidated
@@ -267,14 +270,17 @@ void View::m_onWindowResized ( CoreWindow const& /*sender*/, WindowSizeChangedEv
   m_clientHeight = m_appWindow.get ().Bounds ().Height;
 
   // Todo: drag and drop resizing (resolution needs to be sent)
-  //if (!m_inResizeMove && m_initialized)
-  //{
-  //  if (m_fullscreen)
-  //    m_game->m_getCore ()->m_setResolution ( true );
-  //  else
-  //    m_game->m_getCore ()->m_resizeResources ( false );
-  //}
+  if (args.Handled () && m_initialized)
+  {
+    m_game->m_getCore ()->m_setResolution ( false, static_cast<int>(m_clientWidth), static_cast<int>(m_clientHeight) );
+  }
 
+};
+
+
+void View::m_onDisplayContentInvalidated ( DisplayInformation const& /*sender*/, IInspectable const& /*args*/ )
+{
+  m_game->m_validate ();
 };
 
 
@@ -291,7 +297,7 @@ void View::m_onSuspending ( IInspectable const& /*sender*/, SuspendingEventArgs 
   auto task = std::async (
     std::launch::async, [this, deferral]()
     {
-      m_release ();
+      m_suspend ();
       deferral.Complete ();
     }
   );
@@ -363,16 +369,16 @@ void View::m_onAcceleratorKeyActivated ( CoreDispatcher const& /*sender*/, Accel
 };
 
 
-void View::m_release ( void )
+void View::m_suspend ( void )
 {
 
-  PointerProvider::getVariables ()->currentState = "shutting down";
+  PointerProvider::getVariables ()->currentState = "suspending";
 
   PointerProvider::getVariables ()->running = false;
 
   std::this_thread::sleep_for ( std::chrono::milliseconds { 1000 } );
 
-  m_game->m_release ();
+  m_game->m_onSuspending ();
 
   PointerProvider::getVariables ()->currentState = "uninitialized";
 
@@ -409,8 +415,6 @@ IFrameworkView View::CreateView ( void )
 void View::Initialize ( CoreApplicationView const& applicationView )
 {
 
-  // Todo: more reasearch how to use Xaml controls when implementing the UWP core
-
   // response to application window activation
   applicationView.Activated ( { this, &View::m_onActivated } );
 
@@ -436,18 +440,18 @@ void View::Run ( void )
 
   PointerProvider::getVariables ()->running = true;
 
-  // Todo: make unique research
-  //CoreDX = std::make_unique<CoreDX> ();
-
   // game instantiation
   auto windowPtr = static_cast<::IUnknown*>(winrt::get_abi ( m_appWindow.get () ));
-  m_game = new (std::nothrow) Game ( windowPtr,
-                                     static_cast<int>(m_clientWidth),
-                                     static_cast<int>(m_clientHeight) ); ///
+  //m_game = new (std::nothrow) Game ( windowPtr,
+  //                                   static_cast<int>(m_clientWidth),
+  //                                   static_cast<int>(m_clientHeight) ); ///
+  m_game = std::make_unique<Game> ( windowPtr,
+                                    static_cast<int>(m_clientWidth),
+                                    static_cast<int>(m_clientHeight) );
 
   if (!m_game->m_isReady ())
   {
-    m_game->m_release (); // failure, shut the application down properly.
+    m_game->m_onSuspending (); // failure, shut the application down properly.
 
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 "The game initialization failed!" );
@@ -509,6 +513,8 @@ void View::SetWindow ( CoreWindow const& window )
   auto currentDisplayInfos = DisplayInformation::GetForCurrentView ();
   currentDisplayInfos.DpiChanged ( { this, &View::m_onDpiChanged } );
 
+  DisplayInformation::DisplayContentsInvalidated ( { this, &View::m_onDisplayContentInvalidated } );
+
   // DPI of initialized client window area
   m_Dpi = DisplayInformation::GetForCurrentView ().LogicalDpi ();
 
@@ -549,7 +555,7 @@ void View::SetWindow ( CoreWindow const& window )
 
 void View::Uninitialize ( void )
 {
-  m_release ();
+  m_suspend ();
 };
 
 

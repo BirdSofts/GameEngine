@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,12.11.2019</changed>
+/// <changed>ʆϒʅ,13.11.2019</changed>
 // ********************************************************************************
 
 #ifndef CORE_H
@@ -48,9 +48,11 @@ public:
   Direct2D* m_getD2D ( void ); // get the pointer to application Direct2D
   const int& m_getFPS ( void ); // get the FPS
   void m_frameStatistics ( void ); // frame statistics calculations
-  void m_setResolution ( const bool& ); // resolution changer
+  void m_setResolution ( const bool&, const int& = 0, const int& = 0 ); // resolution changer
   void m_resizeResources ( const bool& ); // free and resize the resources
-  void m_release ( void ); // destruction preparations
+  void m_onSuspending ( void ); // suspension preparations
+  void m_validate ( void ); // validate the correct state of game resources
+  void m_onDeviceLost ( void ); // clean and reallocate
 };
 
 

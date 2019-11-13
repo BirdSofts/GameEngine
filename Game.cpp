@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,12.11.2019</changed>
+/// <changed>ʆϒʅ,13.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
@@ -358,10 +358,16 @@ Universe* Game::m_getUniverse ( void )
 };
 
 
-void Game::m_release ( void )
+void Game::m_onSuspending ( void )
 {
   try
   {
+
+    //Todo:
+    // procedure description:
+    // save state of game objects and release them all
+    // save the game process so user doesn't get angry
+    //xx trim resources and prepare power suspension
 
     //unsigned long rC { 0 };
     //HRESULT hR;
@@ -369,6 +375,7 @@ void Game::m_release ( void )
     m_initialized = false;
 
 
+    // object models
     if (_3d_cube)
     {
       _3d_cube->m_release ();
@@ -401,6 +408,7 @@ void Game::m_release ( void )
     }
 
 
+    // game's resources
     if (m_shaderTexture)
     {
       m_shaderTexture->m_release ();
@@ -425,23 +433,23 @@ void Game::m_release ( void )
       delete m_shaderDiffuseLight;
       m_shaderDiffuseLight = nullptr;
     }
-
-
     if (m_universe)
     {
       m_universe->m_release ();
       delete m_universe;
       m_universe = nullptr;
     }
+
+
     if (m_core)
     {
-      m_core->m_release ();
+      m_core->m_onSuspending ();
       delete m_core;
       m_core = nullptr;
     }
 
     PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
-                                                "The Game is successfully shut down." );
+                                                "The Game is successfully suspended." );
 
   }
   catch (const std::exception & ex)
@@ -449,4 +457,10 @@ void Game::m_release ( void )
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
   }
+};
+
+
+void Game::m_validate ( void )
+{
+  m_core->m_validate ();
 };

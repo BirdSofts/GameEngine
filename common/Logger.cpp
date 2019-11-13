@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,06.11.2019</created>
-/// <changed>ʆϒʅ,12.11.2019</changed>
+/// <changed>ʆϒʅ,13.11.2019</changed>
 // ********************************************************************************
 
 #include "pch.h"
@@ -204,7 +204,7 @@ void Logger<tType>::m_push ( const logType& t, const std::thread::id& tId,
     // line formatting: add some space to recognize the different application state in log file
     if (
       (PointerProvider::getVariables ()->running == false) &&
-      (PointerProvider::getVariables ()->currentState == "shutting down") &&
+      (PointerProvider::getVariables ()->currentState == "suspending") &&
       (m_state == 0))
     {
       lineFormatted << "\r\n\n";
