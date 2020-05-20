@@ -3,7 +3,7 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,13.11.2019</changed>
+/// <changed>ʆϒʅ,20.05.2020</changed>
 // ********************************************************************************
 
 #include "pch.h"
@@ -31,17 +31,30 @@ private:
 
   winrt::agile_ref<CoreWindow> m_appWindow; // reference to application window
   bool m_visible; // application window visibility state
-  float m_Dpi; // current client window DPI
-  float m_clientWidth; // current client window width
-  float m_clientHeight; // current client window height
   bool m_inResizeMove; // true if client window is set to resize and/or move
   bool m_fullscreen; // current full screen state (additionally fed from configuration)
+  //float m_DPI; // current client window DPI
+  //float m_clientWidth; // current client window width
+  //float m_clientHeight; // current client window height
+  struct Display // resolution wrapper
+  {
+    float m_DPI; // current client window DPI
+    float m_clientWidth; // current client window width
+    float m_clientHeight; // current client window height
+    int m_currentWidth; // current client window width
+    int m_currentHeight; // current client window height
+    Display ();
+    void update ( bool );
+  } m_resolution;
   // Orientation
 
   std::unique_ptr <Game> m_game; // unique pointer to game wrapper
   //Game* m_game; // pointer to game wrapper
 
   bool m_initialized; // true in case of successful initialization
+
+  //int m_DipsPixels ( float );
+  //float m_DipsPixels ( int );
 protected:
   void m_onActivated ( CoreApplicationView const& /*applicationView*/,
                        IActivatedEventArgs const& /*args*/ ); // on application window activation
@@ -61,7 +74,7 @@ protected:
   void m_onDpiChanged ( DisplayInformation const& /*sender*/,
                         IInspectable const& /*args*/ ); // on client display DPI changed
 
-  void m_onSuspending ( IInspectable const& /*sender*/,
+  void m_onSuspension ( IInspectable const& /*sender*/,
                         SuspendingEventArgs const& /*args*/ ); // on application window entering the suspended state
 
   void m_onResuming ( IInspectable const& /*sender*/,
@@ -70,7 +83,7 @@ protected:
   void m_onAcceleratorKeyActivated ( CoreDispatcher const& /*sender*/,
                                      AcceleratorKeyEventArgs const& /*args*/ ); // on accelerator key pressed
 
-  void m_suspend (); // release the application resources
+  void m_onSuspend (); // release the application resources
 
   //void m_on Orientation Changed
   //void m_on Display Content Invalidated
@@ -105,10 +118,6 @@ View::View ( void ) :
   m_game ( nullptr ), m_initialized ( false )
 {
 
-  m_Dpi = 0.0f;
-  m_clientWidth = 0.0f;
-  m_clientHeight = 0.0f;
-
 };
 
 
@@ -116,6 +125,30 @@ View::View ( void ) :
 //{
 //
 //};
+
+
+View::Display::Display ()
+{
+  m_DPI = 96.f;
+  m_clientWidth = 0.0f;
+  m_clientHeight = 0.0f;
+  m_currentWidth = 0;
+  m_currentHeight = 0;
+};
+void View::Display::update ( bool prm = false )
+{
+  if (!prm)
+  {
+    // to pixels ( dips * c_DPI / 96.f + 0.5f )
+    m_currentWidth = static_cast<int>(m_clientWidth * m_DPI / 96.f + 0.5f);
+    m_currentHeight = static_cast<int>(m_clientHeight * m_DPI / 96.f + 0.5f);
+  } else
+  {
+    // to dips ( float (pixels) * 96.f / c_DPI )
+    m_clientHeight = (static_cast<float> (m_currentHeight) * 96.f / m_DPI);
+    m_clientWidth = (static_cast<float> (m_currentWidth) * 96.f / m_DPI);
+  }
+};
 
 
 int WINAPI wWinMain ( _In_ HINSTANCE /*hInstance*/,
@@ -200,7 +233,7 @@ int WINAPI wWinMain ( _In_ HINSTANCE /*hInstance*/,
     }
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
 
     if (PointerProvider::getVariables ()->currentState == "CPU")
@@ -231,6 +264,20 @@ int WINAPI wWinMain ( _In_ HINSTANCE /*hInstance*/,
   }
 
 }
+
+
+//int View::m_DipsPixels ( float dips )
+//{
+//  // to pixels ( dips * c_DPI / 96.f + 0.5f )
+//  return (dips * m_DPI / 96.f + 0.5f);
+//};
+//
+//
+//float View::m_DipsPixels ( int pixels )
+//{
+//  // to dips ( float (pixels) * 96.f / c_DPI )
+//  return (static_cast<float> (pixels) * 96.f / m_DPI);
+//};
 
 
 void View::m_onActivated ( CoreApplicationView const& /*applicationView*/, IActivatedEventArgs const& /*args*/ )
@@ -266,13 +313,16 @@ void View::m_onVisibilityChanged ( CoreWindow const& /*sender*/, VisibilityChang
 void View::m_onWindowResized ( CoreWindow const& /*sender*/, WindowSizeChangedEventArgs const& args )
 {
 
-  m_clientWidth = m_appWindow.get ().Bounds ().Width;
-  m_clientHeight = m_appWindow.get ().Bounds ().Height;
+  m_resolution.m_clientWidth = m_appWindow.get ().Bounds ().Width;
+  m_resolution.m_clientHeight = m_appWindow.get ().Bounds ().Height;
+  m_resolution.update ();
 
   // Todo: drag and drop resizing (resolution needs to be sent)
   if (args.Handled () && m_initialized)
   {
-    m_game->m_getCore ()->m_setResolution ( false, static_cast<int>(m_clientWidth), static_cast<int>(m_clientHeight) );
+    m_game->m_getCore ()->m_setResolution ( false,
+                                            m_resolution.m_currentWidth,
+                                            m_resolution.m_currentHeight );
   }
 
 };
@@ -286,18 +336,18 @@ void View::m_onDisplayContentInvalidated ( DisplayInformation const& /*sender*/,
 
 void View::m_onDpiChanged ( DisplayInformation const& sender, IInspectable const& /*args*/ )
 {
-  m_Dpi = sender.LogicalDpi ();
+  m_resolution.m_DPI = sender.LogicalDpi ();
 };
 
 
-void View::m_onSuspending ( IInspectable const& /*sender*/, SuspendingEventArgs const& args )
+void View::m_onSuspension ( IInspectable const& /*sender*/, SuspendingEventArgs const& args )
 {
 
   auto deferral = args.SuspendingOperation ().GetDeferral ();
   auto task = std::async (
     std::launch::async, [this, deferral]()
     {
-      m_suspend ();
+      m_onSuspend ();
       deferral.Complete ();
     }
   );
@@ -323,12 +373,12 @@ void View::m_onAcceleratorKeyActivated ( CoreDispatcher const& /*sender*/, Accel
 
     if (view.IsFullScreen ())
     {
-      view.ExitFullScreenMode ();
       m_game->m_getCore ()->m_setResolution ( false );
+      view.ExitFullScreenMode ();
     } else
     {
-      view.TryEnterFullScreenMode ();
       m_game->m_getCore ()->m_setResolution ( true );
+      view.TryEnterFullScreenMode ();
     }
 
     args.Handled ( true );
@@ -369,7 +419,7 @@ void View::m_onAcceleratorKeyActivated ( CoreDispatcher const& /*sender*/, Accel
 };
 
 
-void View::m_suspend ( void )
+void View::m_onSuspend ( void )
 {
 
   PointerProvider::getVariables ()->currentState = "suspending";
@@ -419,7 +469,7 @@ void View::Initialize ( CoreApplicationView const& applicationView )
   applicationView.Activated ( { this, &View::m_onActivated } );
 
   // response to application window suspension
-  CoreApplication::Suspending ( { this, &View::m_onSuspending } );
+  CoreApplication::Suspending ( { this, &View::m_onSuspension } );
 
   // response to application window resuming from suspension
   CoreApplication::Resuming ( { this, &View::m_onResuming } );
@@ -443,11 +493,11 @@ void View::Run ( void )
   // game instantiation
   auto windowPtr = static_cast<::IUnknown*>(winrt::get_abi ( m_appWindow.get () ));
   //m_game = new (std::nothrow) Game ( windowPtr,
-  //                                   static_cast<int>(m_clientWidth),
-  //                                   static_cast<int>(m_clientHeight) ); ///
+  //                                   m_resolution.m_currentWidth,
+  //                                   m_resolution.m_currentHeight );
   m_game = std::make_unique<Game> ( windowPtr,
-                                    static_cast<int>(m_clientWidth),
-                                    static_cast<int>(m_clientHeight) );
+                                    m_resolution.m_currentWidth,
+                                    m_resolution.m_currentHeight );
 
   if (!m_game->m_isReady ())
   {
@@ -516,17 +566,17 @@ void View::SetWindow ( CoreWindow const& window )
   DisplayInformation::DisplayContentsInvalidated ( { this, &View::m_onDisplayContentInvalidated } );
 
   // DPI of initialized client window area
-  m_Dpi = DisplayInformation::GetForCurrentView ().LogicalDpi ();
+  m_resolution.m_DPI = DisplayInformation::GetForCurrentView ().LogicalDpi ();
 
 
   // size of initialized client window area (save in case of procedure failure)
-  m_clientWidth = float ( PointerProvider::getConfiguration ()->m_getSettings ().Width );
-  m_clientHeight = float ( PointerProvider::getConfiguration ()->m_getSettings ().Height );
+  m_resolution.m_clientWidth = static_cast<float> (PointerProvider::getConfiguration ()->m_getSettings ().Width);
+  m_resolution.m_clientHeight = static_cast<float> (PointerProvider::getConfiguration ()->m_getSettings ().Height);
+  m_resolution.update ();
 
 
   // preferred (current configuration) client window size
-  auto size = Size ( float ( m_clientWidth ),
-                     float ( m_clientHeight ) );
+  auto size = Size ( m_resolution.m_clientWidth, m_resolution.m_clientHeight );
   m_fullscreen = PointerProvider::getConfiguration ()->m_getSettings ().fullscreen;
 
   if (m_fullscreen)
@@ -539,11 +589,13 @@ void View::SetWindow ( CoreWindow const& window )
       view.TryEnterFullScreenMode ();
   }
 
+  //ApplicationView::PreferredLaunchWindowingMode ( ApplicationViewWindowingMode::PreferredLaunchViewSize );
+
   ApplicationView::PreferredLaunchViewSize ( size );
   auto view = ApplicationView::GetForCurrentView ();
 
   // minimum client window size
-  size.Width = 480.0f; size.Height = 320.0f;
+  size.Width = 640.0f; size.Height = 480.0f;
   view.SetPreferredMinSize ( size );
 
   // set and save
@@ -555,7 +607,7 @@ void View::SetWindow ( CoreWindow const& window )
 
 void View::Uninitialize ( void )
 {
-  m_suspend ();
+  m_onSuspend ();
 };
 
 
