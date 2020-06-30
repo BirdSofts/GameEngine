@@ -4,7 +4,6 @@
 /// </summary>
 /// <created>}Y{,27.06.2020</created>
 /// <state></state>
-//xx <changed>}Y{,28.06.2020</changed>
 // ********************************************************************************
 
 // global declarations

@@ -1,7 +1,7 @@
 # Introduction 
 Game Engine zip-spelled in two words! :)
 
-<img href="https://github.com/BirdSofts" src="https://github.com/BirdSofts/GameEngine/blob/master/screenshots/ScreenShot_02.jpg" width="1280" height="720" alt="ScreenShot">
+<img href="https://github.com/BirdSofts" src="https://github.com/BirdSofts/GameEngine/blob/master/CoreApp/screenshots/ScreenShot_02.jpg" width="1280" height="720" alt="ScreenShot">
 
 <table>
 <tr>
