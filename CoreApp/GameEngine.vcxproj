@@ -42,8 +42,8 @@
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <AppContainerApplication>true</AppContainerApplication>
     <ApplicationType>Windows Store</ApplicationType>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
-    <WindowsTargetPlatformMinVersion>10.0.10240.0</WindowsTargetPlatformMinVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.18362.0</WindowsTargetPlatformMinVersion>
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -215,12 +215,12 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
-      <AdditionalDependencies>d2d1.lib;d3d10.lib;d3d11.lib;dxgi.lib;dxguid.lib;windowscodecs.lib;dwrite.lib;ole32.lib;lua.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d2d1.lib;d3d10.lib;d3d11.lib;dxgi.lib;dxguid.lib;windowscodecs.lib;dwrite.lib;dinput8.lib;ole32.lib;lua.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
-      <AdditionalLibraryDirectories>$(VcpkgRoot)..\.\x64-windows\lib;$(VcpkgRoot);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(VcpkgRoot)installed\x64-windows\lib;$(VcpkgRoot);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VcpkgRoot)..\.\x64-windows\include;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VcpkgRoot)installed\x64-windows\include;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedUsingFiles />
       <AdditionalOptions>/bigobj /await %(AdditionalOptions)</AdditionalOptions>
       <WarningLevel>Level4</WarningLevel>
@@ -236,18 +236,18 @@
       </Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y /d "$(VcpkgRoot)..\.\x64-windows\tools\lua\lua.dll" "$(OutDir)"
-xcopy /y /d "$(VcpkgRoot)..\.\x64-windows\tools\lua\lua.dll" "$(LayoutDir)"</Command>
+      <Command>xcopy /y /d "$(VcpkgRoot)installed\x64-windows\tools\lua\lua.dll" "$(OutDir)"
+xcopy /y /d "$(VcpkgRoot)installed\x64-windows\tools\lua\lua.dll" "$(LayoutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Link>
-      <AdditionalDependencies>d2d1.lib;d3d10.lib;d3d11.lib;dxgi.lib;dxguid.lib;windowscodecs.lib;dwrite.lib;ole32.lib;lua.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d2d1.lib;d3d10.lib;d3d11.lib;dxgi.lib;dxguid.lib;windowscodecs.lib;dwrite.lib;dinput8.lib;ole32.lib;lua.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
-      <AdditionalLibraryDirectories>$(VcpkgRoot)..\.\x64-windows\lib;$(VcpkgRoot);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(VcpkgRoot)installed\x64-windows\lib;$(VcpkgRoot);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VcpkgRoot)..\.\x64-windows\include;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VcpkgRoot)installed\x64-windows\include;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedUsingFiles />
       <AdditionalOptions>/bigobj /await %(AdditionalOptions)</AdditionalOptions>
       <WarningLevel>Level4</WarningLevel>
@@ -263,8 +263,8 @@ xcopy /y /d "$(VcpkgRoot)..\.\x64-windows\tools\lua\lua.dll" "$(LayoutDir)"</Com
       </Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y /d "$(VcpkgRoot)..\.\x64-windows\tools\lua\lua.dll" "$(OutDir)"
-xcopy /y /d "$(VcpkgRoot)..\.\x64-windows\tools\lua\lua.dll" "$(LayoutDir)"</Command>
+      <Command>xcopy /y /d "$(VcpkgRoot)installed\x64-windows\tools\lua\lua.dll" "$(OutDir)"
+xcopy /y /d "$(VcpkgRoot)installed\x64-windows\tools\lua\lua.dll" "$(LayoutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
@@ -309,8 +309,6 @@ xcopy /y /d "$(VcpkgRoot)..\.\x64-windows\tools\lua\lua.dll" "$(LayoutDir)"</Com
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
-    <None Include=".gitattributes" />
-    <None Include=".gitignore" />
     <None Include="GameEngine_TemporaryKey.pfx" />
     <None Include="README.md" />
   </ItemGroup>
@@ -323,7 +321,7 @@ xcopy /y /d "$(VcpkgRoot)..\.\x64-windows\tools\lua\lua.dll" "$(LayoutDir)"</Com
     <Image Include="textures\clouds.tga" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="CMakeLists.txt" />
+    <Text Include="CMakeLists_.txt" />
     <Text Include="models\cube.txt" />
   </ItemGroup>
   <ItemGroup>
@@ -373,6 +371,7 @@ xcopy /y /d "$(VcpkgRoot)..\.\x64-windows\tools\lua\lua.dll" "$(LayoutDir)"</Com
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="directx\Input.cpp" />
     <ClCompile Include="common\Logger.cpp" />
     <ClCompile Include="common\Settings.cpp" />
     <ClCompile Include="common\Utilities.cpp" />
@@ -402,6 +401,7 @@ xcopy /y /d "$(VcpkgRoot)..\.\x64-windows\tools\lua\lua.dll" "$(LayoutDir)"</Com
     <ClCompile Include="Shared.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="directx\Input.h" />
     <ClInclude Include="common\Logger.h" />
     <ClInclude Include="common\Settings.h" />
     <ClInclude Include="common\Utilities.h" />

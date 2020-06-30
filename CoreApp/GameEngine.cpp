@@ -3,12 +3,12 @@
 /// 
 /// </summary>
 /// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,20.05.2020</changed>
+/// <changed>ʆϒʅ,30.06.2020</changed>
 // ********************************************************************************
 
 #include "pch.h"
 //#include "GameEngine.h"
-#include "common/Utilities.h" // string + s,f streams + exception + threads + list + Windows standards
+#include "common/Utilities.h"
 #include "Shared.h"
 #include "Game.h"
 

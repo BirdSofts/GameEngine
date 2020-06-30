@@ -12,8 +12,6 @@
     <AppxManifest Include="Package.appxmanifest" />
   </ItemGroup>
   <ItemGroup>
-    <None Include=".gitattributes" />
-    <None Include=".gitignore" />
     <None Include="GameEngine_TemporaryKey.pfx" />
     <None Include="README.md" />
     <None Include="graphics\pixelL.hlsl" />
@@ -22,8 +20,8 @@
     <None Include="graphics\vertexT.hlsl" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="CMakeLists.txt" />
     <Text Include="models\cube.txt" />
+    <Text Include="CMakeLists_.txt" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="graphics\pixel.hlsl" />
@@ -48,6 +46,7 @@
     <ClCompile Include="resources\Light.cpp" />
     <ClCompile Include="resources\Shader.cpp" />
     <ClCompile Include="resources\Texture.cpp" />
+    <ClCompile Include="directx\Input.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core.h" />
@@ -68,5 +67,6 @@
     <ClInclude Include="resources\Light.h" />
     <ClInclude Include="resources\Shader.h" />
     <ClInclude Include="resources\Texture.h" />
+    <ClInclude Include="directx\Input.h" />
   </ItemGroup>
 </Project>

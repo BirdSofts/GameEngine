@@ -2,8 +2,9 @@
 /// <summary>
 /// 
 /// </summary>
-/// <created>ʆϒʅ,01.11.2019</created>
-/// <changed>ʆϒʅ,12.11.2019</changed>
+/// <created>ʆϒʅ,27.06.2020</created>
+/// <state></state>
+//xx <changed>ʆϒʅ,28.06.2020</changed>
 // ********************************************************************************
 
 #include "pch.h"
@@ -45,6 +46,9 @@ unsigned int VertexTexDiffuseL::read ( const char* path, VertexL** vertices )
         while (index != i)
         {
           stream >> (*vertices) [index].position.x >> (*vertices) [index].position.y >> (*vertices) [index].position.z;
+          (*vertices) [index].position.x += .2f;
+          /*(*vertices) [index].position.y += 1;
+          (*vertices) [index].position.z += 1;*/
           stream >> (*vertices) [index].texture.x >> (*vertices) [index].texture.y;
           stream >> (*vertices) [index].normal.x >> (*vertices) [index].normal.y >> (*vertices) [index].normal.z;
           index++;
@@ -59,7 +63,7 @@ unsigned int VertexTexDiffuseL::read ( const char* path, VertexL** vertices )
     return count;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );

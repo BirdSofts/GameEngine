@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--  ********************************************************************************  -->
+<!--/<summary>-->
+<!--  /  -->
+<!--/</summary>-->
+<!--  /  -->
+<!--<created>ʆϒʅ,27.06.2020</created>-->
+<!--  /  -->
+<!--<state></state>-->
+<!--  /xx  -->
+<!--<changed>ʆϒʅ,28.06.2020</changed> -->
+<!--  ********************************************************************************  -->
+
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <!--
+    To customize common C++/WinRT project properties: 
+    * right-click the project node
+    * expand the Common Properties item
+    * select the C++/WinRT property page
+
+    For more advanced scenarios, and complete documentation, please see:
+    https://github.com/Microsoft/cppwinrt/tree/master/nuget 
+    -->
+  <PropertyGroup />
+  <ItemDefinitionGroup />
+</Project>

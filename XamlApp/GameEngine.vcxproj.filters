@@ -1,0 +1,99 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="MainPage.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="App.idl" />
+    <Midl Include="MainPage.idl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="App.cpp" />
+    <ClCompile Include="MainPage.cpp" />
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="common\Logger.cpp" />
+    <ClCompile Include="common\Settings.cpp" />
+    <ClCompile Include="common\Utilities.cpp" />
+    <ClCompile Include="directx\Camera.cpp" />
+    <ClCompile Include="directx\Direct2D.cpp" />
+    <ClCompile Include="directx\Direct3D.cpp" />
+    <ClCompile Include="directx\Input.cpp" />
+    <ClCompile Include="directx\Timer.cpp" />
+    <ClCompile Include="directx\Universe.cpp" />
+    <ClCompile Include="objects\ModelFormats.cpp" />
+    <ClCompile Include="objects\Polygons.cpp" />
+    <ClCompile Include="resources\Light.cpp" />
+    <ClCompile Include="resources\Shader.cpp" />
+    <ClCompile Include="resources\Texture.cpp" />
+    <ClCompile Include="Core.cpp" />
+    <ClCompile Include="Game.cpp" />
+    <ClCompile Include="Shared.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="common\Logger.h" />
+    <ClInclude Include="common\Settings.h" />
+    <ClInclude Include="common\Utilities.h" />
+    <ClInclude Include="directx\Camera.h" />
+    <ClInclude Include="directx\Direct2D.h" />
+    <ClInclude Include="directx\Direct3D.h" />
+    <ClInclude Include="directx\Input.h" />
+    <ClInclude Include="directx\Timer.h" />
+    <ClInclude Include="directx\Universe.h" />
+    <ClInclude Include="objects\ModelFormats.h" />
+    <ClInclude Include="objects\Polygons.h" />
+    <ClInclude Include="resources\Light.h" />
+    <ClInclude Include="resources\Shader.h" />
+    <ClInclude Include="resources\Texture.h" />
+    <ClInclude Include="Core.h" />
+    <ClInclude Include="Game.h" />
+    <ClInclude Include="Shared.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Assets\Wide310x150Logo.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\StoreLogo.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Square150x150Logo.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Square44x44Logo.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\SplashScreen.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\LockScreenLogo.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="textures\clouds.tga" />
+  </ItemGroup>
+  <ItemGroup>
+    <AppxManifest Include="Package.appxmanifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Assets">
+      <UniqueIdentifier>{e48dc53e-40b1-40cb-970a-f89935452892}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PropertySheet.props" />
+    <None Include="packages.config" />
+    <None Include="GameEngine_TemporaryKey.pfx" />
+    <None Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="readme.txt" />
+    <Text Include="models\cube.txt" />
+    <Text Include="CMakeLists_.txt" />
+  </ItemGroup>
+</Project>
