@@ -89,11 +89,19 @@
     <None Include="PropertySheet.props" />
     <None Include="packages.config" />
     <None Include="GameEngine_TemporaryKey.pfx" />
+    <None Include="graphics\pixelL.hlsl" />
+    <None Include="graphics\pixelT.hlsl" />
+    <None Include="graphics\vertexL.hlsl" />
+    <None Include="graphics\vertexT.hlsl" />
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="readme.txt" />
     <Text Include="models\cube.txt" />
     <Text Include="CMakeLists_.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="graphics\pixel.hlsl" />
+    <FxCompile Include="graphics\vertex.hlsl" />
   </ItemGroup>
 </Project>

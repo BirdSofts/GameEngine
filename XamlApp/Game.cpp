@@ -11,11 +11,8 @@
 #include "Shared.h"
 
 
-using namespace winrt::Windows::UI::Core;
-
-
-Game::Game ( ::IUnknown* window, const int& width, const int& height ) :
-  m_core ( nullptr ), m_universe ( nullptr ),
+Game::Game ( TheCore* core ) :
+  m_core ( core ), m_universe ( nullptr ),
   m_allocated ( false ), m_paused ( false ), m_initialized ( false )
 {
   try
@@ -31,15 +28,6 @@ Game::Game ( ::IUnknown* window, const int& width, const int& height ) :
     _2d_texturedTriangles = nullptr;
     _2d_lightedTriangle = nullptr;
 
-    // the game framework instantiation
-    m_core = new (std::nothrow) TheCore ( window, width, height );
-
-    if (!m_core->m_isInitialized ())
-    {
-      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "Initialization of framework failed!" );
-    }
-
     m_initialized = true;
     PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
                                                 "The game is successfully initialized." );
@@ -51,18 +39,12 @@ Game::Game ( ::IUnknown* window, const int& width, const int& height ) :
                                                   "The game resources is successfully allocated." );
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
   }
 };
-
-
-//Game::~Game ( void )
-//{
-//
-//};
 
 
 void Game::m_allocateResources ( void )
@@ -108,17 +90,11 @@ void Game::m_allocateResources ( void )
     m_allocated = true;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
   }
-};
-
-
-const bool& Game::m_isReady ( void )
-{
-  return m_initialized;
 };
 
 
@@ -129,8 +105,6 @@ const bool Game::m_run ( void )
 
     PointerProvider::getVariables ()->currentState = "gaming";
 
-
-    MSG msg { 0 }; // a new message structure
     unsigned short counter { 1 };
 
     // setting the needed starting points
@@ -155,13 +129,13 @@ const bool Game::m_run ( void )
     do // continuous loop
     {
 
-      if ((counter % 10) == 0)
+      if ((counter % 30) == 0)
       {
 
-        counter = 0;
+        //counter = 0;
 
-        //CoreWindow::GetForCurrentThread ().Dispatcher ().ProcessEvents (
-        //  CoreProcessEventsOption::ProcessAllIfPresent );
+        // additional in-between processes if any need to execute
+        // like messages of a core window
 
       }
 
@@ -195,22 +169,15 @@ const bool Game::m_run ( void )
       } else
       {
 
-        // Todo add additional suitable procedure can be done in paused state
+        // additional suitable procedure can be done in paused state
 
-
-        //CoreWindow::GetForCurrentThread ().Dispatcher ().ProcessEvents (
-        //  CoreProcessEventsOption::ProcessOneIfPresent );
         // if no task go to hibernation
         std::this_thread::sleep_for ( std::chrono::milliseconds ( 100 ) );
-
-        // Microsoft's resource (suspension)
-        //CoreWindow::GetForCurrentThread ().Dispatcher ().ProcessEvents (
-        //  CoreProcessEventsOption::ProcessOneAndAllPending );
 
       }
 
       counter++;
-    } while (PointerProvider::getVariables ()->running == true);
+    } while ((PointerProvider::getVariables ()->running == true) && (counter < 60));
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -219,7 +186,7 @@ const bool Game::m_run ( void )
     return true;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -314,7 +281,7 @@ void Game::m_render ( void )
     m_core->m_getD3D ()->m_getDevCon ()->DrawIndexed ( _3d_cube->m_getVerticesCount (), 0, 0 );
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -331,30 +298,11 @@ void Game::m_update ( void )
     m_universe->m_update ();
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
   }
-};
-
-
-bool& Game::m_isPaused ( void )
-{
-  return m_paused;
-};
-
-
-
-TheCore* Game::m_getCore ( void )
-{
-  return m_core;
-};
-
-
-Universe* Game::m_getUniverse ( void )
-{
-  return m_universe;
 };
 
 
@@ -452,15 +400,9 @@ void Game::m_onSuspending ( void )
                                                 "The Game is successfully suspended." );
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
   }
-};
-
-
-void Game::m_validate ( void )
-{
-  m_core->m_validate ();
 };

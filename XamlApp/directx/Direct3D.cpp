@@ -18,7 +18,7 @@ Direct3D::Direct3D ( TheCore* coreObj ) :
 
   // reserve 8 bits for red, green, blue and transparency each in unsigned normalized integer
   m_backBufferFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
-  m_backBufferCount = 3;
+  m_backBufferCount = 2;
 
   m_depthBufferFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
@@ -31,36 +31,34 @@ Direct3D::Direct3D ( TheCore* coreObj ) :
   m_videoCardMemory = 0;
   m_videoCardDescription = L"";
 
-  m_creation ();
+  m_createIndependentResources ();
+  m_createDeviceDependentResources ();
 
 };
 
 
-//Direct3D::~Direct3D ( void )
-//{
-//
-//};
-
-
-const bool& Direct3D::m_isInitialized ( void )
+void Direct3D::m_createIndependentResources ( void )
 {
-  return m_initialized;
+  try
+  {
+    //
+  }
+  catch (const std::exception& ex)
+  {
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                ex.what () );
+  }
 };
 
 
-void Direct3D::m_creation ( void )
+void Direct3D::m_createDeviceDependentResources ( void )
 {
   try
   {
 
     HRESULT hR; // functions return value
 
-
-    // clear previous creations
     m_initialized = false;
-    //m_device.Reset ();
-    //m_deviceContext.Reset ();
-
 
 
     //vSync = PointerProvider::getConfiguration ()->getSettings ().vsync;
@@ -69,7 +67,7 @@ void Direct3D::m_creation ( void )
     // flag: needed to get Direct2D interoperability with Direct3D resources
     unsigned int creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
     // additional conditioned flag: device creation with debug options
-#ifndef _NOT_DEBUGGING
+#ifdef _DEBUG
     creationFlags |= D3D11_CREATE_DEVICE_DEBUG; // creation with debug layer
 #endif // !_NOT_DEBUGGING
 
@@ -172,6 +170,12 @@ void Direct3D::m_creation ( void )
 };
 
 
+void Direct3D::m_createWindowDependentResources ( void )
+{
+
+};
+
+
 void Direct3D::m_allocation ()
 {
   try
@@ -197,19 +201,19 @@ void Direct3D::m_allocation ()
       // BufferCount and SwapChainFlags: 0 do not change the current
       // 0 for the next two parameters to adjust to the current client window size automatically
       // next parameter: set to DXGI_FORMAT_UNKNOWN to preserve the current
-      hR = m_swapChain->ResizeBuffers ( m_backBufferCount, m_core->m_outputWidth,
-                                        m_core->m_outputHeight, m_backBufferFormat, 0 );
-      if (hR == DXGI_ERROR_DEVICE_REMOVED || hR == DXGI_ERROR_DEVICE_RESET)
-      {
-        // on device lost/reset, a new device and swap chain is needed
-        m_onDeviceLost ();
-        return;
-      } else
-      {
-        if (FAILED ( hR ))
-          PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                      "Resizing the swap chain failed!" );
-      }
+      //hR = m_swapChain->ResizeBuffers ( m_backBufferCount, m_core->m_outputWidth,
+      //                                  m_core->m_outputHeight, m_backBufferFormat, 0 );
+      //if (hR == DXGI_ERROR_DEVICE_REMOVED || hR == DXGI_ERROR_DEVICE_RESET)
+      //{
+      //  // on device lost/reset, a new device and swap chain is needed
+      //  m_onDeviceLost ();
+      //  return;
+      //} else
+      //{
+      //  if (FAILED ( hR ))
+      //    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+      //                                                "Resizing the swap chain failed!" );
+      //}
 
     } else
     {
@@ -305,10 +309,11 @@ void Direct3D::m_allocation ()
 
 
 
+      //DXGI_SCALING scaling = DirectX:: displaymetrics
       // filling a swap chain description structure (the type of swap chain)
       DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-      swapChainDesc.Width = m_displayMode.Width; // back buffer size, 0: automatic adjustment from already calculated client window area
-      swapChainDesc.Height = m_displayMode.Height; // the same
+      swapChainDesc.Width = lround ( m_displayMode.Width ); // back buffer size, 0: automatic adjustment from already calculated client window area
+      swapChainDesc.Height = lround ( m_displayMode.Height ); // the same
       //if (vSync) // lock to system settings 60Hz
       //{
       //  // back buffer to front buffer (screen) draw rate
@@ -322,6 +327,7 @@ void Direct3D::m_allocation ()
       //  swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
       //}
       swapChainDesc.Format = m_backBufferFormat; // display format
+      swapChainDesc.Stereo = false;
       // number of multi samplings per pixel and image quality (1 and 0: disable multi sampling (no anti-aliasing))
       swapChainDesc.SampleDesc.Count = 1;
       swapChainDesc.SampleDesc.Quality = 0;
@@ -330,16 +336,17 @@ void Direct3D::m_allocation ()
       //swapChainDesc.OutputWindow = core->getHandle (); // handle to main window
       //swapChainDesc.Windowed = true; // recommendation: windowed creation and switch to full screen
       // flip (in windowed mode: blit) and discard the content of back buffer after presentation
-      swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+      swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+      swapChainDesc.Flags = 0;
       //swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH; // allow switching the display mode (advanced)
       //swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED; // scan-line drawing
-      swapChainDesc.Scaling = DXGI_SCALING_ASPECT_RATIO_STRETCH; // image size adjustment to back buffer resolution
+      swapChainDesc.Scaling = DXGI_SCALING_STRETCH; // image size adjustment to back buffer resolution
       swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
 
       winrt::com_ptr<IDXGISwapChain1> swapChain;
 
       // swap chain creation
-      hR = dxgiFactory->CreateSwapChainForCoreWindow ( m_device.get (), m_core->m_appWindow, &swapChainDesc, nullptr, swapChain.put () );
+      hR = dxgiFactory->CreateSwapChainForComposition ( m_device.get (), &swapChainDesc, nullptr, swapChain.put () );
       if (FAILED ( hR ))
       {
         PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -354,7 +361,32 @@ void Direct3D::m_allocation ()
         return;
       }
 
-    }
+
+
+      //m_core->m_swapChainPanel->Dispatcher ().
+      //  RunAsync ( winrt::Windows::UI::Core::CoreDispatcherPriority::High,
+      //             winrt::Windows::UI::Core::DispatchedHandler
+      //             ( [this]()
+      //               {
+      //                 winrt::com_ptr<ISwapChainPanelNative> panelNative;
+      //                 HRESULT hR = reinterpret_cast<IUnknown*>(m_core->m_swapChainPanel)->QueryInterface ( IID_PPV_ARGS ( panelNative.put () ) );
+      //                 if (FAILED ( hR ))
+      //                 {
+      //                   PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+      //                                                               "Acquiring backing native interface of swap chain panel failed!" );
+      //                 } else
+      //                 {
+      //                   hR = panelNative->SetSwapChain ( m_swapChain.get () );
+      //                   if (FAILED ( hR ))
+      //                   {
+      //                     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+      //                                                                 "Acquiring backing native interface of swap chain panel failed!" );
+      //                   }
+      //                 }
+
+      //               } ) );
+
+
 
 
 
@@ -363,165 +395,167 @@ void Direct3D::m_allocation ()
     // the zero-th buffer is accessible, since already created using flip discarding effect.
     // second parameter: interface type (most cases 2D- texture)
     // the last parameter returns a pointer to the actual back buffer
-    winrt::com_ptr<ID3D11Texture2D> rtBuffer; // render target view buffer
-    hR = m_swapChain->GetBuffer ( 0, IID_PPV_ARGS ( &rtBuffer ) );
-    if (FAILED ( hR ))
-    {
-      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "Acquiring the back buffer failed!" );
-      return;
+      winrt::com_ptr<ID3D11Texture2D> rtBuffer; // render target view buffer
+      hR = m_swapChain->GetBuffer ( 0, IID_PPV_ARGS ( &rtBuffer ) );
+      if (FAILED ( hR ))
+      {
+        PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                    "Acquiring the back buffer failed!" );
+        return;
+      }
+
+      // render target view creation (attach the obtained back buffer to swap chain)
+      // first parameter: the resource for which the render target is created for
+      // second parameter describes data type of the specified resource (mipmap but 0 for now)
+      // the last parameter returns a pointer to the created render target view
+      hR = m_device->CreateRenderTargetView1 ( rtBuffer.get (), nullptr,
+                                               m_renderTview.put () );
+      if (FAILED ( hR ))
+      {
+        PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                    "Creation of render target view failed!" );
+        return;
+      }
+
+
+
+      // depth-stencil buffer creation
+      // depth buffer purpose: to render polygons properly in 3D space
+      // stencil buffer purpose: to achieve effects such as motion blur, volumetric shadows etc.
+      CD3D11_TEXTURE2D_DESC depthBufferDesc;
+      //rtBuffer->GetDesc ( &depthBufferDesc ); // retrieves the back buffer description and fill
+      depthBufferDesc.Format = m_depthBufferFormat; // 24 bits for depth and 8 bits for stencil
+      depthBufferDesc.Width = lround ( m_displayMode.Width );
+      depthBufferDesc.Height = lround ( m_displayMode.Height );
+      depthBufferDesc.MipLevels = 1;
+      depthBufferDesc.ArraySize = 1;
+      depthBufferDesc.SampleDesc.Count = 1; // multi-sampling (anti-aliasing) match to settings of render target
+      depthBufferDesc.SampleDesc.Quality = 0;
+      depthBufferDesc.Usage = D3D11_USAGE_DEFAULT; // value: only GPU will be reading and writing to the resource
+      depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL; // how to bind to the different pipeline stages
+      depthBufferDesc.CPUAccessFlags = 0;
+      depthBufferDesc.MiscFlags = 0;
+
+      // texture creation:
+      // the second parameter: pointer to initial data (zero for any data, since depth-stencil buffer)
+      // note texture 2d function: sorted and rasterized polygons are just coloured pixels in 2d representation
+      hR = m_device->CreateTexture2D ( &depthBufferDesc, nullptr, m_depthSbuffer.put () );
+      //hR = dsBuffer->QueryInterface ( __uuidof(IDXGISurface1), &dsSurface );
+      if (FAILED ( hR ))
+      {
+        PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                    "Creation of depth-stencil buffer failed!" );
+        return;
+      }
+
+
+
+      // depth-stencil state description
+      // to control the depth test and its type, that Direct3D performs for each pixel
+      D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
+      depthStencilDesc.DepthEnable = true;
+      depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+      depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+      depthStencilDesc.StencilEnable = true;
+      depthStencilDesc.StencilReadMask = 0xFF;
+      depthStencilDesc.StencilWriteMask = 0xFF;
+      // stencil operations (if pixel is front facing)
+      depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+      depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+      depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+      depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+      // stencil operations (if pixel is front facing)
+      depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+      depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+      depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+      depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+      // depth stencil state creation
+      hR = m_device->CreateDepthStencilState ( &depthStencilDesc, m_depthSstate.put () );
+      if (FAILED ( hR ))
+      {
+        PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                    "Creation of depth-stencil state failed!" );
+        return;
+      }
+      // set the active depth stencil state
+      m_deviceContext->OMSetDepthStencilState ( m_depthSstate.get (), 1 );
+
+
+
+      // depth-stencil view description
+      // purpose: so the Direct3D use the depth buffer as a depth stencil texture.
+      D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
+      depthStencilViewDesc.Format = m_depthBufferFormat;
+      depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+      depthStencilViewDesc.Flags = 0;
+      depthStencilViewDesc.Texture2D.MipSlice = 0;
+      // depth-stencil view creation
+      // the second parameter: zero to access the mipmap level 0
+      hR = m_device->CreateDepthStencilView ( m_depthSbuffer.get (), &depthStencilViewDesc, m_depthSview.put () );
+      if (FAILED ( hR ))
+      {
+        PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                    "Creation the depth-stencil view failed!" );
+        return;
+      }
+
+
+
+      // binding render target view and depth-stencil view to output render pipeline (for now one render target view)
+      // purpose: rendered graphics by the pipeline will be drawn to the back buffer.
+      // second parameter: pointer to first element of a list of render target view pointers
+      //m_deviceContext->OMSetRenderTargets ( 1, m_renderTview.put (), m_depthSview.get () );
+      ID3D11RenderTargetView* const targets [1] = { m_renderTview.get () };
+      m_deviceContext->OMSetRenderTargets ( 1, targets, m_depthSview.get () );
+
+
+
+      // rasterizer description (determines how and which polygons is to be rendered)
+      // for example: render scenes in wireframe mode, draw both front and back faces of polygons
+      // note that by default DirectX creates one rasterizer the same as below, on which developers have no control.
+      D3D11_RASTERIZER_DESC rasterizerDesc;
+      rasterizerDesc.AntialiasedLineEnable = false;
+      rasterizerDesc.CullMode = D3D11_CULL_BACK;
+      rasterizerDesc.DepthBias = 0;
+      rasterizerDesc.DepthBiasClamp = 0.0f;
+      rasterizerDesc.DepthClipEnable = true;
+      rasterizerDesc.FillMode = D3D11_FILL_SOLID;
+      rasterizerDesc.FrontCounterClockwise = false;
+      rasterizerDesc.MultisampleEnable = false;
+      rasterizerDesc.ScissorEnable = false;
+      rasterizerDesc.SlopeScaledDepthBias = 0.0f;
+      // rasterizer creation
+      hR = m_device->CreateRasterizerState ( &rasterizerDesc, m_rasterizerState.put () );
+      if (FAILED ( hR ))
+      {
+        PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                    "Creation the rasterizer state failed!" );
+        return;
+      }
+      // set the active rasterizer state
+      m_deviceContext->RSSetState ( m_rasterizerState.get () );
+
+
+
+      // viewport structure: set the viewport to entire back buffer (what area should be rendered to)
+      // with other words: so Direct3D can map clip space coordinates to the render target space
+      D3D11_VIEWPORT viewPort;
+      viewPort.Width = float ( m_displayMode.Width );
+      viewPort.Height = float ( m_displayMode.Height );
+      viewPort.MinDepth = 0.0f; // minimum and maximum depth buffer values
+      viewPort.MaxDepth = 1.0f;
+      viewPort.TopLeftX = 0; // first four integers: viewport rectangle (relative to client window rectangle)
+      viewPort.TopLeftY = 0;
+      // setting the viewport
+      // the second parameter is a pointer to an array of viewports
+      m_deviceContext->RSSetViewports ( 1, &viewPort );
+
+
+
+      m_allocated = true;
+
     }
-
-    // render target view creation (attach the obtained back buffer to swap chain)
-    // first parameter: the resource for which the render target is created for
-    // second parameter describes data type of the specified resource (mipmap but 0 for now)
-    // the last parameter returns a pointer to the created render target view
-    hR = m_device->CreateRenderTargetView ( rtBuffer.get (), nullptr,
-                                            m_renderTview.put () );
-    if (FAILED ( hR ))
-    {
-      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "Creation of render target view failed!" );
-      return;
-    }
-
-
-
-    // depth-stencil buffer creation
-    // depth buffer purpose: to render polygons properly in 3D space
-    // stencil buffer purpose: to achieve effects such as motion blur, volumetric shadows etc.
-    CD3D11_TEXTURE2D_DESC depthBufferDesc;
-    //rtBuffer->GetDesc ( &depthBufferDesc ); // retrieves the back buffer description and fill
-    depthBufferDesc.Format = m_depthBufferFormat; // 24 bits for depth and 8 bits for stencil
-    depthBufferDesc.Width = m_displayMode.Width;
-    depthBufferDesc.Height = m_displayMode.Height;
-    depthBufferDesc.MipLevels = 1;
-    depthBufferDesc.ArraySize = 1;
-    depthBufferDesc.SampleDesc.Count = 1; // multi-sampling (anti-aliasing) match to settings of render target
-    depthBufferDesc.SampleDesc.Quality = 0;
-    depthBufferDesc.Usage = D3D11_USAGE_DEFAULT; // value: only GPU will be reading and writing to the resource
-    depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL; // how to bind to the different pipeline stages
-    depthBufferDesc.CPUAccessFlags = 0;
-    depthBufferDesc.MiscFlags = 0;
-
-    // texture creation:
-    // the second parameter: pointer to initial data (zero for any data, since depth-stencil buffer)
-    // note texture 2d function: sorted and rasterized polygons are just coloured pixels in 2d representation
-    hR = m_device->CreateTexture2D ( &depthBufferDesc, nullptr, m_depthSbuffer.put () );
-    //hR = dsBuffer->QueryInterface ( __uuidof(IDXGISurface1), &dsSurface );
-    if (FAILED ( hR ))
-    {
-      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "Creation of depth-stencil buffer failed!" );
-      return;
-    }
-
-
-
-    // depth-stencil state description
-    // to control the depth test and its type, that Direct3D performs for each pixel
-    D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
-    depthStencilDesc.DepthEnable = true;
-    depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-    depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-    depthStencilDesc.StencilEnable = true;
-    depthStencilDesc.StencilReadMask = 0xFF;
-    depthStencilDesc.StencilWriteMask = 0xFF;
-    // stencil operations (if pixel is front facing)
-    depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-    depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-    depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-    depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-    // stencil operations (if pixel is front facing)
-    depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-    depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
-    depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-    depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-
-    // depth stencil state creation
-    hR = m_device->CreateDepthStencilState ( &depthStencilDesc, m_depthSstate.put () );
-    if (FAILED ( hR ))
-    {
-      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "Creation of depth-stencil state failed!" );
-      return;
-    }
-    // set the active depth stencil state
-    m_deviceContext->OMSetDepthStencilState ( m_depthSstate.get (), 1 );
-
-
-
-    // depth-stencil view description
-    // purpose: so the Direct3D use the depth buffer as a depth stencil texture.
-    D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
-    depthStencilViewDesc.Format = m_depthBufferFormat;
-    depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-    depthStencilViewDesc.Flags = 0;
-    depthStencilViewDesc.Texture2D.MipSlice = 0;
-    // depth-stencil view creation
-    // the second parameter: zero to access the mipmap level 0
-    hR = m_device->CreateDepthStencilView ( m_depthSbuffer.get (), &depthStencilViewDesc, m_depthSview.put () );
-    if (FAILED ( hR ))
-    {
-      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "Creation the depth-stencil view failed!" );
-      return;
-    }
-
-
-
-    // binding render target view and depth-stencil view to output render pipeline (for now one render target view)
-    // purpose: rendered graphics by the pipeline will be drawn to the back buffer.
-    // second parameter: pointer to first element of a list of render target view pointers
-    m_deviceContext->OMSetRenderTargets ( 1, m_renderTview.put (), m_depthSview.get () );
-
-
-
-    // rasterizer description (determines how and which polygons is to be rendered)
-    // for example: render scenes in wireframe mode, draw both front and back faces of polygons
-    // note that by default DirectX creates one rasterizer the same as below, on which developers have no control.
-    D3D11_RASTERIZER_DESC rasterizerDesc;
-    rasterizerDesc.AntialiasedLineEnable = false;
-    rasterizerDesc.CullMode = D3D11_CULL_BACK;
-    rasterizerDesc.DepthBias = 0;
-    rasterizerDesc.DepthBiasClamp = 0.0f;
-    rasterizerDesc.DepthClipEnable = true;
-    rasterizerDesc.FillMode = D3D11_FILL_SOLID;
-    rasterizerDesc.FrontCounterClockwise = false;
-    rasterizerDesc.MultisampleEnable = false;
-    rasterizerDesc.ScissorEnable = false;
-    rasterizerDesc.SlopeScaledDepthBias = 0.0f;
-    // rasterizer creation
-    hR = m_device->CreateRasterizerState ( &rasterizerDesc, m_rasterizerState.put () );
-    if (FAILED ( hR ))
-    {
-      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "Creation the rasterizer state failed!" );
-      return;
-    }
-    // set the active rasterizer state
-    m_deviceContext->RSSetState ( m_rasterizerState.get () );
-
-
-
-    // viewport structure: set the viewport to entire back buffer (what area should be rendered to)
-    // with other words: so Direct3D can map clip space coordinates to the render target space
-    D3D11_VIEWPORT viewPort;
-    viewPort.Width = float ( m_displayMode.Width );
-    viewPort.Height = float ( m_displayMode.Height );
-    viewPort.MinDepth = 0.0f; // minimum and maximum depth buffer values
-    viewPort.MaxDepth = 1.0f;
-    viewPort.TopLeftX = 0; // first four integers: viewport rectangle (relative to client window rectangle)
-    viewPort.TopLeftY = 0;
-    // setting the viewport
-    // the second parameter is a pointer to an array of viewports
-    m_deviceContext->RSSetViewports ( 1, &viewPort );
-
-
-
-    m_allocated = true;
-
-
 
     m_clearBuffers ();
 
@@ -740,7 +774,7 @@ void Direct3D::m_onDeviceLost ( void )
   //m_swapChain.Reset ();
   //m_device.Reset ();
 
-  m_creation ();
+  m_createDeviceDependentResources ();
 
 };
 
@@ -791,9 +825,18 @@ void Direct3D::m_present ( void )
                                                   "The presentation of the scene failed!" );
     }
 
+    //m_deviceContext->DiscardView1 ( m_renderTview.get (), nullptr, 0 );
+
+    //m_deviceContext->DiscardView1 ( m_depthSview.get (), nullptr, 0 );
+
     // rebind: the process is needed after each call to present, since in flip and discard mode the view targets are released.
     if (m_depthSview)
-      m_deviceContext->OMSetRenderTargets ( 1, m_renderTview.put (), m_depthSview.get () );
+    {
+      //m_deviceContext->OMSetRenderTargets ( 1, m_renderTview.put (), m_depthSview.get () );
+      ID3D11RenderTargetView* const targets [1] = { m_renderTview.get () };
+      m_deviceContext->OMSetRenderTargets ( 1, targets, m_depthSview.get () );
+    }
+
 
   }
   catch (const std::exception& ex)
@@ -801,28 +844,4 @@ void Direct3D::m_present ( void )
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
   }
-};
-
-
-const winrt::com_ptr<ID3D11Device> Direct3D::m_getDevice ( void )
-{
-  return m_device;
-};
-
-
-const winrt::com_ptr<ID3D11DeviceContext3> Direct3D::m_getDevCon ( void )
-{
-  return m_deviceContext;
-};
-
-
-const winrt::com_ptr<IDXGISwapChain3> Direct3D::m_getSwapChain ( void )
-{
-  return m_swapChain;
-};
-
-
-const DXGI_FORMAT& Direct3D::m_getBackBufferFormat ()
-{
-  return m_backBufferFormat;
 };

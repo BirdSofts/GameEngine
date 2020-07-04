@@ -24,8 +24,8 @@ Configurations::Configurations ( void ) :
 
 
     // defaults initialization:
-    m_defaults.Width = 640;
-    m_defaults.Height = 480;
+    m_defaults.Width = 800;
+    m_defaults.Height = 600;
     m_defaults.fullscreen = false;
 
     // currents initialization:

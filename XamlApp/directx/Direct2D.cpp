@@ -89,28 +89,16 @@ Direct2D::Direct2D ( TheCore* coreObj ) :
 };
 
 
-//Direct2D::~Direct2D ( void )
+//void Direct2D::m_creation ( void )
 //{
 //
 //};
-
-
-const bool& Direct2D::m_isInitialized ()
-{
-  return m_initialized;
-};
-
-
-void Direct2D::m_creation ( void )
-{
-
-};
-
-
-void Direct2D::m_allocation ( void )
-{
-
-};
+//
+//
+//void Direct2D::m_allocation ( void )
+//{
+//
+//};
 
 
 void Direct2D::m_onSuspending ( void )
@@ -149,10 +137,10 @@ void Direct2D::m_onSuspending ( void )
 };
 
 
-void Direct2D::m_validate ( void )
-{
-
-};
+//void Direct2D::m_validate ( void )
+//{
+//
+//};
 
 
 //void Direct2D::m_onDeviceLost ( void )

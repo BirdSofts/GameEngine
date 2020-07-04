@@ -18,9 +18,9 @@ class Direct3D
 {
   friend class TheCore;
 private:
-  TheCore* m_core; // pointer to the framework core
+  TheCore* m_core; // pointer to the application core
 
-  // note that this application put the power of Direct3d 10 into practice.
+  // note that this application consumes Direct3d 11 APIs.
   // to easily handle the life cycle of COM objects, they can be defined using smart pointers known as COM pointers,
   // note that each COM interface must be created in its own way.
   // the core of Direct3D is two COM objects the device and the device context:
@@ -48,7 +48,7 @@ private:
   unsigned int m_videoCardMemory; // dedicated video card memory (megabytes)
   std::wstring m_videoCardDescription; // string representing the physical adapter name
 
-  winrt::com_ptr<ID3D11RenderTargetView> m_renderTview; // render target view
+  winrt::com_ptr<ID3D11RenderTargetView1> m_renderTview; // render target view
 
   winrt::com_ptr<ID3D11Texture2D> m_depthSbuffer; // depth-stencil view buffer
   winrt::com_ptr<ID3D11DepthStencilState> m_depthSstate; // depth-stencil state
@@ -64,23 +64,26 @@ private:
   bool m_allocated; // true if resources allocation was successful
   bool m_initialized; // true if initialization was successful
 
-  void m_creation ( void ); // Direct3D device creation
+  void m_createIndependentResources ( void ); // Direct3D independent resource
+  void m_createDeviceDependentResources ( void ); // Direct3D device dependent resources
+  void m_createWindowDependentResources ( void ); // Direct3D window dependent resources
   void m_allocation (); // Direct3D resources resize/creation
-  void m_setDisplayMode ( void ); // Direct3D display mode change/adjus
+  void m_setDisplayMode ( void ); // Direct3D display mode change/adjust
   void m_onSuspending ( void ); // suspension preparation
   void m_validate ( void ); // validate the correct state of Direct3D resources
   void m_onDeviceLost ( void ); // clean and reallocate
 public:
   Direct3D ( TheCore* );
-  //~Direct3D ( void );
-  const bool& m_isInitialized ( void ); // get the initialized state
+  ~Direct3D ( void ) { /**/ };
 
   void m_clearBuffers ( void ); // clear depth-stencil buffers
   void m_present ( void ); // swapping: present the buffer chain by flipping the buffers
-  const winrt::com_ptr<ID3D11Device> m_getDevice ( void ); // get the pointer to D3D device
-  const winrt::com_ptr<ID3D11DeviceContext3> m_getDevCon ( void ); // get the pointer to D3D device context
-  const winrt::com_ptr<IDXGISwapChain3> m_getSwapChain ( void ); // get the pointer to D3D swap chain
-  const DXGI_FORMAT& m_getBackBufferFormat (); // get current format of back/depth buffers
+
+  const bool& Direct3D::m_isInitialized ( void ) { return m_initialized; }; // get the initialized state
+  const winrt::com_ptr<ID3D11Device> m_getDevice ( void ) { return m_device; }; // get the pointer to D3D device
+  const winrt::com_ptr<ID3D11DeviceContext3> m_getDevCon ( void ) { return m_deviceContext; }; // get the pointer to D3D device context
+  const winrt::com_ptr<IDXGISwapChain3> m_getSwapChain ( void ) { return m_swapChain; }; // get the pointer to D3D swap chain
+  const DXGI_FORMAT& m_getBackBufferFormat () { return m_backBufferFormat; }; // get current format of back/depth buffers
 };
 
 

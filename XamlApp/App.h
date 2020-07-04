@@ -12,6 +12,7 @@
 
 #include "App.xaml.g.h"
 #include "MainPage.h"
+#include "common/Utilities.h"
 
 
 namespace winrt::GameEngine::implementation
@@ -23,13 +24,20 @@ namespace winrt::GameEngine::implementation
 
     static bool failure; // true if exiting with failure
 
-    void OnSuspending ( IInspectable const&, Windows::ApplicationModel::SuspendingEventArgs const& );
-    void OnNavigationFailed ( IInspectable const&, Windows::UI::Xaml::Navigation::NavigationFailedEventArgs const& );
+    void OnSuspending ( IInspectable const& sender,
+                        Windows::ApplicationModel::SuspendingEventArgs const& e ); // on suspension
+
+    void OnResuming ( IInspectable const& sender,
+                      IInspectable const& args ); // when returning from a suspended state
+    void OnNavigationFailed ( IInspectable const& sender,
+                              Windows::UI::Xaml::Navigation::NavigationFailedEventArgs const& e ); // on ZAML failures
 
   public:
-    App ();
+    static bool exitedWith ( void ); // application exit state provider
 
-    void OnLaunched ( Windows::ApplicationModel::Activation::LaunchActivatedEventArgs const& );
+    App (); // first to run (class constructor plus application initialization)
+
+    void OnLaunched ( Windows::ApplicationModel::Activation::LaunchActivatedEventArgs const& e ); // after initialization
   };
 }
 

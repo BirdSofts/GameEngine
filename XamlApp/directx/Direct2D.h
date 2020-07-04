@@ -20,7 +20,7 @@ class Direct2D
   friend class TheCore;
   friend class Direct3D;
 private:
-  TheCore* m_core; // pointer to the framework core
+  TheCore* m_core; // pointer to the application core
 
   winrt::com_ptr<IDWriteFactory1> m_writeFactory; // DirectWrite factory
   winrt::com_ptr<ID2D1Factory1> m_factory; // Direct2D factory
@@ -44,17 +44,18 @@ private:
 
   void m_allocateResources ( void ); // Direct2D resources resize/creation
   void m_initializeTextFormats ( void ); // different formats initialization
-  void m_creation ( void ); // Direct2D device creation
-  void m_allocation ( void ); // Direct2D resources resize/creation
+  //void m_creation ( void ); // Direct2D device creation
+  //void m_allocation ( void ); // Direct2D resources resize/creation
   void m_onSuspending ( void ); // suspension preparation
-  void m_validate ( void ); // validate the correct state of Direct2D resources
+  //void m_validate ( void ); // validate the correct state of Direct2D resources
   //void m_onDeviceLost ( void ); // clean and reallocate
 public:
   Direct2D ( TheCore* ); // creation of the device
-  //~Direct2D ( void );
-  const bool& m_isInitialized (); // get the initialized state
+  //Direct2D::~Direct2D ( void ) { /**/ };
 
   void m_debugInfos ( void ); // FPS infos plus logs to screen
+
+  const bool& m_isInitialized () { return m_initialized; }; // get the initialized state
 };
 
 

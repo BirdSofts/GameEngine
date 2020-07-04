@@ -11,9 +11,10 @@
 #include "Shared.h"
 
 
-TheCore::TheCore ( ::IUnknown* window, const int& width, const int& height ) :
+TheCore::TheCore ( const int& width, const int& height ) :
+  m_swapChainPanel ( nullptr ), m_panelSize ( .0f, .0f ),
   m_timer ( nullptr ), m_FPS ( 0 ), m_milliSPF ( 0 ),
-  m_appWindow ( window ), m_outputWidth ( width ), m_outputHeight ( height ),
+  m_outputWidth ( width ), m_outputHeight ( height ),
   m_D3D ( nullptr ), m_D2D ( nullptr ),
   m_debug ( false ), m_initialized ( false )
 {
@@ -29,17 +30,7 @@ TheCore::TheCore ( ::IUnknown* window, const int& width, const int& height ) :
       return;
     }
 
-    //// application window instantiation
-    //appWindow = new (std::nothrow) Window ( this );
-    //if (!appWindow->isInitialized ())
-    //{
-    //  PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-    //                                            "Window initialization failed!" );
-    //  return;
-    //}
-    //appHandle = appWindow->getHandle (); // handle to the instantiated window
-
-    // Direct3D 10 instantiation
+    // Direct3D instantiation
     m_D3D = new (std::nothrow) Direct3D ( this );
     if (!m_D3D->m_isInitialized ())
     {
@@ -48,7 +39,7 @@ TheCore::TheCore ( ::IUnknown* window, const int& width, const int& height ) :
       return;
     }
 
-    // Direct2D 10 instantiation
+    // Direct2D instantiation
     m_D2D = new (std::nothrow) Direct2D ( this );
     if (!m_D2D->m_isInitialized ())
     {
@@ -69,54 +60,6 @@ TheCore::TheCore ( ::IUnknown* window, const int& width, const int& height ) :
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
   }
-};
-
-
-//TheCore::~TheCore ( void )
-//{
-//
-//};
-
-
-const bool& TheCore::m_isInitialized ( void )
-{
-  return m_initialized;
-};
-
-
-const bool& TheCore::m_isDebugging ( void )
-{
-  return m_debug;
-};
-
-
-const ::IUnknown* TheCore::m_getWindow ( void )
-{
-  return m_appWindow;
-};
-
-
-Timer* TheCore::m_getTimer ( void )
-{
-  return m_timer;
-};
-
-
-Direct3D* TheCore::m_getD3D ( void )
-{
-  return m_D3D;
-};
-
-
-Direct2D* TheCore::m_getD2D ( void )
-{
-  return m_D2D;
-};
-
-
-const int& TheCore::m_getFPS ( void )
-{
-  return m_FPS;
 };
 
 
@@ -158,6 +101,11 @@ void TheCore::m_frameStatistics ( void )
           << " - Dedicated memory: " << m_D3D->m_videoCardMemory << "MB" << std::endl
           << "^_^ - FPS: " << m_FPS << L" - mSPF: " << m_milliSPF << std::endl;
 
+        if (m_D2D->m_textLayoutFPS)
+        {
+          m_D2D->m_textLayoutFPS.detach ();
+        }
+
         // before rendering a text to a bitmap: the creation of the text layout
         hR = m_D2D->m_writeFactory->CreateTextLayout ( outFPS.str ().c_str (), (UINT32) outFPS.str ().size (),
                                                        m_D2D->m_textFormatFPS.get (), (float) m_outputWidth,
@@ -167,6 +115,11 @@ void TheCore::m_frameStatistics ( void )
           PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                       "The Creation of text layout for FPS information failed!" );
           return;
+        }
+
+        if (m_D2D->m_textLayoutLogs)
+        {
+          m_D2D->m_textLayoutLogs.detach ();
         }
 
         std::wstring out { L"Last event: " };
@@ -238,6 +191,55 @@ void TheCore::m_setResolution ( const bool& prm, const int& width, const int& he
                                                 ex.what () );
   }
 };
+
+
+void TheCore::m_setSwapChainPanel ( winrt::Windows::UI::Xaml::Controls::SwapChainPanel* panel )
+{
+  try
+  {
+
+    HRESULT hR;
+
+    winrt::Windows::Graphics::Display::DisplayInformation currrent =
+      winrt::Windows::Graphics::Display::DisplayInformation::GetForCurrentView ();
+
+    m_swapChainPanel = panel;
+    m_panelSize = panel->ActualSize ();
+
+    winrt::com_ptr<ISwapChainPanelNative> panelNative;
+    panelNative = m_swapChainPanel->as<ISwapChainPanelNative> ();
+    hR = panelNative->SetSwapChain ( m_D3D->m_swapChain.get () );
+    if (FAILED ( hR ))
+    {
+      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Acquiring backing native interface of swap chain panel failed!" );
+    }
+
+    //m_D3D->m_allocation ();
+    //if (!m_D3D->m_allocated)
+    //  PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
+    //                                              "Allocation of Direct3D resources failed." );
+
+    m_D3D->m_present ();
+
+    //winrt::com_ptr<ISwapChainPanelNative> panelNative;
+    //hR = reinterpret_cast<IUnknown*>(m_swapChainPanel)->QueryInterface ( __uuidof(ISwapChainPanelNative), panelNative.put_void () );
+    //if (FAILED ( hR ))
+    //{
+    //  PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+    //                                              "Acquiring backing native interface of swap chain panel failed!" );
+    //} else
+    //{
+    //  hR = panelNative->SetSwapChain ( m_D3D->m_swapChain.get () );
+
+
+  }
+  catch (const std::exception& ex)
+  {
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                ex.what () );
+  }
+}
 
 
 void TheCore::m_resizeResources ( const bool& displayMode )
@@ -344,9 +346,9 @@ void TheCore::m_onSuspending ( void )
       m_D3D->m_onSuspending ();
     }
 
-    if (m_appWindow)
+    if (m_swapChainPanel)
     {
-      m_appWindow = nullptr;
+      m_swapChainPanel = nullptr;
     }
 
     // timer application destruction
@@ -368,7 +370,7 @@ void TheCore::m_onSuspending ( void )
 void TheCore::m_validate ( void )
 {
   m_D3D->m_validate ();
-  m_D2D->m_validate ();
+  //m_D2D->m_validate ();
 };
 
 
