@@ -37,12 +37,13 @@ protected:
 
   bool m_allocate ( tType*, unsigned long*, unsigned long& ); // object model resources allocation
 public:
-  Model ( ID3D11Device*, ID3D11DeviceContext*, std::string, bool );
+  Model ( ID3D11Device* dev, ID3D11DeviceContext* devC, std::string entry, bool rewrite );
   //~Model ( void );
 
-  ID3D11Buffer** const m_getVertexBuffer ( void ); // vertex buffer
-  ID3D11Buffer* const m_getIndexBuffer ( void ); // index buffer
   void m_release ( void ); // release the object model
+
+  ID3D11Buffer** const m_getVertexBuffer ( void ) { return &m_vertexBuffer; }; // get pointer to vertex buffer
+  ID3D11Buffer* const m_getIndexBuffer ( void ) { return m_indexBuffer; }; // get pointer to index buffer
 };
 void ModelClassLinker ( void ); // don't call this function: solution for linker error, when using templates.
 
@@ -56,10 +57,10 @@ private:
 
   bool m_allocated; // true after successful resource allocation
 public:
-  Triangles ( ID3D11Device*, ID3D11DeviceContext* );
+  Triangles ( ID3D11Device* dev, ID3D11DeviceContext* devC );
   //~Triangles ( void );
 
-  const unsigned long& m_getVerticesCount ( void ); // get vertices count
+  const unsigned long& m_getVerticesCount ( void ) { return m_verticesCount; }; // get vertices count
 };
 
 
@@ -75,11 +76,12 @@ private:
 
   bool m_allocated; // true after successful resource allocation
 public:
-  Line ( ID3D11Device*, ID3D11DeviceContext* );
+  Line ( ID3D11Device* dev, ID3D11DeviceContext* devC );
   //~Line ( void );
 
   void m_update ( void );
-  const unsigned long& m_getVerticesCount ( void ); // get vertices count
+
+  const unsigned long& m_getVerticesCount ( void ) { return m_verticesCount; }; // get vertices count
 };
 
 
@@ -92,10 +94,10 @@ private:
 
   bool m_allocated; // true after successful resource allocation
 public:
-  TexturedTriangles ( ID3D11Device*, ID3D11DeviceContext* );
+  TexturedTriangles ( ID3D11Device* dev, ID3D11DeviceContext* devC );
   //~TexturedTriangles ( void );
 
-  const unsigned long& m_getVerticesCount ( void ); // get vertices count
+  const unsigned long& m_getVerticesCount ( void ) { return m_verticesCount; }; // get vertices count
 };
 
 
@@ -108,10 +110,10 @@ private:
 
   bool m_allocated; // true after successful resource allocation
 public:
-  LightedTriangle ( ID3D11Device*, ID3D11DeviceContext* );
+  LightedTriangle ( ID3D11Device* dev, ID3D11DeviceContext* devC );
   //~LightedTriangle ( void );
 
-  const unsigned long& m_getVerticesCount ( void ); // get vertices count
+  const unsigned long& m_getVerticesCount ( void ) { return m_verticesCount; }; // get vertices count
 };
 
 
@@ -124,10 +126,10 @@ private:
 
   bool m_allocated; // true after successful resource allocation
 public:
-  Cube ( ID3D11Device*, ID3D11DeviceContext* );
+  Cube ( ID3D11Device* dev, ID3D11DeviceContext* devC );
   //~Cube ( void );
 
-  const unsigned long& m_getVerticesCount ( void ); // get vertices count
+  const unsigned long& m_getVerticesCount ( void ) { return m_verticesCount; }; // get vertices count
 };
 
 

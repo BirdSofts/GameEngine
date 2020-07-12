@@ -19,13 +19,17 @@ TheException::TheException ( void ) :
 {
 
 };
+
+
+//TheException::~TheException ( void )
+//{
+//
+//};
+
+
 void TheException::m_set ( const char* prm )
 {
   m_expected = prm;
-};
-const char* TheException::what ( void ) const throw()
-{
-  return m_expected;
 };
 
 
@@ -47,7 +51,7 @@ std::string Converter::strConverter ( const winrt::hstring& hStr )
     return result;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -71,7 +75,7 @@ std::string Converter::strConverter ( const std::wstring& strW )
     return result;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -98,7 +102,7 @@ std::wstring Converter::strConverter ( const std::string& str )
     return result;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );

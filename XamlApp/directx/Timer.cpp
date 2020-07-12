@@ -52,48 +52,39 @@ Timer::Timer ( void ) :
       m_secondsPerCount = 0.0;
 
 
-      m_initialized = true;
-      PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
-                                                  "The high-precision timer is successfully instantiated." );
 
-    } else
-    {
-      m_initialized = false;
-      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "The high-precision timer instantiation failed!" );
-    }
+      long long frequency { 0 };
+      // Windows high performance timer: 'QueryPerformanceFrequency' 'QueryPerformanceCounter':
+      // note that, if the system doesn't support it, C++ 11 standard chrono is the replacement.
+      // -- QueryPerformanceFrequency:
+      // current frequency of the performance counter (the counts per second of the performance timer),
+      // which is a fixed value at system boot and consistent across all processors.
+      // -- QueryPerformanceCounter:
+      // the amounts of counts per seconds consisted of a high-precision (<1μs) time stamp,
+      // usable in time-interval measurements.
+      // note that the function returns zero if an error is occurred.
+      // Todo implement C++ standard chrono
+      if (QueryPerformanceFrequency ( (LARGE_INTEGER*) &frequency ))
+      {
+        // once calculated seconds per count (reciprocal of the number of counts per seconds)
+        // TimeValueInSeconds = ActualTimeValue / Frequency
+        m_secondsPerCount = double ( 1 ) / frequency;
 
+        m_initialized = true;
+        PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
+                                                    "High-precision timer is successfully instantiated." );
 
-    long long frequency { 0 };
-    // Windows high performance timer: 'QueryPerformanceFrequency' 'QueryPerformanceCounter':
-    // note that, if the system doesn't support it, C++ 11 standard chrono is the replacement.
-    // -- QueryPerformanceFrequency:
-    // current frequency of the performance counter (the counts per second of the performance timer),
-    // which is a fixed value at system boot and consistent across all processors.
-    // -- QueryPerformanceCounter:
-    // the amounts of counts per seconds consisted of a high-precision (<1μs) time stamp,
-    // usable in time-interval measurements.
-    // note that the function returns zero if an error is occurred.
-    // Todo implement C++ standard chrono
-    if (QueryPerformanceFrequency ( (LARGE_INTEGER*) &frequency ))
-    {
-      // once calculated seconds per count (reciprocal of the number of counts per seconds)
-      // TimeValueInSeconds = ActualTimeValue / Frequency
-      m_secondsPerCount = double ( 1 ) / frequency;
+      } else
+      {
+        m_initialized = false;
+        PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                    "High-precision timer instantiation failed!" );
+      }
 
-      m_initialized = true;
-      PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
-                                                  "The high-precision timer is successfully instantiated." );
-
-    } else
-    {
-      m_initialized = false;
-      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "The high-precision timer instantiation failed!" );
     }
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -105,12 +96,6 @@ Timer::Timer ( void ) :
 //{
 //
 //};
-
-
-const bool& Timer::m_isInitialized ( void )
-{
-  return m_initialized;
-};
 
 
 void Timer::m_tick ( void )
@@ -143,10 +128,27 @@ void Timer::m_tick ( void )
 
       uint64_t temp { m_lastTime };
       uint64_t tempCurrent { m_lastTime };
+      uint16_t sleepFactor { 0 };
 
       // ToDo: implement the timer at extend and clean its class from unneeded stuff
       // for the time being, the algorithm is written dirty, with the purpose of consuming less energy... :)
       // yep, the sake of environment is still streaming in my blood! :)
+
+      if (m_leftOver > 10000000)
+        sleepFactor = 8000;
+      else
+        if (m_leftOver > 8000000)
+          sleepFactor = 6000;
+        else
+          if (m_leftOver > 6000000)
+            sleepFactor = 4000;
+          else
+            if (m_leftOver > 4000000)
+              sleepFactor = 2000;
+            else
+              if (m_leftOver > 2000000)
+                sleepFactor = 1000;
+
       while (m_leftOver >= 0)
       {
 
@@ -156,7 +158,7 @@ void Timer::m_tick ( void )
         m_totalTicks += m_elapsedTicks;
         m_leftOver -= temp;
 
-        std::this_thread::sleep_for ( std::chrono::milliseconds ( 10 ) );
+        std::this_thread::sleep_for ( std::chrono::microseconds ( sleepFactor ) );
       }
 
       m_frameCounter++;
@@ -184,7 +186,7 @@ void Timer::m_tick ( void )
     }
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -242,18 +244,12 @@ void Timer::m_event ( const std::string& type )
     }
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
   }
 };
-
-
-//const bool& Timer::m_isPaused ( void )
-//{
-//  return m_paused;
-//};
 
 
 const double Timer::m_getTotalTime ( void )
@@ -267,10 +263,4 @@ const double Timer::m_getTotalTime ( void )
   temp = (m_currentFrameTime - m_startTime - m_totalTimeIdle) * m_secondsPerCount;
   return temp;
 
-};
-
-
-const double& Timer::m_getDeltaTime ( void )
-{
-  return m_deltaTime;
 };

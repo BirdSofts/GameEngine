@@ -71,14 +71,14 @@ unsigned int VertexTexDiffuseL::read ( const char* path, VertexL** vertices )
 };
 
 
-void VertexTexDiffuseL::write ( VertexL* /*data*/, unsigned int& /*count*/ )
-{
-  try
-  {
-
-  }
-  catch (const std::exception&)
-  {
-
-  }
-};
+//void VertexTexDiffuseL::write ( VertexL* /*data*/, unsigned int& /*count*/ )
+//{
+//  try
+//  {
+//
+//  }
+//  catch (const std::exception&)
+//  {
+//
+//  }
+//};

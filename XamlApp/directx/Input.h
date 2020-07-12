@@ -24,8 +24,8 @@ private:
 public:
   Input ( void );
   //~Input ( void );
-  const bool& isInitialized ( void ); // get the initialized state
 
+  const bool& Input::isInitialized ( void ) { return initialized; }; // get the initialized state
 };
 
 

@@ -112,7 +112,7 @@ void Shader::m_loadCompiled ( std::string& fileName, Buffer* csoBuffer )
     }
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () + m_entryPoint );
@@ -181,7 +181,7 @@ bool Shader::m_initializeCompiled ( std::string* filePaths, D3D11_INPUT_ELEMENT_
     return true;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () + m_entryPoint );
@@ -230,7 +230,7 @@ bool Shader::m_compile ( LPCWSTR* files )
       if (m_errorMsg)
       {
         PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-          (char*) m_errorMsg->GetBufferPointer ()
+                                                    (char*) m_errorMsg->GetBufferPointer ()
                                                     + m_entryPoint );
         errorStr = (char*) m_errorMsg->GetBufferPointer ();
         m_errorMsg->Release ();
@@ -242,7 +242,7 @@ bool Shader::m_compile ( LPCWSTR* files )
     return true;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () + m_entryPoint );
@@ -251,8 +251,7 @@ bool Shader::m_compile ( LPCWSTR* files )
 };
 
 
-bool Shader::m_initialize ( D3D11_INPUT_ELEMENT_DESC* polygonLayout,
-                            unsigned int elmCount,
+bool Shader::m_initialize ( D3D11_INPUT_ELEMENT_DESC* polygonLayout, unsigned int elmCount,
                             D3D11_SAMPLER_DESC* sampler )
 {
   try
@@ -313,36 +312,12 @@ bool Shader::m_initialize ( D3D11_INPUT_ELEMENT_DESC* polygonLayout,
     return true;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () + m_entryPoint );
     return false;
   }
-};
-
-
-ID3D11VertexShader* const Shader::m_getVertexShader ( void )
-{
-  return m_vertexShader;
-};
-
-
-ID3D11PixelShader* const Shader::m_getPixelShader ( void )
-{
-  return m_pixelShader;
-};
-
-
-ID3D11InputLayout* const Shader::m_getInputLayout ( void )
-{
-  return m_inputLayout;
-};
-
-
-ID3D11SamplerState** const Shader::m_getSamplerState ( void )
-{
-  return &m_samplerState;
 };
 
 
@@ -375,7 +350,7 @@ void Shader::m_release ( void )
     m_device = nullptr;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -421,7 +396,7 @@ ShaderColour::ShaderColour ( ID3D11Device* dev ) :
     m_initialized = m_initializeCompiled ( m_files, m_polygonLayoutDesc, m_elementsCount );
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -433,12 +408,6 @@ ShaderColour::ShaderColour ( ID3D11Device* dev ) :
 //{
 //
 //};
-
-
-const bool& ShaderColour::m_isInitialized ( void )
-{
-  return m_initialized;
-};
 
 
 ShaderTexture::ShaderTexture ( ID3D11Device* dev ) :
@@ -493,7 +462,7 @@ ShaderTexture::ShaderTexture ( ID3D11Device* dev ) :
       m_initialized = m_initialize ( m_polygonLayoutDesc, m_elementsCount, &m_samplerDesc );
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -505,12 +474,6 @@ ShaderTexture::ShaderTexture ( ID3D11Device* dev ) :
 //{
 //
 //};
-
-
-const bool& ShaderTexture::m_isInitialized ( void )
-{
-  return m_initialized;
-};
 
 
 ShaderDiffuseLight::ShaderDiffuseLight ( ID3D11Device* dev ) :
@@ -566,7 +529,7 @@ ShaderDiffuseLight::ShaderDiffuseLight ( ID3D11Device* dev ) :
       m_initialized = m_initialize ( m_polygonLayoutDesc, m_elementsCount, &m_samplerDesc );
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -578,9 +541,3 @@ ShaderDiffuseLight::ShaderDiffuseLight ( ID3D11Device* dev ) :
 //{
 //
 //};
-
-
-const bool& ShaderDiffuseLight::m_isInitialized ( void )
-{
-  return m_initialized;
-};

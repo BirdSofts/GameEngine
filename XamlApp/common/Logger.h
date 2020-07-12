@@ -26,7 +26,8 @@ struct LogEntity
 
   LogEntity ( void );
   //~LogEntity ( void );
-  LogEntity operator=( LogEntity& );
+
+  LogEntity operator=( LogEntity& logObj ); // assignment
 };
 
 
@@ -41,10 +42,11 @@ private:
 public:
   ToFile ( void );
   //~ToFile ( void );
-  const bool& m_isReady ( void );
 
-  void m_close ( void );
-  bool m_write ( const std::string& );
+  void m_close ( void ); // close the resource
+  bool m_write ( const std::string& line ); // construction of a log entity
+
+  const bool& ToFile::m_isReady ( void ) { return m_ready; }; // true if ready to write
 };
 
 
@@ -68,21 +70,25 @@ private:
 
   int m_state;
 
-  static unsigned int m_counter;
+  static unsigned int m_counter; // log counter
 public:
   Logger ( void );
   //~Logger ( void );
 
-  void m_push ( const logType&, const std::thread::id&,
-                const std::string&, const std::string& );
-  const LogEntity& m_getLog ( void );
-  const std::string& m_getLogRawStr ( void );
-  void m_shutdown ( void );
+  void m_push ( const logType& t, const std::thread::id& tId,
+                const std::string& tName, const std::string& msg ); // push a log entity into list
+  void m_shutdown ( void ); // close the resource
+
+  const LogEntity& m_getLog ( void ) { return m_theLog; }; // get a log entity as structure
+  const std::string& m_getLogRawStr ( void ) { return m_theLogRawStr; }; // get a log entity as a raw line
 
   template<class tType>
   friend void loggerEngine ( Logger<tType>* ); // write engine
 };
 void LoggerClassLinker ( void ); // don't call this function: solution for linker error, when using templates.
+
+
+template<class tType> unsigned int Logger<tType>::m_counter { 0 };
 
 
 #endif // !LOGGER_H

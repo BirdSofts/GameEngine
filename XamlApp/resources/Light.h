@@ -25,12 +25,13 @@ private:
 public:
   DiffuseLight ( void );
   //~DiffuseLight ( void );
-  const bool& m_isInitialized ( void ); // get the initialized state
 
-  void m_setColour ( const float* ); // set diffuse light colour
-  void m_setDirection ( const float* ); // set diffuse light direction
-  DirectX::XMFLOAT4 m_getColour ( void ); // get diffuse light colour
-  DirectX::XMFLOAT3 m_getDirection ( void ); // get diffuse light direction
+  void m_setColour ( const float* colour ); // set diffuse light colour
+  void m_setDirection ( const float* direction ); // set diffuse light direction
+
+  const bool& m_isInitialized ( void ) { return m_initialized; };; // get the initialized state
+  DirectX::XMFLOAT4 m_getColour ( void ) { return m_diffuseColour; }; // get diffuse light colour
+  DirectX::XMFLOAT3 m_getDirection ( void ) { return m_diffuseDirection; }; // get diffuse light direction
 };
 
 

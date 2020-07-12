@@ -10,6 +10,11 @@
 #define TIMER_H
 
 
+// Todo 
+// timer event
+//enum logType { start = 0, pause, reset };
+
+
 // high-precision timer container (time is measured in counts -QPC units-)
 class Timer
 {
@@ -49,13 +54,14 @@ private:
 public:
   Timer ( void );
   //~Timer ( void );
-  const bool& m_isInitialized ( void ); // get the initialized state
 
   void m_tick ( void ); // the time never stops! (the time of every frame i.e. a cycle of game loop)
   void m_event ( const std::string& type ); // start, reset, stop
-  //const bool& m_isPaused ( void ); // get the paused state
   const double m_getTotalTime ( void ); // total time minus the idle time
-  const double& m_getDeltaTime ( void ); // get the delta time
+
+  const bool& m_isInitialized ( void ) { return m_initialized; }; // get the initialized state
+  //const bool& m_isPaused ( void ) { return m_paused; }; // get the paused state
+  const double& m_getDeltaTime ( void ) { return m_deltaTime; }; // get the delta time
 };
 
 

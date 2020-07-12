@@ -121,13 +121,6 @@ Texture<fileType>::Texture ( ID3D11Device* dev, ID3D11DeviceContext* devC, const
 //};
 
 
-template <typename fileType>
-const bool& Texture<fileType>::m_isInitialized ( void )
-{
-  return m_initialized;
-};
-
-
 // .tga loader specialization
 //template<typename TargaHeader>
 bool Texture<TargaHeader>::m_load ( const char* path )
@@ -250,19 +243,12 @@ bool Texture<TargaHeader>::m_load ( const char* path )
 };
 
 
-// .tga loader specialization
+// .png loader specialization
 //template<typename PngHeader>
 bool Texture<PngHeader>::m_load ( const char* /*path*/ )
 {
   //Todo research more interesting formats to add
   return false;
-};
-
-
-template<typename fileType>
-ID3D11ShaderResourceView** const Texture<fileType>::m_getTexture ()
-{
-  return &m_textureView;
 };
 
 

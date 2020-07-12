@@ -106,20 +106,6 @@ bool Model<tType>::m_allocate ( tType* data, unsigned long* index, unsigned long
 
 
 template <class tType>
-ID3D11Buffer** const Model<tType>::m_getVertexBuffer ( void )
-{
-  return &m_vertexBuffer;
-};
-
-
-template <class tType>
-ID3D11Buffer* const Model<tType>::m_getIndexBuffer ( void )
-{
-  return m_indexBuffer;
-};
-
-
-template <class tType>
 void Model<tType>::m_release ( void )
 {
   try
@@ -220,12 +206,6 @@ Triangles::Triangles ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
 //{
 //
 //};
-
-
-const unsigned long& Triangles::m_getVerticesCount ( void )
-{
-  return m_verticesCount;
-};
 
 
 Line::Line ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
@@ -353,12 +333,6 @@ void Line::m_update ( void )
 };
 
 
-const unsigned long& Line::m_getVerticesCount ( void )
-{
-  return m_verticesCount;
-};
-
-
 TexturedTriangles::TexturedTriangles ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
   Model ( dev, devC, "\tTexturedTriangles", false ),
   m_verticesCount ( 0 ), m_allocated ( false )
@@ -404,12 +378,6 @@ TexturedTriangles::TexturedTriangles ( ID3D11Device* dev, ID3D11DeviceContext* d
 //{
 //
 //};
-
-
-const unsigned long& TexturedTriangles::m_getVerticesCount ( void )
-{
-  return m_verticesCount;
-};
 
 
 LightedTriangle::LightedTriangle ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
@@ -459,12 +427,6 @@ LightedTriangle::LightedTriangle ( ID3D11Device* dev, ID3D11DeviceContext* devC 
 //};
 
 
-const unsigned long& LightedTriangle::m_getVerticesCount ( void )
-{
-  return m_verticesCount;
-};
-
-
 Cube::Cube ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
   Model ( dev, devC, "\tLightedTriangles", false ),
   m_verticesCount ( 0 ), m_allocated ( false )
@@ -507,9 +469,3 @@ Cube::Cube ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
 //{
 //
 //};
-
-
-const unsigned long& Cube::m_getVerticesCount ( void )
-{
-  return m_verticesCount;
-};

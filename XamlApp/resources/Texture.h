@@ -21,7 +21,7 @@ struct TargaHeader
 };
 
 
-// png texture file typev
+// png texture file type
 struct PngHeader {};
 
 
@@ -40,14 +40,15 @@ private:
 
   bool m_initialized; // true in case of a successful procedure
 
-  bool m_load ( const char* ); // specialized defined file loader
+  bool m_load ( const char* path ); // specialized file loader
 public:
-  Texture ( ID3D11Device*, ID3D11DeviceContext*, const char* );
+  Texture ( ID3D11Device* dev, ID3D11DeviceContext* devC, const char* path );
   //~Texture ( void );
-  const bool& m_isInitialized ( void ); // get the initialized state
 
-  ID3D11ShaderResourceView** const m_getTexture ( void ); // get texture data (unsuccessful texture file loading: nullptr)
   void m_release ( void ); // resource releaser
+
+  const bool& Texture<fileType>::m_isInitialized ( void ) { return m_initialized; } // get the initialized state
+  ID3D11ShaderResourceView** const Texture<fileType>::m_getTexture ( void ) { return &m_textureView; }; // get texture data
 };
 void TextureClassLinker ( void ); // don't call this function: solution for linker error, when using templates.
 

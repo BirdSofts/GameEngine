@@ -114,7 +114,7 @@ Universe::Universe ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
     m_initialized = true;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -126,12 +126,6 @@ Universe::Universe ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
 //{
 //
 //};
-
-
-const bool& Universe::m_isInitialized ( void )
-{
-  return m_initialized;
-};
 
 
 void Universe::m_renderResources ( void )
@@ -217,23 +211,11 @@ void Universe::m_renderResources ( void )
 
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
   }
-};
-
-
-Camera* Universe::m_getCamera ( void )
-{
-  return m_camera;
-};
-
-
-DiffuseLight* Universe::m_getDiffuseLight ( void )
-{
-  return m_diffuseLight;
 };
 
 
@@ -252,7 +234,7 @@ void Universe::m_update ( void )
     m_worldMatrix = DirectX::XMMatrixRotationY ( m_worldRotationMatrix );
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -291,7 +273,7 @@ void Universe::m_release ( void )
     m_deviceContext = nullptr;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );

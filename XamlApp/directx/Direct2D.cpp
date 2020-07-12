@@ -27,7 +27,7 @@ Direct2D::Direct2D ( TheCore* coreObj ) :
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "The creation of DirectWrite factory failed!" );
+                                                  "Creation of DirectWrite factory failed!" );
       return;
     }
 
@@ -45,7 +45,7 @@ Direct2D::Direct2D ( TheCore* coreObj ) :
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "The creation of Direct2D factory failed!" );
+                                                  "Creation of Direct2D factory failed!" );
       return;
     }
 
@@ -89,13 +89,7 @@ Direct2D::Direct2D ( TheCore* coreObj ) :
 };
 
 
-//void Direct2D::m_creation ( void )
-//{
-//
-//};
-//
-//
-//void Direct2D::m_allocation ( void )
+//Direct2D::~Direct2D ( void )
 //{
 //
 //};
@@ -116,23 +110,31 @@ void Direct2D::m_onSuspending ( void )
   //}
 
 
-  //unsigned long rC { 0 };
-  //HRESULT hR;
-  //Direct2D application destruction
-  //if (m_D2D)
-  //{
-  //  m_D2D->m_initialized = false;
-  //  rC = m_D2D->m_dcBitmap.Reset ();
-  //  rC = m_D2D->m_deviceContext.Reset ();
-  //  //rC = d2d->dcBuffer.Reset ();
-  //  rC = m_D2D->m_device.Reset ();
-  //  rC = m_D2D->m_factory.Reset ();
-  //  //rC = d2d->writeFac.Reset ();
-  //  m_D2D->m_core = nullptr;
-  //  delete m_D2D;
-  //  PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
-  //                                              "Direct2D is successfully destructed." );
-  //}
+  unsigned long rC;
+  HRESULT hR;
+
+  m_allocated = false;
+  m_initialized = false;
+
+  rC = m_textFormatLogs->Release ();
+  rC = m_textFormatFPS->Release ();
+  rC = m_textFormatPointer->Release ();
+  rC = m_brushBlack->Release ();
+  rC = m_brushWhite->Release ();
+  rC = m_brushYellow->Release ();
+  rC = m_brushRed->Release ();
+  m_deviceContext->SetTarget ( nullptr );
+  rC = m_dcBitmap->Release ();
+  rC = m_dcBuffer->Release ();
+
+  m_core = nullptr;
+
+  if (rC)
+    PointerProvider::getFileLogger ()->m_push ( logType::warning, std::this_thread::get_id (), "mainThread",
+                                                "Problem while releasing one or more Direct2D resources!" );
+  else
+    PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
+                                                "Direct2D is successfully destructed." );
 
 };
 
@@ -227,6 +229,8 @@ void Direct2D::m_initializeTextFormats ( void )
 
     if (SUCCEEDED ( hR ))
       hR = m_deviceContext->CreateSolidColorBrush ( D2D1::ColorF ( D2D1::ColorF::Black ), m_brushBlack.put () );
+    if (SUCCEEDED ( hR ))
+      hR = m_deviceContext->CreateSolidColorBrush ( D2D1::ColorF ( D2D1::ColorF::Red ), m_brushRed.put () );
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -243,7 +247,13 @@ void Direct2D::m_initializeTextFormats ( void )
     if (SUCCEEDED ( hR ))
       hR = m_writeFactory.get ()->CreateTextFormat ( L"Lucida Console", nullptr,
                                                      DWRITE_FONT_WEIGHT_EXTRA_LIGHT, DWRITE_FONT_STYLE_NORMAL,
-                                                     DWRITE_FONT_STRETCH_NORMAL, 10.0f, L"en-GB", m_textFormatLogs.put () );
+                                                     DWRITE_FONT_STRETCH_NORMAL, 12.0f, L"en-GB", m_textFormatLogs.put () );
+
+    if (SUCCEEDED ( hR ))
+      hR = m_writeFactory.get ()->CreateTextFormat ( L"Lucida Console", nullptr,
+                                                     DWRITE_FONT_WEIGHT_EXTRA_LIGHT, DWRITE_FONT_STYLE_NORMAL,
+                                                     DWRITE_FONT_STRETCH_NORMAL, 13.0f, L"en-GB", m_textFormatPointer.put () );
+
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -289,17 +299,22 @@ void Direct2D::m_debugInfos ( void )
   try
   {
 
-    if (m_core->m_debug /*&& (!core->appWindow->isResized ())*/ && m_textLayoutsDebug)
+    if (m_core->m_debug && (!m_core->m_isResizing) && m_textLayoutsDebug)
     {
       // drawing operations must be issued between a BeginDraw and EndDraw calls
       m_deviceContext->BeginDraw ();
       // drawing a fully formatted text
       if (m_textLayoutFPS)
         m_deviceContext->DrawTextLayout ( D2D1::Point2F ( 3.0f, 3.0f ), m_textLayoutFPS.get (),
-                                          m_brushYellow.get (), D2D1_DRAW_TEXT_OPTIONS_NONE );
+                                          m_brushWhite.get (), D2D1_DRAW_TEXT_OPTIONS_NONE );
       if (m_textLayoutLogs)
-        m_deviceContext->DrawTextLayout ( D2D1::Point2F ( 3.0f, 40.0f ), m_textLayoutLogs.get (),
+        m_deviceContext->DrawTextLayout ( D2D1::Point2F ( 3.0f, 41.0f ), m_textLayoutLogs.get (),
                                           m_brushYellow.get (), D2D1_DRAW_TEXT_OPTIONS_NONE );
+
+      if (m_textLayoutLogs)
+        m_deviceContext->DrawTextLayout ( D2D1::Point2F ( 3.0f, 67.0f ), m_textLayoutPointer.get (),
+                                          m_brushRed.get (), D2D1_DRAW_TEXT_OPTIONS_NONE );
+
       if (FAILED ( m_deviceContext->EndDraw () ))
       {
         PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",

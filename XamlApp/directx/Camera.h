@@ -25,13 +25,14 @@ private:
 public:
   Camera ( void );
   //~Camera ( void );
-  const bool& isInitialized ( void ); // get the initialized state
 
   void renderCamera ( void ); // view matrix generation/update based on the camera position
-  void setPosition ( DirectX::XMFLOAT3& ); // set camera position
-  void setPosition ( float, float, float ); // set camera position
-  void forwardBackward ( float ); // set position forward/backward
-  const DirectX::XMMATRIX& getView ( void ); // get view matrix
+  void setPosition ( DirectX::XMFLOAT3& pos ); // set camera position
+  void setPosition ( float x, float y, float z ); // set camera position
+  void forwardBackward ( float z ); // set position forward/backward
+
+  const bool& isInitialized ( void ) { return initialized; }; // get the initialized state
+  const DirectX::XMMATRIX& getView ( void ) { return matrixView; }; // get view matrix
 };
 
 

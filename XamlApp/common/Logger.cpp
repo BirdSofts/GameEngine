@@ -66,11 +66,11 @@ ToFile::ToFile ( void ) :
       m_ready = true;
     else
     {
-      //MessageBoxA ( NULL, "The log file could not be opened for writing.", "Error", MB_OK | MB_ICONERROR );
+      //MessageBoxA ( NULL, "Log file could not be opened for writing.", "Error", MB_OK | MB_ICONERROR );
     }
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     //MessageBoxA ( NULL, ex.what (), "Error", MB_OK | MB_ICONERROR );
   }
@@ -81,12 +81,6 @@ ToFile::ToFile ( void ) :
 //{
 //
 //};
-
-
-const bool& ToFile::m_isReady ( void )
-{
-  return m_ready;
-}
 
 
 void ToFile::m_close ( void )
@@ -112,17 +106,13 @@ bool ToFile::m_write ( const std::string& line )
     }
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
     return false;
   }
 };
-
-
-template<class tType>
-unsigned int Logger<tType>::m_counter { 0 };
 
 
 template<class tType>
@@ -142,7 +132,7 @@ Logger<tType>::Logger ( void ) : m_theLogRawStr ( "" ), m_filePolicy (), m_write
     m_state = 0;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     //MessageBoxA ( NULL, ex.what (), "Error", MB_OK | MB_ICONERROR );
   }
@@ -245,38 +235,24 @@ void Logger<tType>::m_push ( const logType& t, const std::thread::id& tId,
     lineFormatted << m_theLog.m_threadId << '\t' << m_theLog.m_threadName << '\t' << m_theLog.m_message;
 
     // line formatting: add some space to recognize the different application state in log file
-    if (
-      (PointerProvider::getVariables ()->running == true) &&
-      (PointerProvider::getVariables ()->currentState == "initialized") &&
-      (m_state == 1))
-    {
-      lineFormatted << '\n';
-      m_state = 2;
-    }
+    //if (
+    //  (PointerProvider::getVariables ()->running == true) &&
+    //  (PointerProvider::getVariables ()->currentState == "initialized") &&
+    //  (m_state == 1))
+    //{
+    //  lineFormatted << '\n';
+    //  m_state = 2;
+    //}
 
     std::lock_guard<std::timed_mutex> lock ( m_writeGuard );
     m_buffer.push_back ( lineFormatted.str () );
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
   }
-};
-
-
-template<class tType>
-const LogEntity& Logger<tType>::m_getLog ( void )
-{
-  return m_theLog;
-};
-
-
-template<class tType>
-const std::string& Logger<tType>::m_getLogRawStr ( void )
-{
-  return m_theLogRawStr;
 };
 
 
@@ -299,43 +275,52 @@ void loggerEngine ( Logger<tType>* engine )
   {
 
     // dump engine: write any present logs' data
-    std::this_thread::sleep_for ( std::chrono::milliseconds { 20 } );
+    //std::this_thread::sleep_for ( std::chrono::milliseconds { 20 } );
 
     PointerProvider::getFileLogger ()->m_push (
       logType::info, std::this_thread::get_id (), "logThread",
-      "Logging engine is successfully started:\n\nFull-featured surveillance \
-      is the utter most goal in a digital world, and frankly put, it is well justified! ^,^\n" );
+      "Logging engine is successfully started:\n\nFull-featured surveillance is the utter most goal in a digital world, and frankly put, it is well justified! ^,^\n" );
 
     // Todo robust lock
     // initializing and not locking the mutex object (mark as not owing a lock)
-    std::unique_lock<std::timed_mutex> lock ( engine->m_writeGuard, std::defer_lock );
+    //std::unique_lock<std::timed_mutex> lock ( engine->m_writeGuard, std::defer_lock );
 
     do
     {
-      std::this_thread::sleep_for ( std::chrono::milliseconds ( 100 ) );
 
-      if (engine->m_buffer.size ())
+
+      if (engine->m_buffer.size () > 0)
       {
-        if (!lock.try_lock_for ( std::chrono::milliseconds { 50 } ))
-          continue;
+        //if (!lock.try_lock_for ( std::chrono::milliseconds { 50 } ))
+        //  continue;
 
-        for (auto& element : engine->m_buffer)
+        //for (auto& element : engine->m_buffer)
+        //{
+
+        if (!engine->m_filePolicy.m_write ( engine->m_buffer.front () ))
         {
-          if (!engine->m_filePolicy.m_write ( element ))
-          {
-            PointerProvider::getFileLogger ()->m_push ( logType::warning, std::this_thread::get_id (),
-                                                        "logThread", "Writing to file wasn't possible." );
-          }
+          PointerProvider::getFileLogger ()->m_push ( logType::warning, std::this_thread::get_id (),
+                                                      "logThread", "Writing to file wasn't possible." );
+        } else
+        {
+          engine->m_buffer.pop_front ();
         }
 
-        engine->m_buffer.clear ();
-        lock.unlock ();
+        //}
+
+        //engine->m_buffer.clear ();
+        //lock.unlock ();
+      } else
+      {
+        std::this_thread::sleep_for ( std::chrono::milliseconds ( 100 ) );
       }
 
-    } while (engine->m_operating.test_and_set () || engine->m_buffer.size ());
+
+
+    } while (engine->m_operating.test_and_set ());
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "logThread",
                                                 ex.what () );
@@ -347,9 +332,9 @@ void LoggerClassLinker ( void ) // don't call this function: solution for linker
 {
 
   Logger<ToFile> tempObj;
-  tempObj.m_push ( logType::error, std::this_thread::get_id (), "mainThread", "The problem solver... :)" );
+  tempObj.m_push ( logType::error, std::this_thread::get_id (), "mainThread", "Problem solver pure... :)" );
   tempObj.m_getLog ();
   tempObj.m_getLogRawStr ();
   tempObj.m_shutdown ();
 
-}
+};

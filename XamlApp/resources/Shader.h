@@ -21,8 +21,10 @@ private:
   {
     byte* buffer;
     long long size;
+
     Buffer ( void );
     ~Buffer ( void );
+
     void release ( void );
   };
 protected:
@@ -39,22 +41,21 @@ protected:
 
   std::string m_entryPoint;
 public:
-  Shader ( ID3D11Device*, std::string );
+  Shader ( ID3D11Device* dev, std::string entry );
   //~Shader ( void );
 
-  void m_loadCompiled ( std::string&, Buffer* ); // read shader data (compiled .cso files)
-  bool m_initializeCompiled ( std::string*, D3D11_INPUT_ELEMENT_DESC*,
-                              unsigned int ); // rendering pipeline (GPU initialization)
-
-  bool m_compile ( LPCWSTR* ); // compile HLSL using DirectX APIs
-  bool m_initialize ( D3D11_INPUT_ELEMENT_DESC*, unsigned int,
-                      D3D11_SAMPLER_DESC* ); // rendering pipeline (GPU initialization)
-
-  ID3D11VertexShader* const m_getVertexShader ( void );
-  ID3D11PixelShader* const m_getPixelShader ( void );
-  ID3D11InputLayout* const m_getInputLayout ( void );
-  ID3D11SamplerState** const m_getSamplerState ( void );
+  void m_loadCompiled ( std::string& fileName, Buffer* csoBuffer ); // read shader data (compiled .cso files)
+  bool m_initializeCompiled ( std::string* filePaths, D3D11_INPUT_ELEMENT_DESC* polygonLayout,
+                              unsigned int elmCount ); // rendering pipeline (GPU initialization)
+  bool m_compile ( LPCWSTR* files ); // compile HLSL using DirectX APIs
+  bool m_initialize ( D3D11_INPUT_ELEMENT_DESC* polygonLayout, unsigned int elmCount,
+                      D3D11_SAMPLER_DESC* sampler ); // rendering pipeline (GPU initialization)
   void m_release ( void ); // release the shaders resources
+
+  ID3D11VertexShader* const m_getVertexShader ( void ) { return m_vertexShader; };
+  ID3D11PixelShader* const m_getPixelShader ( void ) { return m_pixelShader; };
+  ID3D11InputLayout* const m_getInputLayout ( void ) { return m_inputLayout; };
+  ID3D11SamplerState** const m_getSamplerState ( void ) { return &m_samplerState; };
 };
 
 
@@ -68,9 +69,10 @@ private:
 
   bool m_initialized; // true if initialization was successful
 public:
-  ShaderColour ( ID3D11Device* );
+  ShaderColour ( ID3D11Device* dev );
   //~ShaderColour ( void );
-  const bool& m_isInitialized ( void ); // get the initialized state
+
+  const bool& m_isInitialized ( void ) { return m_initialized; }; // get the initialized state
 };
 
 
@@ -85,9 +87,10 @@ private:
 
   bool m_initialized; // true if initialization was successful
 public:
-  ShaderTexture ( ID3D11Device* );
+  ShaderTexture ( ID3D11Device* dev );
   //~ShaderTexture ( void );
-  const bool& m_isInitialized ( void ); // get the initialized state
+
+  const bool& m_isInitialized ( void ) { return m_initialized; }; // get the initialized state
 };
 
 
@@ -102,9 +105,10 @@ private:
 
   bool m_initialized; // true if initialization was successful
 public:
-  ShaderDiffuseLight ( ID3D11Device* );
+  ShaderDiffuseLight ( ID3D11Device* dev );
   //~ShaderDiffuseLight ( void );
-  const bool& m_isInitialized ( void ); // get the initialized state
+
+  const bool& ShaderDiffuseLight::m_isInitialized ( void ) { return m_initialized; }; // get the initialized state
 };
 
 

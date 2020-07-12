@@ -27,7 +27,8 @@ using namespace GameEngine::implementation;
 /// Initializes the singleton application object.  This is the first line of authored code
 /// executed, and as such is the logical equivalent of main() or WinMain().
 /// </summary>
-App::App ()
+App::App () :
+  m_mainPage ( nullptr )
 {
   try
   {
@@ -133,7 +134,7 @@ App::App ()
       } else
         if (PointerProvider::getVariables ()->currentState == "appDebug")
         {
-          //MessageBoxA ( NULL, "The debug service failed to start.", "Error", MB_OK | MB_ICONERROR );
+          //MessageBoxA ( NULL, "Debug service failed to start.", "Error", MB_OK | MB_ICONERROR );
         } else
         {
           //MessageBoxA ( NULL, ex.what (), "Error", MB_OK | MB_ICONERROR );
@@ -149,6 +150,84 @@ App::App ()
         //return EXIT_FAILURE;
 
   }
+}
+
+
+//App::~App ()
+//{
+//
+//};
+
+
+/// <summary>
+/// Invoked when application execution is being suspended.  Application state is saved
+/// without knowing whether the application will be terminated or resumed with the contents
+/// of memory still intact.
+/// </summary>
+/// <param name="sender">The source of the suspend request.</param>
+/// <param name="e">Details about the suspend request.</param>
+void App::OnSuspending ( [[maybe_unused]] IInspectable const& sender, [[maybe_unused]] SuspendingEventArgs const& e )
+{
+
+  m_mainPage->releaseResources ();
+
+  //auto deferral = e.SuspendingOperation ().GetDeferral ();
+  //auto task = std::async (
+  //  std::launch::async, [this, deferral]()
+  //  {
+  //    PointerProvider::getVariables ()->currentState = "suspending";
+
+  //    PointerProvider::getVariables ()->running = false;
+
+  //    std::this_thread::sleep_for ( std::chrono::milliseconds { 1000 } );
+
+  //    // Save application state and stop any background activity
+  //    m_mainPage->SaveInternalState ( winrt::Windows::Storage::ApplicationData::Current ().LocalSettings ().Values () );
+
+  //    PointerProvider::getVariables ()->currentState = "uninitialized";
+
+  //    if (PointerProvider::getException ())
+  //      PointerProvider::providerException ( nullptr );
+
+  //    if (PointerProvider::getConfiguration ())
+  //      PointerProvider::providerConfiguration ( nullptr );
+
+  //    if (PointerProvider::getFileLogger ())
+  //    {
+  //      PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
+  //                                                  "Logger engine is set to shut down..." );
+
+  //      // failure or success, the logs are somehow to be saved, so give its thread some time
+  //      std::this_thread::sleep_for ( std::chrono::milliseconds { 100 } );
+
+  //      PointerProvider::getFileLogger ()->m_shutdown ();
+  //      PointerProvider::providerFileLogger ( nullptr );
+  //    }
+
+  //    if (PointerProvider::getVariables ())
+  //      PointerProvider::providerVariables ( nullptr );
+
+  //    deferral.Complete ();
+  //  }
+  //);
+}
+
+
+void App::OnResuming ( [[maybe_unused]] IInspectable const& sender, [[maybe_unused]] IInspectable const& args )
+{
+  // Resume application state and return to background activity
+  m_mainPage->LoadInternalState ( winrt::Windows::Storage::ApplicationData::Current ().LocalSettings ().Values () );
+}
+
+
+/// <summary>
+/// Invoked when Navigation to a certain page fails
+/// </summary>
+/// <param name="sender">The Frame which failed navigation</param>
+/// <param name="e">Details about the navigation failure</param>
+void App::OnNavigationFailed ( [[maybe_unused]] IInspectable const& sender, NavigationFailedEventArgs const& e )
+{
+  throw hresult_error ( E_FAIL, hstring ( L"Failed to load Page " ) + e.SourcePageType ().Name );
 }
 
 
@@ -219,71 +298,11 @@ void App::OnLaunched ( LaunchActivatedEventArgs const& e )
       Window::Current ().Activate ();
     }
   }
-}
-
-/// <summary>
-/// Invoked when application execution is being suspended.  Application state is saved
-/// without knowing whether the application will be terminated or resumed with the contents
-/// of memory still intact.
-/// </summary>
-/// <param name="sender">The source of the suspend request.</param>
-/// <param name="e">Details about the suspend request.</param>
-void App::OnSuspending ( [[maybe_unused]] IInspectable const& sender, [[maybe_unused]] SuspendingEventArgs const& e )
-{
-  // Save application state and stop any background activity
-  auto deferral = e.SuspendingOperation ().GetDeferral ();
-  auto task = std::async (
-    std::launch::async, [this, deferral]()
-    {
-      PointerProvider::getVariables ()->currentState = "suspending";
-
-      PointerProvider::getVariables ()->running = false;
-
-      std::this_thread::sleep_for ( std::chrono::milliseconds { 1000 } );
-
-      //m_game->m_onSuspending (); // Todo load and save state
-
-      PointerProvider::getVariables ()->currentState = "uninitialized";
-
-      if (PointerProvider::getException ())
-        PointerProvider::providerException ( nullptr );
-
-      if (PointerProvider::getConfiguration ())
-        PointerProvider::providerConfiguration ( nullptr );
-
-      if (PointerProvider::getFileLogger ())
-      {
-        PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
-                                                    "The logging engine is set to shut down..." );
-
-        // failure or success, the logs are somehow to be saved, so give its thread some time
-        std::this_thread::sleep_for ( std::chrono::milliseconds { 100 } );
-
-        PointerProvider::getFileLogger ()->m_shutdown ();
-        PointerProvider::providerFileLogger ( nullptr );
-      }
-
-      if (PointerProvider::getVariables ())
-        PointerProvider::providerVariables ( nullptr );
-
-      deferral.Complete ();
-    }
-  );
-}
 
 
-void App::OnResuming ( [[maybe_unused]] IInspectable const& sender, [[maybe_unused]] IInspectable const& args )
-{
-  // Resume application state and return to background activity
-}
+  if (m_mainPage == nullptr)
+  {
+    m_mainPage = dynamic_cast<GameEngine::implementation::MainPage*>(rootFrame.Content ().as<GameEngine::implementation::MainPage> ().get ());
+  }
 
-
-/// <summary>
-/// Invoked when Navigation to a certain page fails
-/// </summary>
-/// <param name="sender">The Frame which failed navigation</param>
-/// <param name="e">Details about the navigation failure</param>
-void App::OnNavigationFailed ( [[maybe_unused]] IInspectable const& sender, NavigationFailedEventArgs const& e )
-{
-  throw hresult_error ( E_FAIL, hstring ( L"Failed to load Page " ) + e.SourcePageType ().Name );
 }

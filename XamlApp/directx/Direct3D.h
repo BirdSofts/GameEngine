@@ -64,17 +64,17 @@ private:
   bool m_allocated; // true if resources allocation was successful
   bool m_initialized; // true if initialization was successful
 
-  void m_createIndependentResources ( void ); // Direct3D independent resource
-  void m_createDeviceDependentResources ( void ); // Direct3D device dependent resources
-  void m_createWindowDependentResources ( void ); // Direct3D window dependent resources
-  void m_allocation (); // Direct3D resources resize/creation
+  void m_createIndependentResources ( void ); // create Direct3D independent resources
+  void m_createDeviceDependentResources ( void ); // create Direct3D device dependent resources
+  void m_createWindowDependentResources ( void ); // create Direct3D window dependent resources
+  void m_allocation ( void ); // Direct3D resources resize/creation
   void m_setDisplayMode ( void ); // Direct3D display mode change/adjust
   void m_onSuspending ( void ); // suspension preparation
   void m_validate ( void ); // validate the correct state of Direct3D resources
   void m_onDeviceLost ( void ); // clean and reallocate
 public:
-  Direct3D ( TheCore* );
-  ~Direct3D ( void ) { /**/ };
+  Direct3D ( TheCore* coreObj );
+  //~Direct3D ( void );
 
   void m_clearBuffers ( void ); // clear depth-stencil buffers
   void m_present ( void ); // swapping: present the buffer chain by flipping the buffers

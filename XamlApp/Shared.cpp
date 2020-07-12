@@ -15,6 +15,10 @@ Variables::Variables ( void )
   running = false;
   currentState = "";
 };
+//Variables::~Variables ( void )
+//{
+//
+//};
 
 
 //template<class tType>
@@ -32,39 +36,11 @@ Variables::Variables ( void )
 
 
 std::shared_ptr<Variables> PointerProvider::variables = nullptr;
-
 std::shared_ptr<TheException> PointerProvider::exception = nullptr;
-
 std::shared_ptr<Configurations> PointerProvider::configuration = nullptr;
-
 std::shared_ptr<Logger<ToFile>> PointerProvider::fileLogger = nullptr;
 
-
-//std::exception_ptr PointerProvider::exceptionPointer = nullptr;
-
-
-Variables* PointerProvider::getVariables ( void )
-{
-  return variables.get ();
-};
-
-
-TheException* PointerProvider::getException ( void )
-{
-  return exception.get ();
-};
-
-
-Configurations* PointerProvider::getConfiguration ( void )
-{
-  return configuration.get ();
-};
-
-
-Logger<ToFile>* PointerProvider::getFileLogger ( void )
-{
-  return fileLogger.get ();
-};
+//std::exception_ptr PointerProvider::sample = nullptr;
 
 
 void PointerProvider::providerVariables ( std::shared_ptr<Variables> object )
@@ -89,3 +65,9 @@ void PointerProvider::providerFileLogger ( std::shared_ptr<Logger<ToFile>> objec
 {
   fileLogger = object;
 };
+
+
+Variables* PointerProvider::getVariables ( void ) { return variables.get (); };
+TheException* PointerProvider::getException ( void ) { return exception.get (); };
+Configurations* PointerProvider::getConfiguration ( void ) { return configuration.get (); };
+Logger<ToFile>* PointerProvider::getFileLogger ( void ) { return fileLogger.get (); };

@@ -11,8 +11,8 @@
 #include "Shared.h"
 
 
-Game::Game ( TheCore* core ) :
-  m_core ( core ), m_universe ( nullptr ),
+Game::Game ( TheCore* coreObj ) :
+  m_core ( coreObj ), m_universe ( nullptr ),
   m_allocated ( false ), m_paused ( false ), m_initialized ( false )
 {
   try
@@ -30,13 +30,13 @@ Game::Game ( TheCore* core ) :
 
     m_initialized = true;
     PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
-                                                "The game is successfully initialized." );
+                                                "The Game is successfully initialized." );
 
     m_allocateResources ();
 
     if (!m_allocated)
       PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
-                                                  "The game resources is successfully allocated." );
+                                                  "The Game's resources is successfully allocated." );
 
   }
   catch (const std::exception& ex)
@@ -45,6 +45,12 @@ Game::Game ( TheCore* core ) :
                                                 ex.what () );
   }
 };
+
+
+//Game::~Game ( void )
+//{
+//
+//};
 
 
 void Game::m_allocateResources ( void )
@@ -129,10 +135,10 @@ const bool Game::m_run ( void )
     do // continuous loop
     {
 
-      if ((counter % 30) == 0)
+      if ((counter % 60) == 0)
       {
 
-        //counter = 0;
+        counter = 0;
 
         // additional in-between processes if any need to execute
         // like messages of a core window
@@ -142,11 +148,12 @@ const bool Game::m_run ( void )
 
       // tick the timer to calculate a frame
       m_core->m_getTimer ()->m_tick ();
-      // -- fps calculation
-      m_core->m_frameStatistics ();
 
       if (!m_paused)
       {
+
+        // -- fps calculation
+        m_core->m_frameStatistics ();
 
         // -----------------------------------------------------------------------------------------------------------
         // a game loop purpose:
@@ -166,6 +173,10 @@ const bool Game::m_run ( void )
         // Note the needed delta time
         m_update ();
 
+        if (counter == 59)
+          PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "gameThread",
+                                                      "Logger service test: (each log represent 60 delivered frames!) ^_^" );
+
       } else
       {
 
@@ -176,8 +187,9 @@ const bool Game::m_run ( void )
 
       }
 
+
       counter++;
-    } while ((PointerProvider::getVariables ()->running == true) && (counter < 60));
+    } while ((PointerProvider::getVariables ()->running == true));
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -388,16 +400,8 @@ void Game::m_onSuspending ( void )
       m_universe = nullptr;
     }
 
-
-    if (m_core)
-    {
-      m_core->m_onSuspending ();
-      delete m_core;
-      m_core = nullptr;
-    }
-
     PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
-                                                "The Game is successfully suspended." );
+                                                "Game's resources are successfully released." );
 
   }
   catch (const std::exception& ex)
@@ -405,4 +409,10 @@ void Game::m_onSuspending ( void )
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
   }
+};
+
+
+void Game::m_validate ( void )
+{
+  m_core->m_validate ();
 };

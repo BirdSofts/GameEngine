@@ -37,8 +37,8 @@ struct VertexL
 class VertexTexDiffuseL
 {
 public:
-  static unsigned int read ( const char*, VertexL** ); // 
-  static void write ( VertexL*, unsigned int& );
+  static unsigned int read ( const char* path, VertexL** vertices ); // read polygon vertices
+  //static void write ( VertexL*, unsigned int& ); // write a polygon
 };
 
 

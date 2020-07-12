@@ -19,7 +19,6 @@
 
 class Game
 {
-  friend class TheCore;
 private:
   TheCore* m_core; // pointer to the application core
 
@@ -45,21 +44,19 @@ private:
 
   void m_allocateResources ( void ); // resources creation
 public:
-  Game ( TheCore* ); // game initialization
-  ~Game ( void ) { /**/ };
+  Game ( TheCore* coreObj ); // game initialization
+  //~Game ( void );
 
   const bool m_run ( void ); // game engine loop
   void m_render ( void ); // render the scene
   void m_update ( void ); // updating the game world
   void m_onSuspending ( void ); // suspension preparation
-
-  void m_validate ( void ) { m_core->m_validate (); }; // game's resources/objects validation/reallocation
+  void m_validate ( void ); // game's resources/objects validation/reallocation
 
   const bool& m_isReady ( void ) { return m_initialized; }; // get the initialized state
   bool& m_isPaused ( void ) { return m_paused; }; // get the paused state
   TheCore* m_getCore ( void ) { return m_core; }; // get the pointer to D3D core
   Universe* m_getUniverse ( void ) { return m_universe; }; // get the pointer to game universe
-
 };
 
 

@@ -37,6 +37,12 @@ Direct3D::Direct3D ( TheCore* coreObj ) :
 };
 
 
+//Direct3D::~Direct3D ( void )
+//{
+//
+//};
+
+
 void Direct3D::m_createIndependentResources ( void )
 {
   try
@@ -176,7 +182,7 @@ void Direct3D::m_createWindowDependentResources ( void )
 };
 
 
-void Direct3D::m_allocation ()
+void Direct3D::m_allocation ( void )
 {
   try
   {
@@ -186,11 +192,6 @@ void Direct3D::m_allocation ()
 
     // clear previous allocations
     m_allocated = false;
-    ID3D11RenderTargetView* nullViews [] = { nullptr };
-    m_deviceContext->OMSetRenderTargets ( _countof ( nullViews ), nullViews, nullptr );
-    //m_renderTview.Reset ();
-    //m_depthSview.Reset ();
-    m_deviceContext->Flush ();
 
 
 
@@ -201,19 +202,21 @@ void Direct3D::m_allocation ()
       // BufferCount and SwapChainFlags: 0 do not change the current
       // 0 for the next two parameters to adjust to the current client window size automatically
       // next parameter: set to DXGI_FORMAT_UNKNOWN to preserve the current
-      //hR = m_swapChain->ResizeBuffers ( m_backBufferCount, m_core->m_outputWidth,
-      //                                  m_core->m_outputHeight, m_backBufferFormat, 0 );
-      //if (hR == DXGI_ERROR_DEVICE_REMOVED || hR == DXGI_ERROR_DEVICE_RESET)
-      //{
-      //  // on device lost/reset, a new device and swap chain is needed
-      //  m_onDeviceLost ();
-      //  return;
-      //} else
-      //{
-      //  if (FAILED ( hR ))
-      //    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-      //                                                "Resizing the swap chain failed!" );
-      //}
+      hR = m_swapChain->ResizeBuffers ( m_backBufferCount,
+                                        m_core->m_mainPageTypes->m_getDisplay ()->panelWidthPixels,
+                                        m_core->m_mainPageTypes->m_getDisplay ()->panelHeightPixels,
+                                        m_backBufferFormat, 0 );
+      if (hR == DXGI_ERROR_DEVICE_REMOVED || hR == DXGI_ERROR_DEVICE_RESET)
+      {
+        // on device lost/reset, a new device and swap chain is needed
+        m_onDeviceLost ();
+        return;
+      } else
+      {
+        if (FAILED ( hR ))
+          PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                      "Resizing the swap chain failed!" );
+      }
 
     } else
     {
@@ -312,8 +315,8 @@ void Direct3D::m_allocation ()
       //DXGI_SCALING scaling = DirectX:: displaymetrics
       // filling a swap chain description structure (the type of swap chain)
       DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-      swapChainDesc.Width = lround ( m_displayMode.Width ); // back buffer size, 0: automatic adjustment from already calculated client window area
-      swapChainDesc.Height = lround ( m_displayMode.Height ); // the same
+      swapChainDesc.Width = m_core->m_mainPageTypes->m_getDisplay ()->panelWidthPixels; // back buffer size, 0: automatic adjustment from already calculated client window area
+      swapChainDesc.Height = m_core->m_mainPageTypes->m_getDisplay ()->panelHeightPixels; // the same
       //if (vSync) // lock to system settings 60Hz
       //{
       //  // back buffer to front buffer (screen) draw rate
@@ -362,200 +365,173 @@ void Direct3D::m_allocation ()
       }
 
 
-
-      //m_core->m_swapChainPanel->Dispatcher ().
-      //  RunAsync ( winrt::Windows::UI::Core::CoreDispatcherPriority::High,
-      //             winrt::Windows::UI::Core::DispatchedHandler
-      //             ( [this]()
-      //               {
-      //                 winrt::com_ptr<ISwapChainPanelNative> panelNative;
-      //                 HRESULT hR = reinterpret_cast<IUnknown*>(m_core->m_swapChainPanel)->QueryInterface ( IID_PPV_ARGS ( panelNative.put () ) );
-      //                 if (FAILED ( hR ))
-      //                 {
-      //                   PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-      //                                                               "Acquiring backing native interface of swap chain panel failed!" );
-      //                 } else
-      //                 {
-      //                   hR = panelNative->SetSwapChain ( m_swapChain.get () );
-      //                   if (FAILED ( hR ))
-      //                   {
-      //                     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-      //                                                                 "Acquiring backing native interface of swap chain panel failed!" );
-      //                   }
-      //                 }
-
-      //               } ) );
-
-
-
-
-
+    }
     // render target buffer allocation
     // obtain a pointer to the current back buffer of swap chain
     // the zero-th buffer is accessible, since already created using flip discarding effect.
     // second parameter: interface type (most cases 2D- texture)
     // the last parameter returns a pointer to the actual back buffer
-      winrt::com_ptr<ID3D11Texture2D> rtBuffer; // render target view buffer
-      hR = m_swapChain->GetBuffer ( 0, IID_PPV_ARGS ( &rtBuffer ) );
-      if (FAILED ( hR ))
-      {
-        PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                    "Acquiring the back buffer failed!" );
-        return;
-      }
-
-      // render target view creation (attach the obtained back buffer to swap chain)
-      // first parameter: the resource for which the render target is created for
-      // second parameter describes data type of the specified resource (mipmap but 0 for now)
-      // the last parameter returns a pointer to the created render target view
-      hR = m_device->CreateRenderTargetView1 ( rtBuffer.get (), nullptr,
-                                               m_renderTview.put () );
-      if (FAILED ( hR ))
-      {
-        PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                    "Creation of render target view failed!" );
-        return;
-      }
-
-
-
-      // depth-stencil buffer creation
-      // depth buffer purpose: to render polygons properly in 3D space
-      // stencil buffer purpose: to achieve effects such as motion blur, volumetric shadows etc.
-      CD3D11_TEXTURE2D_DESC depthBufferDesc;
-      //rtBuffer->GetDesc ( &depthBufferDesc ); // retrieves the back buffer description and fill
-      depthBufferDesc.Format = m_depthBufferFormat; // 24 bits for depth and 8 bits for stencil
-      depthBufferDesc.Width = lround ( m_displayMode.Width );
-      depthBufferDesc.Height = lround ( m_displayMode.Height );
-      depthBufferDesc.MipLevels = 1;
-      depthBufferDesc.ArraySize = 1;
-      depthBufferDesc.SampleDesc.Count = 1; // multi-sampling (anti-aliasing) match to settings of render target
-      depthBufferDesc.SampleDesc.Quality = 0;
-      depthBufferDesc.Usage = D3D11_USAGE_DEFAULT; // value: only GPU will be reading and writing to the resource
-      depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL; // how to bind to the different pipeline stages
-      depthBufferDesc.CPUAccessFlags = 0;
-      depthBufferDesc.MiscFlags = 0;
-
-      // texture creation:
-      // the second parameter: pointer to initial data (zero for any data, since depth-stencil buffer)
-      // note texture 2d function: sorted and rasterized polygons are just coloured pixels in 2d representation
-      hR = m_device->CreateTexture2D ( &depthBufferDesc, nullptr, m_depthSbuffer.put () );
-      //hR = dsBuffer->QueryInterface ( __uuidof(IDXGISurface1), &dsSurface );
-      if (FAILED ( hR ))
-      {
-        PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                    "Creation of depth-stencil buffer failed!" );
-        return;
-      }
-
-
-
-      // depth-stencil state description
-      // to control the depth test and its type, that Direct3D performs for each pixel
-      D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
-      depthStencilDesc.DepthEnable = true;
-      depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-      depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-      depthStencilDesc.StencilEnable = true;
-      depthStencilDesc.StencilReadMask = 0xFF;
-      depthStencilDesc.StencilWriteMask = 0xFF;
-      // stencil operations (if pixel is front facing)
-      depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-      depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-      depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-      depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-      // stencil operations (if pixel is front facing)
-      depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-      depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
-      depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-      depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-
-      // depth stencil state creation
-      hR = m_device->CreateDepthStencilState ( &depthStencilDesc, m_depthSstate.put () );
-      if (FAILED ( hR ))
-      {
-        PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                    "Creation of depth-stencil state failed!" );
-        return;
-      }
-      // set the active depth stencil state
-      m_deviceContext->OMSetDepthStencilState ( m_depthSstate.get (), 1 );
-
-
-
-      // depth-stencil view description
-      // purpose: so the Direct3D use the depth buffer as a depth stencil texture.
-      D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
-      depthStencilViewDesc.Format = m_depthBufferFormat;
-      depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-      depthStencilViewDesc.Flags = 0;
-      depthStencilViewDesc.Texture2D.MipSlice = 0;
-      // depth-stencil view creation
-      // the second parameter: zero to access the mipmap level 0
-      hR = m_device->CreateDepthStencilView ( m_depthSbuffer.get (), &depthStencilViewDesc, m_depthSview.put () );
-      if (FAILED ( hR ))
-      {
-        PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                    "Creation the depth-stencil view failed!" );
-        return;
-      }
-
-
-
-      // binding render target view and depth-stencil view to output render pipeline (for now one render target view)
-      // purpose: rendered graphics by the pipeline will be drawn to the back buffer.
-      // second parameter: pointer to first element of a list of render target view pointers
-      //m_deviceContext->OMSetRenderTargets ( 1, m_renderTview.put (), m_depthSview.get () );
-      ID3D11RenderTargetView* const targets [1] = { m_renderTview.get () };
-      m_deviceContext->OMSetRenderTargets ( 1, targets, m_depthSview.get () );
-
-
-
-      // rasterizer description (determines how and which polygons is to be rendered)
-      // for example: render scenes in wireframe mode, draw both front and back faces of polygons
-      // note that by default DirectX creates one rasterizer the same as below, on which developers have no control.
-      D3D11_RASTERIZER_DESC rasterizerDesc;
-      rasterizerDesc.AntialiasedLineEnable = false;
-      rasterizerDesc.CullMode = D3D11_CULL_BACK;
-      rasterizerDesc.DepthBias = 0;
-      rasterizerDesc.DepthBiasClamp = 0.0f;
-      rasterizerDesc.DepthClipEnable = true;
-      rasterizerDesc.FillMode = D3D11_FILL_SOLID;
-      rasterizerDesc.FrontCounterClockwise = false;
-      rasterizerDesc.MultisampleEnable = false;
-      rasterizerDesc.ScissorEnable = false;
-      rasterizerDesc.SlopeScaledDepthBias = 0.0f;
-      // rasterizer creation
-      hR = m_device->CreateRasterizerState ( &rasterizerDesc, m_rasterizerState.put () );
-      if (FAILED ( hR ))
-      {
-        PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                    "Creation the rasterizer state failed!" );
-        return;
-      }
-      // set the active rasterizer state
-      m_deviceContext->RSSetState ( m_rasterizerState.get () );
-
-
-
-      // viewport structure: set the viewport to entire back buffer (what area should be rendered to)
-      // with other words: so Direct3D can map clip space coordinates to the render target space
-      D3D11_VIEWPORT viewPort;
-      viewPort.Width = float ( m_displayMode.Width );
-      viewPort.Height = float ( m_displayMode.Height );
-      viewPort.MinDepth = 0.0f; // minimum and maximum depth buffer values
-      viewPort.MaxDepth = 1.0f;
-      viewPort.TopLeftX = 0; // first four integers: viewport rectangle (relative to client window rectangle)
-      viewPort.TopLeftY = 0;
-      // setting the viewport
-      // the second parameter is a pointer to an array of viewports
-      m_deviceContext->RSSetViewports ( 1, &viewPort );
-
-
-
-      m_allocated = true;
-
+    winrt::com_ptr<ID3D11Texture2D> rtBuffer; // render target view buffer
+    hR = m_swapChain->GetBuffer ( 0, IID_PPV_ARGS ( &rtBuffer ) );
+    if (FAILED ( hR ))
+    {
+      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Acquiring the back buffer failed!" );
+      return;
     }
+
+    // render target view creation (attach the obtained back buffer to swap chain)
+    // first parameter: the resource for which the render target is created for
+    // second parameter describes data type of the specified resource (mipmap but 0 for now)
+    // the last parameter returns a pointer to the created render target view
+    hR = m_device->CreateRenderTargetView1 ( rtBuffer.get (), nullptr,
+                                             m_renderTview.put () );
+    if (FAILED ( hR ))
+    {
+      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Creation of render target view failed!" );
+      return;
+    }
+
+
+
+    // depth-stencil buffer creation
+    // depth buffer purpose: to render polygons properly in 3D space
+    // stencil buffer purpose: to achieve effects such as motion blur, volumetric shadows etc.
+    CD3D11_TEXTURE2D_DESC depthBufferDesc;
+    //rtBuffer->GetDesc ( &depthBufferDesc ); // retrieves the back buffer description and fill
+    depthBufferDesc.Format = m_depthBufferFormat; // 24 bits for depth and 8 bits for stencil
+    depthBufferDesc.Width = m_core->m_mainPageTypes->m_getDisplay ()->panelWidthPixels;
+    depthBufferDesc.Height = m_core->m_mainPageTypes->m_getDisplay ()->panelHeightPixels;
+    depthBufferDesc.MipLevels = 1;
+    depthBufferDesc.ArraySize = 1;
+    depthBufferDesc.SampleDesc.Count = 1; // multi-sampling (anti-aliasing) match to settings of render target
+    depthBufferDesc.SampleDesc.Quality = 0;
+    depthBufferDesc.Usage = D3D11_USAGE_DEFAULT; // value: only GPU will be reading and writing to the resource
+    depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL; // how to bind to the different pipeline stages
+    depthBufferDesc.CPUAccessFlags = 0;
+    depthBufferDesc.MiscFlags = 0;
+
+    // texture creation:
+    // the second parameter: pointer to initial data (zero for any data, since depth-stencil buffer)
+    // note texture 2d function: sorted and rasterized polygons are just coloured pixels in 2d representation
+    hR = m_device->CreateTexture2D ( &depthBufferDesc, nullptr, m_depthSbuffer.put () );
+    //hR = dsBuffer->QueryInterface ( __uuidof(IDXGISurface1), &dsSurface );
+    if (FAILED ( hR ))
+    {
+      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Creation of depth-stencil buffer failed!" );
+      return;
+    }
+
+
+
+    // depth-stencil state description
+    // to control the depth test and its type, that Direct3D performs for each pixel
+    D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
+    depthStencilDesc.DepthEnable = true;
+    depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+    depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+    depthStencilDesc.StencilEnable = true;
+    depthStencilDesc.StencilReadMask = 0xFF;
+    depthStencilDesc.StencilWriteMask = 0xFF;
+    // stencil operations (if pixel is front facing)
+    depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+    depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+    // stencil operations (if pixel is front facing)
+    depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+    depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+    // depth stencil state creation
+    hR = m_device->CreateDepthStencilState ( &depthStencilDesc, m_depthSstate.put () );
+    if (FAILED ( hR ))
+    {
+      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Creation of depth-stencil state failed!" );
+      return;
+    }
+    // set the active depth stencil state
+    m_deviceContext->OMSetDepthStencilState ( m_depthSstate.get (), 1 );
+
+
+
+    // depth-stencil view description
+    // purpose: so the Direct3D use the depth buffer as a depth stencil texture.
+    D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
+    depthStencilViewDesc.Format = m_depthBufferFormat;
+    depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    depthStencilViewDesc.Flags = 0;
+    depthStencilViewDesc.Texture2D.MipSlice = 0;
+    // depth-stencil view creation
+    // the second parameter: zero to access the mipmap level 0
+    hR = m_device->CreateDepthStencilView ( m_depthSbuffer.get (), &depthStencilViewDesc, m_depthSview.put () );
+    if (FAILED ( hR ))
+    {
+      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Creation the depth-stencil view failed!" );
+      return;
+    }
+
+
+
+    // binding render target view and depth-stencil view to output render pipeline (for now one render target view)
+    // purpose: rendered graphics by the pipeline will be drawn to the back buffer.
+    // second parameter: pointer to first element of a list of render target view pointers
+    //m_deviceContext->OMSetRenderTargets ( 1, m_renderTview.put (), m_depthSview.get () );
+    ID3D11RenderTargetView* const targets [1] = { m_renderTview.get () };
+    m_deviceContext->OMSetRenderTargets ( 1, targets, m_depthSview.get () );
+
+
+
+    // rasterizer description (determines how and which polygons is to be rendered)
+    // for example: render scenes in wireframe mode, draw both front and back faces of polygons
+    // note that by default DirectX creates one rasterizer the same as below, on which developers have no control.
+    D3D11_RASTERIZER_DESC rasterizerDesc;
+    rasterizerDesc.AntialiasedLineEnable = false;
+    rasterizerDesc.CullMode = D3D11_CULL_BACK;
+    rasterizerDesc.DepthBias = 0;
+    rasterizerDesc.DepthBiasClamp = 0.0f;
+    rasterizerDesc.DepthClipEnable = true;
+    rasterizerDesc.FillMode = D3D11_FILL_SOLID;
+    rasterizerDesc.FrontCounterClockwise = false;
+    rasterizerDesc.MultisampleEnable = false;
+    rasterizerDesc.ScissorEnable = false;
+    rasterizerDesc.SlopeScaledDepthBias = 0.0f;
+    // rasterizer creation
+    hR = m_device->CreateRasterizerState ( &rasterizerDesc, m_rasterizerState.put () );
+    if (FAILED ( hR ))
+    {
+      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Creation the rasterizer state failed!" );
+      return;
+    }
+    // set the active rasterizer state
+    m_deviceContext->RSSetState ( m_rasterizerState.get () );
+
+
+
+    // viewport structure: set the viewport to entire back buffer (what area should be rendered to)
+    // with other words: so Direct3D can map clip space coordinates to the render target space
+    D3D11_VIEWPORT viewPort;
+    viewPort.Width = float ( m_core->m_mainPageTypes->m_getDisplay ()->panelWidthPixels );
+    viewPort.Height = float ( m_core->m_mainPageTypes->m_getDisplay ()->panelHeightPixels );
+    viewPort.MinDepth = 0.0f; // minimum and maximum depth buffer values
+    viewPort.MaxDepth = 1.0f;
+    viewPort.TopLeftX = 0; // first four integers: viewport rectangle (relative to client window rectangle)
+    viewPort.TopLeftY = 0;
+    // setting the viewport
+    // the second parameter is a pointer to an array of viewports
+    m_deviceContext->RSSetViewports ( 1, &viewPort );
+
+
+
+    m_allocated = true;
+
+
 
     m_clearBuffers ();
 
@@ -581,44 +557,46 @@ void Direct3D::m_setDisplayMode ( void )
       for (unsigned int i = 0; i < m_displayModesCount; i++)
       {
         // support check for current resolution of the client window (at engine initialization streamed from settings file)
-        if (m_displayModes [i].Width == static_cast<UINT>(m_core->m_outputWidth))
-          if (m_displayModes [i].Height == static_cast<UINT>(m_core->m_outputHeight))
-          {
-            m_displayMode = m_displayModes [i];
-            m_displayModeIndex = i;
-            break;
-          } else
-          {
-            // not supported: set to the lowest supported resolution
-            m_displayMode = m_displayModes [0];
-            m_displayModeIndex = 0;
+        if (m_displayModes [i].Width == m_core->m_mainPageTypes->m_getDisplay ()->panelWidthPixels &&
+             m_displayModes [i].Height == m_core->m_mainPageTypes->m_getDisplay ()->panelHeightPixels)
+        {
+          m_displayMode = m_displayModes [i];
+          m_displayModeIndex = i;
+          break;
+        }
+      }
 
-            PointerProvider::getFileLogger ()->m_push ( logType::warning, std::this_thread::get_id (), "mainThread",
-                                                        "The chosen resolution is not supported!" );
+      if (m_displayMode.Width == 0)
+      {
+        // not supported: set to the lowest supported resolution
+        m_displayMode = m_displayModes [0];
+        m_displayModeIndex = 0;
 
-            // rewrite a not valid configurations with defaults: the file is probably modified from outside of the application
-            if (!PointerProvider::getConfiguration ()->m_apply ( PointerProvider::getConfiguration ()->m_getDefaults () ))
-            {
-              PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                          "Rewriting the Configuration file with default settings failed." );
-            }
-          }
+        PointerProvider::getFileLogger ()->m_push ( logType::warning, std::this_thread::get_id (), "mainThread",
+                                                    "The chosen resolution is not supported!" );
+
+        // rewrite a not valid configurations with defaults: the file is probably modified from outside of the application
+        if (!PointerProvider::getConfiguration ()->m_apply ( PointerProvider::getConfiguration ()->m_getDefaults () ))
+        {
+          PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                      "Rewriting the Configuration file with default settings failed." );
+        }
       }
     }
-
-
-    //if (m_swapChain)
-    //{
-    //  // setting the resolution
-    //  hR = m_swapChain->ResizeTarget ( &m_displayMode );
-    //  if (FAILED ( hR ))
-    //  {
-    //    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-    //                                                "Setting a supported resolution failed." );
-    //  }
-    //}
-
   }
+
+
+  //if (m_swapChain)
+  //{
+  //  // setting the resolution
+  //  hR = m_swapChain->ResizeTarget ( &m_displayMode );
+  //  if (FAILED ( hR ))
+  //  {
+  //    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+  //                                                "Setting a supported resolution failed." );
+  //  }
+  //}
+
   catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -632,39 +610,46 @@ void Direct3D::m_onSuspending ( void )
 
   // power suspension procedure
 
-  m_deviceContext->ClearState ();
+  //m_deviceContext->ClearState ();
 
-  winrt::com_ptr<IDXGIDevice3> dxgiDevice;
-  if (SUCCEEDED ( m_device.try_as ( dxgiDevice ) ))
-  {
-    dxgiDevice->Trim ();
-    PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
-                                                "Direct3D is successfully suspended." );
-  }
-
-
-  //unsigned long rC { 0 };
-  //HRESULT hR;
-  // Direct3D application destruction
-  //if (m_D3D)
+  //winrt::com_ptr<IDXGIDevice3> dxgiDevice;
+  //if (SUCCEEDED ( m_device.try_as ( dxgiDevice ) ))
   //{
-  //  m_D3D->m_initialized = false;
-  //  m_D3D->m_deviceContext->ClearState ();
-  //  rC = m_D3D->m_rasterizerState.Reset ();
-  //  m_D3D->m_deviceContext->OMSetRenderTargets ( 0, nullptr, nullptr );
-  //  rC = m_D3D->m_depthSview.Reset ();
-  //  rC = m_D3D->m_depthSstate.Reset ();
-  //  rC = m_D3D->m_depthSbuffer.Reset ();
-  //  rC = m_D3D->m_renderTview.Reset ();
-  //  rC = m_D3D->m_swapChain.Reset ();
-
-  //  rC = m_D3D->m_device.Reset ();
-  //  m_D3D->m_core = nullptr;
-
-  //  delete m_D3D;
+  //  dxgiDevice->Trim ();
   //  PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
-  //                                              "Direct3D is successfully destructed." );
+  //                                              "Direct3D is successfully suspended." );
   //}
+
+
+  unsigned long rC { 0 };
+  HRESULT hR;
+
+  m_allocated = false;
+  m_initialized = false;
+
+  m_deviceContext->ClearState ();
+  rC = m_rasterizerState->Release ();
+  ID3D11RenderTargetView* nullViews [] = { nullptr };
+  m_deviceContext->OMSetRenderTargets ( _countof ( nullViews ), nullViews, nullptr );
+  rC = m_depthSview->Release ();
+  rC = m_depthSstate->Release ();
+  rC = m_depthSbuffer->Release ();
+  rC = m_renderTview->Release ();
+
+  m_deviceContext->Flush ();
+
+  rC = m_swapChain->Release ();
+  rC = m_deviceContext->Release ();
+  rC = m_device->Release ();
+
+  m_core = nullptr;
+
+  if (rC)
+    PointerProvider::getFileLogger ()->m_push ( logType::warning, std::this_thread::get_id (), "mainThread",
+                                                "Problem while releasing one or more Direct3D resources!" );
+  else
+    PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
+                                                "Direct3D is successfully destructed." );
 
 };
 
@@ -822,7 +807,7 @@ void Direct3D::m_present ( void )
          (hR != DXGI_ERROR_WAS_STILL_DRAWING)) // occurs, if the calling thread is blocked
     {
       PointerProvider::getFileLogger ()->m_push ( logType::warning, std::this_thread::get_id (), "mainThread",
-                                                  "The presentation of the scene failed!" );
+                                                  "Presentation of the scene failed!" );
     }
 
     //m_deviceContext->DiscardView1 ( m_renderTview.get (), nullptr, 0 );

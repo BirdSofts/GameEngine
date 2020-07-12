@@ -24,12 +24,6 @@ DiffuseLight::DiffuseLight () : m_initialized ( false )
 //};
 
 
-const bool& DiffuseLight::m_isInitialized ( void )
-{
-  return m_initialized;
-};
-
-
 void DiffuseLight::m_setColour ( const float* colour )
 {
   m_diffuseColour = DirectX::XMFLOAT4 { colour [0], colour [1], colour [2], colour [3] };
@@ -39,16 +33,4 @@ void DiffuseLight::m_setColour ( const float* colour )
 void DiffuseLight::m_setDirection ( const float* direction )
 {
   m_diffuseDirection = DirectX::XMFLOAT3 { direction [0], direction [1], direction [2] };
-};
-
-
-DirectX::XMFLOAT4 DiffuseLight::m_getColour ( void )
-{
-  return m_diffuseColour;
-};
-
-
-DirectX::XMFLOAT3 DiffuseLight::m_getDirection ( void )
-{
-  return m_diffuseDirection;
 };

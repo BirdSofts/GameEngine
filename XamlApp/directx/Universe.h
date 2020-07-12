@@ -51,17 +51,18 @@ private:
   DiffuseLight* m_diffuseLight; // pointer to the diffuse light application
   ID3D11Buffer* m_diffuseLightBuffer; // constant light buffer (to interface with shader)
 
-  bool m_initialized; // true if initialization was successful
+  bool m_initialized; // true in case of successful initialization
 public:
-  Universe ( ID3D11Device*, ID3D11DeviceContext* );
+  Universe ( ID3D11Device* dev, ID3D11DeviceContext* devC );
   //~Universe ( void );
-  const bool& m_isInitialized ( void ); // get the initialized state
 
   void m_renderResources ( void ); // map matrix buffer and update
-  Camera* m_getCamera ( void ); // get the pointer to camera application
-  DiffuseLight* m_getDiffuseLight ( void ); // get the pointer to diffuse light application
   void m_update ( void ); // update the game universe
   void m_release ( void ); // release the resource
+
+  const bool& m_isInitialized ( void ) { return m_initialized; }; // get the initialized state
+  Camera* m_getCamera ( void ) { return m_camera; }; // get pointer to camera
+  DiffuseLight* m_getDiffuseLight ( void ) { return m_diffuseLight; }; // get pointer to diffuse light
 };
 
 

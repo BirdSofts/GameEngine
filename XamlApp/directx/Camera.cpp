@@ -27,7 +27,7 @@ Camera::Camera ( void )
     initialized = true;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -39,12 +39,6 @@ Camera::Camera ( void )
 //{
 //
 //};
-
-
-const bool& Camera::isInitialized ( void )
-{
-  return initialized;
-};
 
 
 void Camera::renderCamera ( void )
@@ -98,7 +92,7 @@ void Camera::renderCamera ( void )
     matrixView = DirectX::XMMatrixLookAtLH ( positionVector, lookAtVector, upVector );
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -125,10 +119,4 @@ void Camera::setPosition ( float x, float y, float z )
 void Camera::forwardBackward ( float z )
 {
   position.z += z;
-};
-
-
-const DirectX::XMMATRIX& Camera::getView ( void )
-{
-  return matrixView;
 };
