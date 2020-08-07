@@ -49,19 +49,19 @@ void Camera::renderCamera ( void )
     DirectX::XMFLOAT3 up, pos, lookAt;
     DirectX::XMVECTOR upVector, positionVector, lookAtVector;
 
-    // vector setup: the one that points upwards
+    // up vector setup (along the y-axis): the one that points upwards
     up.x = 0.0f;
     up.y = 1.0f;
     up.z = 0.0f;
     upVector = DirectX::XMLoadFloat3 ( &up ); // load into structure
 
-    // camera position setup (in the world)
+    // camera position (eye) setup (in the world)
     pos.x = position.x;
     pos.y = position.y;
     pos.z = position.z;
     positionVector = DirectX::XMLoadFloat3 ( &pos );
 
-    // camera looking setup (default)
+    // camera looking at setup (default)
     lookAt.x = 0.0f;
     lookAt.y = 0.0f;
     lookAt.z = 1.0f;

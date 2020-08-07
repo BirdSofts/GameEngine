@@ -12,10 +12,9 @@
 
 
 TheCore::TheCore ( MainPageTypes* mainPageTypes ) :
-  m_mainPageTypes ( mainPageTypes ),
-  m_timer ( nullptr ), m_FPS ( 0 ), m_milliSPF ( 0 ),
+  m_mainPageTypes ( mainPageTypes ), m_timer ( nullptr ),
   m_D3D ( nullptr ), m_D2D ( nullptr ),
-  m_debug ( false ), m_isResizing ( false ), m_initialized ( false )
+  m_deviceRestored ( true ), m_debug ( false ), m_isResizing ( false ), m_initialized ( false )
 {
   try
   {
@@ -31,19 +30,19 @@ TheCore::TheCore ( MainPageTypes* mainPageTypes ) :
 
     // Direct3D instantiation
     m_D3D = new (std::nothrow) Direct3D ( this );
-    if (!m_D3D->m_isInitialized ())
+    if (!m_D3D->m_isReady ())
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "Direct3D initialization failed!" );
+                                                  "A test on Direct3D section failed!" );
       return;
     }
 
     // Direct2D instantiation
     m_D2D = new (std::nothrow) Direct2D ( this );
-    if (!m_D2D->m_isInitialized ())
+    if (!m_D2D->m_isReady ())
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "Direct2D initialization failed!" );
+                                                  "A test on Direct2D section failed!" );
       return;
     }
 
@@ -66,6 +65,12 @@ TheCore::TheCore ( MainPageTypes* mainPageTypes ) :
 //{
 //
 //};
+
+
+void TheCore::m_registerDeviceNotify ( IDeviceNotify* deviceNotify )
+{
+  m_deviceNotify = deviceNotify;
+};
 
 
 void TheCore::m_setSwapChainPanel ( winrt::Windows::UI::Xaml::Controls::SwapChainPanel* swapChainPanel )
@@ -98,36 +103,25 @@ void TheCore::m_setSwapChainPanel ( winrt::Windows::UI::Xaml::Controls::SwapChai
 }
 
 
-void TheCore::m_setResolution ( const bool& prm, const int& width, const int& height )
+void TheCore::m_updateDisplay ( const bool& setResolution )
 {
   try
   {
 
-    if (width == 0 && height == 0)
+    if (setResolution)
     {
-
-      if (prm)
-      {
-        // highest supported resolution + fullscreen
-        m_D3D->m_displayModeIndex = m_D3D->m_displayModesCount - 1;
-        m_D3D->m_displayMode = m_D3D->m_displayModes [m_D3D->m_displayModeIndex];
-      } else
-      {
-        // lowest supported resolution
-        m_D3D->m_displayModeIndex = 0;
-        m_D3D->m_displayMode = m_D3D->m_displayModes [m_D3D->m_displayModeIndex];
-      }
-
+      // highest supported resolution
+      m_D3D->m_displayModeIndex = m_D3D->m_displayModesCount - 1;
+      m_D3D->m_displayMode = m_D3D->m_displayModes [m_D3D->m_displayModeIndex];
     } else
     {
-
-      // user enjoys windowed mode at arbitrary resolutions
-      m_D3D->m_displayMode.Width = width;
-      m_D3D->m_displayMode.Height = height;
-
-      m_resizeResources ( false );
-
+      // lowest supported resolution
+      m_D3D->m_displayModeIndex = 0;
+      m_D3D->m_displayMode = m_D3D->m_displayModes [m_D3D->m_displayModeIndex];
     }
+
+    m_resizeResources ( false );
+
 
   }
   catch (const std::exception& ex)
@@ -151,14 +145,20 @@ void TheCore::m_resizeResources ( const bool& displayMode )
       unsigned long rC { 0 };
       HRESULT hR;
 
+
       // free game resources
       //if ()
       //{
       //}
 
+
       // free Direct2D resources
       if (m_D2D && !rC)
       {
+
+        m_D2D->m_allocated = false;
+
+        rC = m_D2D->m_stateBlock->Release ();
 
         rC = m_D2D->m_textFormatLogs->Release ();
         rC = m_D2D->m_textFormatFPS->Release ();
@@ -168,8 +168,11 @@ void TheCore::m_resizeResources ( const bool& displayMode )
         rC = m_D2D->m_brushYellow->Release ();
         rC = m_D2D->m_brushRed->Release ();
         m_D2D->m_deviceContext->SetTarget ( nullptr );
-        rC = m_D2D->m_dcBitmap->Release ();
-        rC = m_D2D->m_dcBuffer->Release ();
+        rC = m_D2D->m_deviceContextBitmap->Release ();
+        rC = m_D2D->m_deviceContextBuffer->Release ();
+        rC = m_D2D->m_deviceContext->Release ();
+
+        m_D2D->m_stateBlock.detach ();
 
         m_D2D->m_textLayoutFPS.detach ();
         m_D2D->m_textLayoutLogs.detach ();
@@ -181,71 +184,72 @@ void TheCore::m_resizeResources ( const bool& displayMode )
         m_D2D->m_brushWhite.detach ();
         m_D2D->m_brushYellow.detach ();
         m_D2D->m_brushRed.detach ();
-        m_D2D->m_dcBitmap.detach ();
-        m_D2D->m_dcBuffer.detach ();
+        m_D2D->m_deviceContextBitmap.detach ();
+        m_D2D->m_deviceContextBuffer.detach ();
         m_D2D->m_deviceContext.detach ();
         if (rC)
         {
           rC = 0; // HACK debug
           PointerProvider::getFileLogger ()->m_push ( logType::warning, std::this_thread::get_id (), "mainThread",
-                                                      "Problem while releasing one or more resources!" );
+                                                      "Releasing one or more Direct2D resources failed!" );
         }
 
       }
 
+
       // free Direct3D resources
-      if (m_D3D->m_depthSview && m_D3D->m_renderTview && !rC)
+      if (m_D3D->m_depthStencilView && m_D3D->m_renderTargetView && !rC)
       {
+
+        m_D3D->m_allocated = false;
 
         m_D3D->m_deviceContext->ClearState ();
         rC = m_D3D->m_rasterizerState->Release ();
         m_D3D->m_deviceContext->OMSetRenderTargets ( 0, nullptr, nullptr );
-        rC = m_D3D->m_depthSview->Release ();
-        rC = m_D3D->m_depthSstate->Release ();
-        rC = m_D3D->m_depthSbuffer->Release ();
-        rC = m_D3D->m_renderTview->Release ();
+        rC = m_D3D->m_depthStencilView->Release ();
+        rC = m_D3D->m_depthStencilState->Release ();
+        rC = m_D3D->m_depthStencilBuffer->Release ();
+        rC = m_D3D->m_renderTargetView->Release ();
         ID3D11RenderTargetView* nullViews [] = { nullptr };
         m_D3D->m_deviceContext->OMSetRenderTargets ( _countof ( nullViews ), nullViews, nullptr );
         m_D3D->m_rasterizerState.detach ();
-        m_D3D->m_depthSbuffer.detach ();
-        m_D3D->m_depthSstate.detach ();
-        m_D3D->m_depthSview.detach ();
-        m_D3D->m_renderTview.detach ();
+        m_D3D->m_depthStencilBuffer.detach ();
+        m_D3D->m_depthStencilState.detach ();
+        m_D3D->m_depthStencilView.detach ();
+        m_D3D->m_renderTargetView.detach ();
         m_D3D->m_deviceContext->Flush ();
         if (rC)
         {
           rC = 0; // HACK debug
           PointerProvider::getFileLogger ()->m_push ( logType::warning, std::this_thread::get_id (), "mainThread",
-                                                      "Problem while releasing one or more resources!" );
+                                                      "Releasing one or more Direct3D resources failed!" );
         }
 
       }
 
       // reallocation procedures
-      if (!rC)
+
+      if (displayMode)
       {
-
-        if (displayMode)
-        {
-          m_D3D->m_setDisplayMode ();
-        }
-
-        m_D3D->m_allocation ();
-
-        if (m_D2D)
-        {
-          m_D2D->m_allocateResources ();
-        }
-
-        //game->allocateResources ();
-
-        m_isResizing = false;
-
-      } else
-      {
-        PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                    "Resources' deallocation failed!" );
+        m_D3D->m_setDisplayMode ();
       }
+
+      if (m_D3D)
+      {
+        if (m_D3D->m_createDeviceResources ())
+        {
+          if (m_D2D)
+          {
+            if (m_D2D->m_createDeviceContextResources ())
+              PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                          "Resources are successfully reallocated!" );
+            //game->allocateResources ();
+
+          }
+        }
+
+      }
+      m_isResizing = false;
 
     }
 
@@ -264,28 +268,17 @@ void TheCore::m_frameStatistics ( void )
   {
 
     HRESULT hR;
+    unsigned long rC;
 
-    // a static local variable retains its state between the calls:
-    static int frameCounter; // frame counter (a frame is a full cycle of the game loop)
-    static double elapsed; // the elapsed time since the last call
-    frameCounter++;
-
-    if ((m_timer->m_getTotalTime () - elapsed) >= 1e0)
+    if (m_debug && m_D2D && !m_isResizing)
     {
 
-      // frame calculations:
-      m_FPS = frameCounter; // the number of counted frames in one second
-      m_milliSPF = 1e3 / m_FPS; // average taken time by a frame in milliseconds
-
-      if (m_debug && m_D2D && !m_isResizing)
+      if (m_timer->m_isNewFrame ())
       {
-        m_D2D->m_textLayoutsDebug = false;
-        //// results to window caption
-        //std::wstring caption = L"The Game ^,^ - FPS: " + std::to_wstring ( fps ) +
-        //  L" - mSPF: " + std::to_wstring ( mspf );
-        //SetWindowTextW ( appHandle, caption.c_str () );
 
-        // results to client window area
+        m_timer->m_isNewFrame () = false;
+        m_D2D->m_textLayoutsDebug = false;
+
         // FPS information text layouts
         std::wostringstream outFPS;
         outFPS.precision ( 6 );
@@ -294,18 +287,20 @@ void TheCore::m_frameStatistics ( void )
           << m_D3D->m_displayMode.RefreshRate.Numerator / m_D3D->m_displayMode.RefreshRate.Denominator << " Hz" << std::endl
           << "Display Adapter: " << m_D3D->m_videoCardDescription
           << " - Dedicated memory: " << m_D3D->m_videoCardMemory << "MB" << std::endl
-          << "^_^ - FPS: " << m_FPS << L" - mSPF: " << m_milliSPF << std::endl;
+          << "^_^ - FPS: " << m_timer->m_getFPS () << L" - mSPF: " << m_timer->m_getMilliSPF () << std::endl;
 
         if (m_D2D->m_textLayoutFPS)
         {
-          m_D2D->m_textLayoutFPS->Release ();
+          rC = m_D2D->m_textLayoutFPS->Release ();
           m_D2D->m_textLayoutFPS.detach ();
         }
 
         // before rendering a text to a bitmap: the creation of the text layout
-        hR = m_D2D->m_writeFactory->CreateTextLayout ( outFPS.str ().c_str (), (UINT32) outFPS.str ().size (),
-                                                       m_D2D->m_textFormatFPS.get (), m_mainPageTypes->m_getDisplay ()->panelWidthDips,
-                                                       m_mainPageTypes->m_getDisplay ()->panelHeightDips, m_D2D->m_textLayoutFPS.put () );
+        hR = m_D2D->m_directWriteFactory->CreateTextLayout ( outFPS.str ().c_str (), (UINT32) outFPS.str ().size (),
+                                                             m_D2D->m_textFormatFPS.get (), m_mainPageTypes->m_getDisplay ()->panelWidthDips, 50.f,
+                                                             reinterpret_cast<IDWriteTextLayout**>(m_D2D->m_textLayoutFPS.put ()) );
+        if (SUCCEEDED ( hR ))
+          hR = m_D2D->m_textLayoutFPS->GetMetrics ( &m_D2D->m_textMetricsFPS );
         if (FAILED ( hR ))
         {
           PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -314,27 +309,27 @@ void TheCore::m_frameStatistics ( void )
         }
 
         m_D2D->m_textLayoutsDebug = true;
-
       }
 
-      // reset
-      frameCounter = 0;
-      elapsed += 1.0;
     }
+
+    // last log entity text layout
+    std::wostringstream outLastlog;
+    outLastlog << L"Last event: ";
+    outLastlog << Converter::strConverter ( PointerProvider::getFileLogger ()->m_getLogRawStr () ) << std::endl;
 
     if (m_D2D->m_textLayoutLogs)
     {
 
-      m_D2D->m_textLayoutLogs->Release ();
+      rC = m_D2D->m_textLayoutLogs->Release ();
       m_D2D->m_textLayoutLogs.detach ();
     }
 
-    std::wostringstream outLastlog;
-    outLastlog << L"Last event: ";
-    outLastlog << Converter::strConverter ( PointerProvider::getFileLogger ()->m_getLogRawStr () ) << std::endl;
-    hR = m_D2D->m_writeFactory->CreateTextLayout ( outLastlog.str ().c_str (), (UINT32) (UINT32) outLastlog.str ().size (),
-                                                   m_D2D->m_textFormatLogs.get (), m_mainPageTypes->m_getDisplay ()->panelWidthDips,
-                                                   m_mainPageTypes->m_getDisplay ()->panelHeightDips, m_D2D->m_textLayoutLogs.put () );
+    hR = m_D2D->m_directWriteFactory->CreateTextLayout ( outLastlog.str ().c_str (), (UINT32) (UINT32) outLastlog.str ().size (),
+                                                         m_D2D->m_textFormatLogs.get (), m_mainPageTypes->m_getDisplay ()->panelWidthDips, 50.f,
+                                                         reinterpret_cast<IDWriteTextLayout**>(m_D2D->m_textLayoutLogs.put ()) );
+    if (SUCCEEDED ( hR ))
+      hR = m_D2D->m_textLayoutLogs->GetMetrics ( &m_D2D->m_textMetricsLogs );
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -342,19 +337,22 @@ void TheCore::m_frameStatistics ( void )
       return;
     }
 
+    // pointer position text layout
+    std::wostringstream outPointer;
+    outPointer << m_mainPageTypes->m_getPointer ().c_str () << std::endl;
+
     if (m_D2D->m_textLayoutPointer)
     {
 
-      m_D2D->m_textLayoutPointer->Release ();
+      rC = m_D2D->m_textLayoutPointer->Release ();
       m_D2D->m_textLayoutPointer.detach ();
     }
 
-    std::wostringstream outPointer;
-    outPointer << m_mainPageTypes->m_getPointer ().c_str () << std::endl;
-    hR = m_D2D->m_writeFactory->CreateTextLayout ( outPointer.str ().c_str (), (UINT32) (UINT32) outPointer.str ().size (),
-                                                   m_D2D->m_textFormatPointer.get (), m_mainPageTypes->m_getDisplay ()->panelWidthDips,
-                                                   m_mainPageTypes->m_getDisplay ()->panelHeightDips, m_D2D->m_textLayoutPointer.put () );
-
+    hR = m_D2D->m_directWriteFactory->CreateTextLayout ( outPointer.str ().c_str (), (UINT32) (UINT32) outPointer.str ().size (),
+                                                         m_D2D->m_textFormatPointer.get (), 300.f, 30.f,
+                                                         reinterpret_cast<IDWriteTextLayout**>(m_D2D->m_textLayoutPointer.put ()) );
+    if (SUCCEEDED ( hR ))
+      hR = m_D2D->m_textLayoutPointer->GetMetrics ( &m_D2D->m_textMetricsPointer );
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -371,29 +369,39 @@ void TheCore::m_frameStatistics ( void )
 };
 
 
-void TheCore::m_onSuspending ( void )
+void TheCore::m_release ( void )
 {
   try
   {
 
-    m_initialized = false;
-
     if (m_D2D)
     {
-      m_D2D->m_onSuspending ();
+      m_D2D->m_release ();
     }
 
     if (m_D3D)
     {
-      m_D3D->m_onSuspending ();
+      m_D3D->m_release ();
     }
 
-    // timer application destruction
-    if (m_timer)
-      delete m_timer;
+    if (m_deviceRestored)
+    {
+      // timer application destruction
+      if (m_timer)
+      {
+        delete m_timer;
+        m_timer = nullptr;
+      }
 
-    PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
-                                                "Application Framework is successfully suspended." );
+      m_initialized = false;
+
+      PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
+                                                  "Application Framework is successfully suspended." );
+    } else
+    {
+      PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "main/gameThread",
+                                                  "Application Framework is successfully released." );
+    }
 
   }
   catch (const std::exception& ex)
@@ -406,6 +414,18 @@ void TheCore::m_onSuspending ( void )
 
 void TheCore::m_onDeviceLost ( void )
 {
+
+  m_deviceRestored = false;
+
+  m_deviceNotify->OnDeviceEvents ();
+
+  m_release ();
+
+  if (m_D3D->m_createResources ())
+    if (m_D2D->m_createResources ())
+      m_deviceRestored = true;
+
+  m_deviceNotify->OnDeviceEvents ();
 
 };
 

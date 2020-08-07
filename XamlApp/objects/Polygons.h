@@ -21,8 +21,8 @@ private:
   std::string m_entryPoint;
   bool m_dynamic; // true: dynamic usage + write access for CPU
 protected:
-  ID3D11Device* m_device; // pointer to DirectX device
-  ID3D11DeviceContext* m_deviceContext; // pointer to DirectX device context
+  ID3D11Device3* m_device; // pointer to DirectX device
+  ID3D11DeviceContext3* m_deviceContext; // pointer to DirectX device context
 
   D3D11_BUFFER_DESC m_vertexBufferDesc;
   // 2D/3D models buffer containers, drawn by invoked shaders that are compiled into vertex/pixel shaders
@@ -37,7 +37,7 @@ protected:
 
   bool m_allocate ( tType*, unsigned long*, unsigned long& ); // object model resources allocation
 public:
-  Model ( ID3D11Device* dev, ID3D11DeviceContext* devC, std::string entry, bool rewrite );
+  Model ( ID3D11Device3* dev, ID3D11DeviceContext3* devC, std::string entry, bool rewrite );
   //~Model ( void );
 
   void m_release ( void ); // release the object model
@@ -57,7 +57,7 @@ private:
 
   bool m_allocated; // true after successful resource allocation
 public:
-  Triangles ( ID3D11Device* dev, ID3D11DeviceContext* devC );
+  Triangles ( ID3D11Device3* dev, ID3D11DeviceContext3* devC );
   //~Triangles ( void );
 
   const unsigned long& m_getVerticesCount ( void ) { return m_verticesCount; }; // get vertices count
@@ -76,7 +76,7 @@ private:
 
   bool m_allocated; // true after successful resource allocation
 public:
-  Line ( ID3D11Device* dev, ID3D11DeviceContext* devC );
+  Line ( ID3D11Device3* dev, ID3D11DeviceContext3* devC );
   //~Line ( void );
 
   void m_update ( void );
@@ -94,7 +94,7 @@ private:
 
   bool m_allocated; // true after successful resource allocation
 public:
-  TexturedTriangles ( ID3D11Device* dev, ID3D11DeviceContext* devC );
+  TexturedTriangles ( ID3D11Device3* dev, ID3D11DeviceContext3* devC );
   //~TexturedTriangles ( void );
 
   const unsigned long& m_getVerticesCount ( void ) { return m_verticesCount; }; // get vertices count
@@ -110,7 +110,7 @@ private:
 
   bool m_allocated; // true after successful resource allocation
 public:
-  LightedTriangle ( ID3D11Device* dev, ID3D11DeviceContext* devC );
+  LightedTriangle ( ID3D11Device3* dev, ID3D11DeviceContext3* devC );
   //~LightedTriangle ( void );
 
   const unsigned long& m_getVerticesCount ( void ) { return m_verticesCount; }; // get vertices count
@@ -126,7 +126,7 @@ private:
 
   bool m_allocated; // true after successful resource allocation
 public:
-  Cube ( ID3D11Device* dev, ID3D11DeviceContext* devC );
+  Cube ( ID3D11Device3* dev, ID3D11DeviceContext3* devC );
   //~Cube ( void );
 
   const unsigned long& m_getVerticesCount ( void ) { return m_verticesCount; }; // get vertices count

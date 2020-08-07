@@ -45,7 +45,7 @@ unsigned int VertexTexDiffuseL::read ( const char* path, VertexL** vertices )
         while (index != i)
         {
           stream >> (*vertices) [index].position.x >> (*vertices) [index].position.y >> (*vertices) [index].position.z;
-          (*vertices) [index].position.x += .2f;
+          //(*vertices) [index].position.x += .2f;
           /*(*vertices) [index].position.y += 1;
           (*vertices) [index].position.z += 1;*/
           stream >> (*vertices) [index].texture.x >> (*vertices) [index].texture.y;

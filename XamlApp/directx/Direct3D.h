@@ -48,11 +48,12 @@ private:
   unsigned int m_videoCardMemory; // dedicated video card memory (megabytes)
   std::wstring m_videoCardDescription; // string representing the physical adapter name
 
-  winrt::com_ptr<ID3D11RenderTargetView1> m_renderTview; // render target view
+  winrt::com_ptr<ID3D11RenderTargetView1> m_renderTargetView; // render target view
 
-  winrt::com_ptr<ID3D11Texture2D> m_depthSbuffer; // depth-stencil view buffer
-  winrt::com_ptr<ID3D11DepthStencilState> m_depthSstate; // depth-stencil state
-  winrt::com_ptr<ID3D11DepthStencilView> m_depthSview; // depth-stencil view
+  winrt::com_ptr<ID3D11Texture2D> m_depthStencilBuffer; // depth-stencil view buffer
+  winrt::com_ptr<ID3D11DepthStencilState> m_depthStencilState; // depth-stencil state
+  winrt::com_ptr<ID3D11DepthStencilView> m_depthStencilView; // depth-stencil view
+  D3D11_VIEWPORT m_screenViewPort; // screen view port
 
   DXGI_FORMAT m_backBufferFormat; // back buffer colour format
   UINT m_backBufferCount; // back buffers count
@@ -61,17 +62,17 @@ private:
   winrt::com_ptr<ID3D11RasterizerState> m_rasterizerState; // rasterizer state
 
   bool m_vSync; // application configuration (if true render according installed monitor refresh rate)
-  bool m_allocated; // true if resources allocation was successful
-  bool m_initialized; // true if initialization was successful
 
-  void m_createIndependentResources ( void ); // create Direct3D independent resources
-  void m_createDeviceDependentResources ( void ); // create Direct3D device dependent resources
-  void m_createWindowDependentResources ( void ); // create Direct3D window dependent resources
-  void m_allocation ( void ); // Direct3D resources resize/creation
+  bool m_allocated; // true if resources are allocated successful
+  bool m_initialized; // true in case of successful initialization
+
+  bool m_createResources ( void ); // create Direct3D independent resources
+  bool m_createDeviceResources ( void ); // create Direct3D device dependent resources
+  bool m_createDeviceContextResources ( void ); // create Direct3D device context dependent resources
+  bool m_initialize ( void ); // different resources initialization
   void m_setDisplayMode ( void ); // Direct3D display mode change/adjust
-  void m_onSuspending ( void ); // suspension preparation
+  void m_release ( void ); // suspension preparation
   void m_validate ( void ); // validate the correct state of Direct3D resources
-  void m_onDeviceLost ( void ); // clean and reallocate
 public:
   Direct3D ( TheCore* coreObj );
   //~Direct3D ( void );
@@ -79,8 +80,8 @@ public:
   void m_clearBuffers ( void ); // clear depth-stencil buffers
   void m_present ( void ); // swapping: present the buffer chain by flipping the buffers
 
-  const bool& Direct3D::m_isInitialized ( void ) { return m_initialized; }; // get the initialized state
-  const winrt::com_ptr<ID3D11Device> m_getDevice ( void ) { return m_device; }; // get the pointer to D3D device
+  const bool& Direct3D::m_isReady ( void ) { return m_allocated; }; // true if fully initialized
+  const winrt::com_ptr<ID3D11Device3> m_getDevice ( void ) { return m_device; }; // get the pointer to D3D device
   const winrt::com_ptr<ID3D11DeviceContext3> m_getDevCon ( void ) { return m_deviceContext; }; // get the pointer to D3D device context
   const winrt::com_ptr<IDXGISwapChain3> m_getSwapChain ( void ) { return m_swapChain; }; // get the pointer to D3D swap chain
   const DXGI_FORMAT& m_getBackBufferFormat () { return m_backBufferFormat; }; // get current format of back/depth buffers

@@ -29,6 +29,8 @@
 
 #include <future> // C++ future header
 
+#include <math.h> // C standard math header
+
 
 // Windows dependencies
 #include <windows.h>
@@ -74,17 +76,15 @@
 
 
 // DirectX dependencies
-//#include <wrl/client.h> COM smart pointer
-//#include <wrl.h>
-//#include <d3d10_1.h> // standard DirectX3D 10 APIs (setting up and 3D drawing)
-#include <d3d11_4.h> // standard DirectX3D 11 APIs (setting up and 3D drawing) // 11_3
-//#pragma comment (lib, "d3d11.lib") // linkage to the 'd3d10_1' library
 #if defined(NTDDI_WIN10_RS2)
 #include <dxgi1_6.h> // standard DXGI APIs (tools to interface with installed hardware) // 1_6
 #else
 #include <dxgi1_5.h>
 #endif // !defined(NTDDI_WIN10_RS2)
 //#pragma comment (lib, "dxgi.lib") // linkage to the 'dxgi' library
+//#include <d3d10_1.h> // standard DirectX3D 10 APIs (setting up and 3D drawing)
+#include <d3d11_4.h> // standard DirectX3D 11 APIs (setting up and 3D drawing) // 11_3
+//#pragma comment (lib, "d3d11.lib") // linkage to the 'd3d10_1' library
 
 #include <d2d1_3.h> // standard DirectX2D APIs (setting up and 2D drawing)
 //#pragma comment (lib, "d2d1.lib") // linkage to the 'd2d1' library

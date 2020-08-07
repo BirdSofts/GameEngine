@@ -11,8 +11,34 @@
 #include "Shared.h"
 
 
-Shader::Shader ( ID3D11Device* dev, std::string entry ) :
-  m_device ( dev ), m_entryPoint ( " Entry Point: " + entry )
+Buffer::Buffer ( void )
+{
+  buffer = nullptr;
+  size = 0;
+};
+
+
+Buffer::~Buffer ( void )
+{
+  if (buffer)
+    release ();
+};
+
+
+void Buffer::release ( void )
+{
+
+  if (buffer)
+  {
+    delete buffer;
+    buffer = nullptr;
+  }
+
+};
+
+
+Shader::Shader ( TheCore* coreObj, std::string entry ) :
+  m_core ( coreObj ), m_entryPoint ( " Entry Point: " + entry )
 {
 
   // shaders, introduced in several different types,
@@ -42,32 +68,6 @@ Shader::Shader ( ID3D11Device* dev, std::string entry ) :
 //{
 //
 //};
-
-
-Shader::Buffer::Buffer ( void )
-{
-  buffer = nullptr;
-  size = 0;
-};
-
-
-Shader::Buffer::~Buffer ( void )
-{
-  if (buffer)
-    release ();
-};
-
-
-void Shader::Buffer::release ( void )
-{
-
-  if (buffer)
-  {
-    delete buffer;
-    buffer = nullptr;
-  }
-
-};
 
 
 void Shader::m_loadCompiled ( std::string& fileName, Buffer* csoBuffer )
@@ -127,6 +127,7 @@ bool Shader::m_initializeCompiled ( std::string* filePaths, D3D11_INPUT_ELEMENT_
   {
 
     HRESULT hR;
+    winrt::com_ptr<ID3D11Device3> device { m_core->m_getD3D ()->m_getDevice () };
 
     // load and encapsulate .cso shaders (compiled by VisualStudio) into usable shader objects
     Buffer vertexBuf; // vertex shader buffer
@@ -135,13 +136,19 @@ bool Shader::m_initializeCompiled ( std::string* filePaths, D3D11_INPUT_ELEMENT_
     Buffer pixelBuf; // pixel shader buffer
     m_loadCompiled ( filePaths [1], &pixelBuf );
 
+    //// Microsoft template:
+    //auto loadVSTask = DX::ReadDataAsync ( L".cso" );
+    //auto createVSTask = loadVSTask.then ( [this]( const std::vector<byte>& fileData ) {
+    //                                      //create shader
+    //                                      } )
+
     if (vertexBuf.buffer && pixelBuf.buffer)
     {
 
       // Direct3D interface for vertex shaders: vertex shader creation
       // purpose: invoking the HLSL shaders for drawing the 3D models already on the GPU
-      hR = m_device->CreateVertexShader ( vertexBuf.buffer,
-                                          vertexBuf.size, nullptr, &m_vertexShader );
+      hR = device->CreateVertexShader ( vertexBuf.buffer,
+                                        vertexBuf.size, nullptr, &m_vertexShader );
       if (FAILED ( hR ))
       {
         PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -151,8 +158,8 @@ bool Shader::m_initializeCompiled ( std::string* filePaths, D3D11_INPUT_ELEMENT_
 
 
       // Direct3D interface for pixel shaders: pixel shader creation
-      hR = m_device->CreatePixelShader ( pixelBuf.buffer,
-                                         pixelBuf.size, nullptr, &m_pixelShader );
+      hR = device->CreatePixelShader ( pixelBuf.buffer,
+                                       pixelBuf.size, nullptr, &m_pixelShader );
       if (FAILED ( hR ))
       {
         PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -163,9 +170,9 @@ bool Shader::m_initializeCompiled ( std::string* filePaths, D3D11_INPUT_ELEMENT_
 
       // input layout creation (how to handle the defined vertices)
       // the interface holds definition of how to feed vertex data into the input-assembler stage of the graphics rendering pipeline
-      hR = m_device->CreateInputLayout ( polygonLayout, elmCount,
-                                         vertexBuf.buffer,
-                                         vertexBuf.size, &m_inputLayout );
+      hR = device->CreateInputLayout ( polygonLayout, elmCount,
+                                       vertexBuf.buffer,
+                                       vertexBuf.size, &m_inputLayout );
       if (FAILED ( hR ))
       {
         PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -258,10 +265,11 @@ bool Shader::m_initialize ( D3D11_INPUT_ELEMENT_DESC* polygonLayout, unsigned in
   {
 
     HRESULT hR;
+    winrt::com_ptr<ID3D11Device3> device { m_core->m_getD3D ()->m_getDevice () };
 
 
-    hR = m_device->CreateVertexShader ( m_vertexBuffer->GetBufferPointer (),
-                                        m_vertexBuffer->GetBufferSize (), nullptr, &m_vertexShader );
+    hR = device->CreateVertexShader ( m_vertexBuffer->GetBufferPointer (),
+                                      m_vertexBuffer->GetBufferSize (), nullptr, &m_vertexShader );
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -270,8 +278,8 @@ bool Shader::m_initialize ( D3D11_INPUT_ELEMENT_DESC* polygonLayout, unsigned in
     }
 
 
-    hR = m_device->CreatePixelShader ( m_pixelBuffer->GetBufferPointer (),
-                                       m_pixelBuffer->GetBufferSize (), nullptr, &m_pixelShader );
+    hR = device->CreatePixelShader ( m_pixelBuffer->GetBufferPointer (),
+                                     m_pixelBuffer->GetBufferSize (), nullptr, &m_pixelShader );
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -280,9 +288,9 @@ bool Shader::m_initialize ( D3D11_INPUT_ELEMENT_DESC* polygonLayout, unsigned in
     }
 
 
-    hR = m_device->CreateInputLayout ( polygonLayout, elmCount,
-                                       m_vertexBuffer->GetBufferPointer (),
-                                       m_vertexBuffer->GetBufferSize (), &m_inputLayout );
+    hR = device->CreateInputLayout ( polygonLayout, elmCount,
+                                     m_vertexBuffer->GetBufferPointer (),
+                                     m_vertexBuffer->GetBufferSize (), &m_inputLayout );
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -300,7 +308,7 @@ bool Shader::m_initialize ( D3D11_INPUT_ELEMENT_DESC* polygonLayout, unsigned in
     if (sampler)
     {
       // testure sampler state creation
-      hR = m_device->CreateSamplerState ( sampler, &m_samplerState );
+      hR = device->CreateSamplerState ( sampler, &m_samplerState );
       if (FAILED ( hR ))
       {
         PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -347,7 +355,7 @@ void Shader::m_release ( void )
       m_samplerState = nullptr;
     }
 
-    m_device = nullptr;
+    m_core = nullptr;
 
   }
   catch (const std::exception& ex)
@@ -358,8 +366,8 @@ void Shader::m_release ( void )
 };
 
 
-ShaderColour::ShaderColour ( ID3D11Device* dev ) :
-  Shader ( dev, "ColourShader" ), m_initialized ( false )
+ShaderColour::ShaderColour ( TheCore* coreObj ) :
+  Shader ( coreObj, "ColourShader" ), m_initialized ( false )
 {
   try
   {
@@ -410,8 +418,8 @@ ShaderColour::ShaderColour ( ID3D11Device* dev ) :
 //};
 
 
-ShaderTexture::ShaderTexture ( ID3D11Device* dev ) :
-  Shader ( dev, "TextureShader" ), m_initialized ( false )
+ShaderTexture::ShaderTexture ( TheCore* coreObj ) :
+  Shader ( coreObj, "TextureShader" ), m_initialized ( false )
 {
   try
   {
@@ -476,8 +484,9 @@ ShaderTexture::ShaderTexture ( ID3D11Device* dev ) :
 //};
 
 
-ShaderDiffuseLight::ShaderDiffuseLight ( ID3D11Device* dev ) :
-  Shader ( dev, "DiffuseLightShader" ), m_initialized ( false )
+ShaderTexDiffLight::ShaderTexDiffLight ( TheCore* coreObj ) :
+  Shader ( coreObj, "TexturedDiffuseLightShader" ),
+  m_initialized ( false )
 {
   try
   {

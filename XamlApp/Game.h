@@ -15,9 +15,10 @@
 #include "resources/Shader.h"
 #include "resources/Texture.h"
 #include "objects/Polygons.h"
+#include "objects/Mesh.h"
 
 
-class Game
+class Game : public IDeviceNotify
 {
 private:
   TheCore* m_core; // pointer to the application core
@@ -26,8 +27,8 @@ private:
 
   ShaderColour* m_shaderColour;
   ShaderTexture* m_shaderTexture;
-  Texture<TargaHeader>* m_texture; // texture resource
-  ShaderDiffuseLight* m_shaderDiffuseLight;
+  Texture* m_texture; // texture resource
+  ShaderTexDiffLight* m_shaderDiffuseLight;
 
   // 2D models:
   Triangles* _2d_triangles; // three triangles
@@ -38,6 +39,9 @@ private:
   // 3D models
   Cube* _3d_cube;
 
+  // 3D mesh models
+  MeshCube* _3d_meshCube;
+
   bool m_allocated; // true if resources allocation was successful
   bool m_paused; // true if the game is paused
   bool m_initialized; // true if initialization was successful
@@ -46,12 +50,13 @@ private:
 public:
   Game ( TheCore* coreObj ); // game initialization
   //~Game ( void );
+  void OnDeviceEvents ( void ); // inherited from device notify (pure virtual deleted function)
 
   const bool m_run ( void ); // game engine loop
   void m_render ( void ); // render the scene
   void m_update ( void ); // updating the game world
-  void m_onSuspending ( void ); // suspension preparation
-  void m_validate ( void ); // game's resources/objects validation/reallocation
+  void m_updateDisplay ( void ); // on display properties changed
+  void m_release ( void ); // suspension preparation
 
   const bool& m_isReady ( void ) { return m_initialized; }; // get the initialized state
   bool& m_isPaused ( void ) { return m_paused; }; // get the paused state

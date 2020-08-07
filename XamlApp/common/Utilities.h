@@ -19,9 +19,9 @@ public:
   TheException ( void );
   //~TheException ( void );
 
-  void m_set ( const char* prm ); // set occurred exeption 
+  void m_set ( const char* prm ); // set occurred exception
 
-  const char* what ( void ) const throw() { return m_expected; }; // standard exception procedure overload
+  const char* what ( void ) const throw() { return m_expected; }; // overload of standard exception procedure
 };
 
 

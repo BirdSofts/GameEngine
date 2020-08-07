@@ -144,6 +144,7 @@ xcopy /y /d "$(VcpkgRoot)installed\x64-windows\tools\lua\lua.dll" "$(LayoutDir)"
     <ClInclude Include="directx\Universe.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="MainPageTypes.h" />
+    <ClInclude Include="objects\Mesh.h" />
     <ClInclude Include="objects\ModelFormats.h" />
     <ClInclude Include="objects\Polygons.h" />
     <ClInclude Include="pch.h" />
@@ -194,6 +195,7 @@ xcopy /y /d "$(VcpkgRoot)installed\x64-windows\tools\lua\lua.dll" "$(LayoutDir)"
     <ClCompile Include="directx\Universe.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="MainPageTypes.cpp" />
+    <ClCompile Include="objects\Mesh.cpp" />
     <ClCompile Include="objects\ModelFormats.cpp" />
     <ClCompile Include="objects\Polygons.cpp" />
     <ClCompile Include="pch.cpp">

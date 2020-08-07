@@ -12,7 +12,7 @@
 
 
 template <class tType>
-Model<tType>::Model ( ID3D11Device* dev, ID3D11DeviceContext* devC, std::string entry, bool rewrite ) :
+Model<tType>::Model ( ID3D11Device3* dev, ID3D11DeviceContext3* devC, std::string entry, bool rewrite ) :
   m_entryPoint ( " Entry Point: " + entry ), m_dynamic ( rewrite ),
   m_device ( dev ), m_deviceContext ( devC ),
   m_vertexBuffer ( nullptr ), m_indexBuffer ( nullptr )
@@ -96,7 +96,7 @@ bool Model<tType>::m_allocate ( tType* data, unsigned long* index, unsigned long
     return true;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () + m_entryPoint );
@@ -125,7 +125,7 @@ void Model<tType>::m_release ( void )
     m_device = nullptr;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -136,8 +136,8 @@ void Model<tType>::m_release ( void )
 void ModelClassLinker ( void ) // don't call this function: solution for linker error, when using templates.
 {
 
-  ID3D11Device* dev { nullptr };
-  ID3D11DeviceContext* devCon { nullptr };
+  ID3D11Device3* dev { nullptr };
+  ID3D11DeviceContext3* devCon { nullptr };
   Model<Vertex> tempVertex ( dev, devCon, "", false );
   tempVertex.m_getIndexBuffer ();
   tempVertex.m_getVertexBuffer ();
@@ -154,7 +154,7 @@ void ModelClassLinker ( void ) // don't call this function: solution for linker 
 }
 
 
-Triangles::Triangles ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
+Triangles::Triangles ( ID3D11Device3* dev, ID3D11DeviceContext3* devC ) :
   Model ( dev, devC, "\tThreeTriangles", false ),
   m_verticesCount ( 0 ), m_allocated ( false )
 {
@@ -165,25 +165,25 @@ Triangles::Triangles ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
     m_verticesCount = 9;
 
     // three triangles vertices data
-    m_verticesData [0].position = DirectX::XMFLOAT3 { -0.95f, 0.0f, 0.0f }; // bottom left
+    m_verticesData [0].position = DirectX::XMFLOAT3 { -1.4f, -0.9f, 0.0f }; // bottom left
     m_verticesData [0].color = DirectX::XMFLOAT4 { 0.13f, 0.13f, 0.13f, 1.0f };
-    m_verticesData [1].position = DirectX::XMFLOAT3 { -0.9f, -0.12f, 0.0f }; // top middle
+    m_verticesData [1].position = DirectX::XMFLOAT3 { -1.2f, -0.7f, 0.0f }; // top middle
     m_verticesData [1].color = DirectX::XMFLOAT4 { 0.53f, 0.53f, 0.53f, 1.0f };
-    m_verticesData [2].position = DirectX::XMFLOAT3 { -1.0f, -0.12f, 0.0f }; // bottom right
+    m_verticesData [2].position = DirectX::XMFLOAT3 { -1.0f, -0.9f, 0.0f }; // bottom right
     m_verticesData [2].color = DirectX::XMFLOAT4 { 0.93f, 0.93f, 0.93f, 1.0f };
 
-    m_verticesData [3].position = DirectX::XMFLOAT3 { -0.75f, 0.0f, 0.0f };
+    m_verticesData [3].position = DirectX::XMFLOAT3 { -1.4f, -0.6f, 0.0f };
     m_verticesData [3].color = DirectX::XMFLOAT4 { 0.13f, 0.80f, 0.13f, 1.0f };
-    m_verticesData [4].position = DirectX::XMFLOAT3 { -0.7f, -0.12f, 0.0f };
+    m_verticesData [4].position = DirectX::XMFLOAT3 { -1.2f, -0.5f, 0.0f };
     m_verticesData [4].color = DirectX::XMFLOAT4 { 0.13f, 0.80f, 0.13f, 1.0f };
-    m_verticesData [5].position = DirectX::XMFLOAT3 { -0.8f, -0.12f, 0.0f };
+    m_verticesData [5].position = DirectX::XMFLOAT3 { -1.0f, -0.6f, 0.0f };
     m_verticesData [5].color = DirectX::XMFLOAT4 { 0.13f, 0.80f, 0.13f, 1.0f };
 
-    m_verticesData [6].position = DirectX::XMFLOAT3 { -0.55f, 0.2f, 0.0f };
+    m_verticesData [6].position = DirectX::XMFLOAT3 { -1.45f, -0.4f, 0.0f };
     m_verticesData [6].color = DirectX::XMFLOAT4 { 0.13f, 0.13f, 0.13f, 1.0f };
-    m_verticesData [7].position = DirectX::XMFLOAT3 { -0.5f, -0.12f, 0.0f };
+    m_verticesData [7].position = DirectX::XMFLOAT3 { -1.3f, 0.1f, 0.0f };
     m_verticesData [7].color = DirectX::XMFLOAT4 { 0.53f, 0.53f, 0.53f, 1.0f };
-    m_verticesData [8].position = DirectX::XMFLOAT3 { -0.6f, -0.12f, 0.0f };
+    m_verticesData [8].position = DirectX::XMFLOAT3 { -1.15f, -0.4f, 0.0f };
     m_verticesData [8].color = DirectX::XMFLOAT4 { 0.93f, 0.93f, 0.93f, 1.0f };
 
     // triangles' vertices indices
@@ -194,7 +194,7 @@ Triangles::Triangles ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
       m_allocated = true;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -208,9 +208,10 @@ Triangles::Triangles ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
 //};
 
 
-Line::Line ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
-  Model ( dev, devC, "\tClockwiseLine", true ),
-  m_verticesCount ( 0 ), m_allocated ( false )
+Line::Line ( ID3D11Device3* dev, ID3D11DeviceContext3* devC ) :
+  Model ( dev, devC, "\tClockwiseLine", false ),
+  m_verticesCount ( 0 ),
+  m_allocated ( false )
 {
   try
   {
@@ -233,7 +234,7 @@ Line::Line ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
       m_allocated = true;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -263,29 +264,42 @@ void Line::m_update ( void )
     // second parameter: what CPU does when GPU is busy
     // note that in Direct3D11 a resource may contain sub-resources (additional parameters of device context method)
     // after the resource is mapped, any change to it is reflected to the vertex buffer.
-    hR = m_deviceContext->Map ( m_vertexBuffer, 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &m_mappedRes );
-    if (FAILED ( hR ))
-    {
-      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "Mapping the resource data failed!" );
-    }
+    //m_mapped = true;
+    //hR = m_deviceContext->Map ( m_vertexBuffer, 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &m_mappedRes );
+    //if (FAILED ( hR ))
+    //{
+    //  PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+    //                                              "Mapping the resource data failed!" );
+    //}
 
 
     // update the sub-resource:
 
     //-- turn the line clockwise
-    Vertex* data = reinterpret_cast<Vertex*>(m_mappedRes.pData);
+    //Vertex* data = reinterpret_cast<Vertex*>(m_mappedRes.pData);
 
-    static float temp { data->position.x };
+    Vertex dataTest [2];
+    dataTest [0] = m_verticesData [0];
+    dataTest [1] = m_verticesData [1];
 
-    if (data->position.x < (data + 1)->position.x)
+    //dataTest [0].position.x += .2f;
+    //dataTest [0].position.y += .2f;
+    //dataTest [0].position.z += .2f;
+
+    //dataTest [1].position.x -= .2f;
+    //dataTest [1].position.y -= .2f;
+    //dataTest [1].position.z -= .2f;
+
+    static float temp { dataTest->position.x };
+
+    if (dataTest->position.x < (dataTest + 1)->position.x)
     {
       modeX_1 = 1;
       modeY_1 = 1;
       modeX_2 = -1;
       modeY_2 = -1;
     } else
-      if (data->position.x > ( data + 1 )->position.x)
+      if (dataTest->position.x > ( dataTest + 1 )->position.x)
       {
         modeX_1 = 1;
         modeY_1 = -1;
@@ -293,21 +307,21 @@ void Line::m_update ( void )
         modeY_2 = 1;
       }
 
-    if ((data + 1)->position.x < temp)
+    if ((dataTest + 1)->position.x < temp)
     {
-      temp = data->position.x;
-      data->position.x = (data + 1)->position.x;
-      (data + 1)->position.x = temp;
-      temp = data->position.y;
-      data->position.y = (data + 1)->position.y;
-      (data + 1)->position.y = temp;
-      temp = data->position.x;
+      temp = dataTest->position.x;
+      dataTest->position.x = (dataTest + 1)->position.x;
+      (dataTest + 1)->position.x = temp;
+      temp = dataTest->position.y;
+      dataTest->position.y = (dataTest + 1)->position.y;
+      (dataTest + 1)->position.y = temp;
+      temp = dataTest->position.x;
     }
 
-    data->position.x += modeX_1 * 0.002f;
-    data->position.y += modeY_1 * 0.002f;
-    (data + 1)->position.x += modeX_2 * 0.002f;
-    (data + 1)->position.y += modeY_2 * 0.002f;
+    dataTest->position.x += modeX_1 * 0.05f;
+    dataTest->position.y += modeY_1 * 0.05f;
+    (dataTest + 1)->position.x += modeX_2 * 0.05f;
+    (dataTest + 1)->position.y += modeY_2 * 0.05f;
 
     //-- randomize the colour vertices
     float rnd_1 { 0.0f };
@@ -316,16 +330,20 @@ void Line::m_update ( void )
     rnd_1 = ((rand () % 100) / static_cast<float>(100));
     rnd_2 = ((rand () % 100) / static_cast<float>(100));
     rnd_3 = ((rand () % 100) / static_cast<float>(100));
-    data->color.x = (data + 1)->color.x = rnd_1; // red
-    data->color.y = (data + 1)->color.y = rnd_2; // green
-    data->color.z = rnd_1 = (data + 1)->color.z = rnd_3; // blue
+    dataTest->color.x = (dataTest + 1)->color.x = rnd_1; // red
+    dataTest->color.y = (dataTest + 1)->color.y = rnd_2; // green
+    dataTest->color.z = (dataTest + 1)->color.z = rnd_3; // blue
 
 
     // validates the pointer of the vertex buffer's resource and enables the GPU's read access upon.
-    m_deviceContext->Unmap ( m_vertexBuffer, 0 );
+    //m_deviceContext->Unmap ( m_vertexBuffer, 0 );
+
+    m_deviceContext->UpdateSubresource1 ( m_vertexBuffer, 0, NULL, dataTest, 0, 0, 0 );
+
+    //m_mapped = false;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -333,7 +351,7 @@ void Line::m_update ( void )
 };
 
 
-TexturedTriangles::TexturedTriangles ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
+TexturedTriangles::TexturedTriangles ( ID3D11Device3* dev, ID3D11DeviceContext3* devC ) :
   Model ( dev, devC, "\tTexturedTriangles", false ),
   m_verticesCount ( 0 ), m_allocated ( false )
 {
@@ -366,7 +384,7 @@ TexturedTriangles::TexturedTriangles ( ID3D11Device* dev, ID3D11DeviceContext* d
       m_allocated = true;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -380,7 +398,7 @@ TexturedTriangles::TexturedTriangles ( ID3D11Device* dev, ID3D11DeviceContext* d
 //};
 
 
-LightedTriangle::LightedTriangle ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
+LightedTriangle::LightedTriangle ( ID3D11Device3* dev, ID3D11DeviceContext3* devC ) :
   Model ( dev, devC, "\tLightedTriangles", false ),
   m_verticesCount ( 0 ), m_allocated ( false )
 {
@@ -391,17 +409,17 @@ LightedTriangle::LightedTriangle ( ID3D11Device* dev, ID3D11DeviceContext* devC 
     m_verticesCount = 3;
 
     // the lighted triangle
-    m_verticesData [0].position = DirectX::XMFLOAT3 { 0.0f, -0.8f, 0.0f };
+    m_verticesData [0].position = DirectX::XMFLOAT3 { -0.4f, -0.9f, 0.0f };
     m_verticesData [0].texture = DirectX::XMFLOAT2 { 0.0f, 1.0f };
     m_verticesData [0].normal = DirectX::XMFLOAT3 { 0.0f, 0.0f, -1.0f };
     // normal vector: perpendicular to the polygon's face,
     // thus the exact direction the face is pointing is calculable.
     // note: set along the Z axis (-1) so the normal point toward the viewer.
 
-    m_verticesData [1].position = DirectX::XMFLOAT3 { 0.4f, 0.0f, 0.0f };
+    m_verticesData [1].position = DirectX::XMFLOAT3 { -0.2f, -0.5f, 0.0f };
     m_verticesData [1].texture = DirectX::XMFLOAT2 { 0.5f, 0.0f };
     m_verticesData [1].normal = DirectX::XMFLOAT3 { 0.0f, 0.0f, -1.0f };
-    m_verticesData [2].position = DirectX::XMFLOAT3 { 0.8f, -0.8f, 0.0f };
+    m_verticesData [2].position = DirectX::XMFLOAT3 { 0.0f, -0.9f, 0.0f };
     m_verticesData [2].texture = DirectX::XMFLOAT2 { 1.0f, 1.0f };
     m_verticesData [2].normal = DirectX::XMFLOAT3 { 0.0f, 0.0f, -1.0f };
 
@@ -413,7 +431,7 @@ LightedTriangle::LightedTriangle ( ID3D11Device* dev, ID3D11DeviceContext* devC 
       m_allocated = true;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -427,7 +445,7 @@ LightedTriangle::LightedTriangle ( ID3D11Device* dev, ID3D11DeviceContext* devC 
 //};
 
 
-Cube::Cube ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
+Cube::Cube ( ID3D11Device3* dev, ID3D11DeviceContext3* devC ) :
   Model ( dev, devC, "\tLightedTriangles", false ),
   m_verticesCount ( 0 ), m_allocated ( false )
 {
@@ -457,7 +475,7 @@ Cube::Cube ( ID3D11Device* dev, ID3D11DeviceContext* devC ) :
     }
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );

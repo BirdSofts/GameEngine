@@ -56,8 +56,8 @@ ToFile::ToFile ( void ) :
   {
 
     StorageFolder folder ( ApplicationData::Current ().TemporaryFolder () );
-    //StorageFile file = DownloadsFolder::CreateFileAsync ( L"sample.txt" ) ;
-    //StorageFile file ( folder.CreateFileAsync ( L"sample.txt" ) );
+    //StorageFile file = DownloadsFolder::CreateFileAsync ( L"dump.txt" ) ;
+    //StorageFile file ( folder.CreateFileAsync ( L"dump.txt" ) );
 
     m_path = folder.Path () + L"\\dump.log";
 
@@ -234,17 +234,7 @@ void Logger<tType>::m_push ( const logType& t, const std::thread::id& tId,
 
     lineFormatted << m_theLog.m_threadId << '\t' << m_theLog.m_threadName << '\t' << m_theLog.m_message;
 
-    // line formatting: add some space to recognize the different application state in log file
-    //if (
-    //  (PointerProvider::getVariables ()->running == true) &&
-    //  (PointerProvider::getVariables ()->currentState == "initialized") &&
-    //  (m_state == 1))
-    //{
-    //  lineFormatted << '\n';
-    //  m_state = 2;
-    //}
-
-    std::lock_guard<std::timed_mutex> lock ( m_writeGuard );
+    //std::lock_guard<std::timed_mutex> lock ( m_writeGuard );
     m_buffer.push_back ( lineFormatted.str () );
 
   }

@@ -10,16 +10,17 @@
 #define UNIVERSE_H
 
 
+#include "Core.h"
 #include "Camera.h"
 #include "../resources/Light.h"
 
 
 // matrix buffer (matching the global cbuffer type introduced in vertex shader)
-struct MatrixBuffer
+struct worldViewProjectionMatrices
 {
-  DirectX::XMMATRIX world;
-  DirectX::XMMATRIX view;
-  DirectX::XMMATRIX projection;
+  DirectX::XMFLOAT4X4 world;
+  DirectX::XMFLOAT4X4 view;
+  DirectX::XMFLOAT4X4 projection;
 };
 
 
@@ -36,26 +37,27 @@ struct LightBuffer
 class Universe
 {
 private:
-  ID3D11Device* m_device; // pointer to DirecX device
-  ID3D11DeviceContext* m_deviceContext; // pointer to DirectX device context
+  TheCore* m_core; // pointer to the application core
 
   Camera* m_camera; // pointer to the camera application
-  DirectX::XMMATRIX m_projectionMatrix; // projection matrix (translation of 3D scene into the 2D viewport space)
-  DirectX::XMMATRIX m_worldMatrix; // world matrix (to convert into 3D scenes' vertices)
-  float m_worldRotationMatrix; // world matrix rotation factor
-  DirectX::XMMATRIX m_orthographicMatrix; // orthographic matrix (2D rendering)
-  const float m_screenDepth { 1000.0f }; // depth settings
-  const float m_screenNear { 0.1f }; // depth settings
-  ID3D11Buffer* m_matrixBuffer; // constant matrix buffer (to interface with shader)
+
+  //DirectX::XMMATRIX m_projectionMatrix; // projection matrix (translation of 3D scene into the 2D viewport space)
+  //DirectX::XMMATRIX m_worldMatrix; // world matrix (to convert into 3D scenes' vertices)
+  //DirectX::XMMATRIX m_orthographicMatrix; // orthographic matrix (2D rendering)
+  float m_worldRotationFactor;
+
+  worldViewProjectionMatrices m_worldViewProjectionDate;
+  ID3D11Buffer* m_matrixBuffer; // constant world view projection matrices buffer (to interface with shader)
 
   DiffuseLight* m_diffuseLight; // pointer to the diffuse light application
-  ID3D11Buffer* m_diffuseLightBuffer; // constant light buffer (to interface with shader)
+  ID3D11Buffer* m_diffuseLightBuffer; // constant diffuse light buffer (to interface with shader)
 
   bool m_initialized; // true in case of successful initialization
 public:
-  Universe ( ID3D11Device* dev, ID3D11DeviceContext* devC );
+  Universe ( TheCore* coreObj );
   //~Universe ( void );
 
+  void m_createResources ( void ); // create dependent resources
   void m_renderResources ( void ); // map matrix buffer and update
   void m_update ( void ); // update the game universe
   void m_release ( void ); // release the resource

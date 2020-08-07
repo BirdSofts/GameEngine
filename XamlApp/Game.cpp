@@ -32,6 +32,8 @@ Game::Game ( TheCore* coreObj ) :
     PointerProvider::getFileLogger ()->m_push ( logType::info, std::this_thread::get_id (), "mainThread",
                                                 "The Game is successfully initialized." );
 
+    m_core->m_registerDeviceNotify ( this );
+
     m_allocateResources ();
 
     if (!m_allocated)
@@ -53,6 +55,34 @@ Game::Game ( TheCore* coreObj ) :
 //};
 
 
+void Game::OnDeviceEvents ( void )
+{
+  try
+  {
+
+    if (!m_core->m_isDeviceRestored ())
+    {
+      m_paused = true;
+
+      // deallocate invalid resources
+      m_release ();
+    } else
+    {
+      // reallocate resources
+      m_allocateResources ();
+
+      m_paused = false;
+    }
+
+  }
+  catch (const std::exception& ex)
+  {
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "main/gameThread",
+                                                ex.what () );
+  }
+};
+
+
 void Game::m_allocateResources ( void )
 {
   try
@@ -61,7 +91,7 @@ void Game::m_allocateResources ( void )
     m_allocated = false;
 
     // the game framework instantiation
-    m_universe = new (std::nothrow) Universe ( m_core->m_getD3D ()->m_getDevice ().get (), m_core->m_getD3D ()->m_getDevCon ().get () );
+    m_universe = new (std::nothrow) Universe ( m_core );
 
     if (!m_universe->m_isInitialized ())
     {
@@ -69,16 +99,15 @@ void Game::m_allocateResources ( void )
                                                   "Initialization of game universe failed!" );
     }
 
-    m_shaderColour = new (std::nothrow) ShaderColour ( m_core->m_getD3D ()->m_getDevice ().get () );
+    m_shaderColour = new (std::nothrow) ShaderColour ( m_core );
 
-    m_shaderTexture = new (std::nothrow) ShaderTexture ( m_core->m_getD3D ()->m_getDevice ().get () );
+    m_shaderTexture = new (std::nothrow) ShaderTexture ( m_core );
 
     _2d_triangles = new (std::nothrow) Triangles ( m_core->m_getD3D ()->m_getDevice ().get (), m_core->m_getD3D ()->m_getDevCon ().get () );
 
     _2d_line = new (std::nothrow) Line ( m_core->m_getD3D ()->m_getDevice ().get (), m_core->m_getD3D ()->m_getDevCon ().get () );
 
-    m_texture = new (std::nothrow) Texture<TargaHeader>
-      ( m_core->m_getD3D ()->m_getDevice ().get (), m_core->m_getD3D ()->m_getDevCon ().get (), "./textures/clouds.tga" ); // a texture file
+    m_texture = new (std::nothrow) Texture ( m_core, "./textures/clouds.tga" ); // a texture file
     if (!m_texture)
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -87,11 +116,13 @@ void Game::m_allocateResources ( void )
     }
     _2d_texturedTriangles = new (std::nothrow) TexturedTriangles ( m_core->m_getD3D ()->m_getDevice ().get (), m_core->m_getD3D ()->m_getDevCon ().get () );
 
-    m_shaderDiffuseLight = new (std::nothrow) ShaderDiffuseLight ( m_core->m_getD3D ()->m_getDevice ().get () );
+    m_shaderDiffuseLight = new (std::nothrow) ShaderTexDiffLight ( m_core );
 
     _2d_lightedTriangle = new (std::nothrow) LightedTriangle ( m_core->m_getD3D ()->m_getDevice ().get (), m_core->m_getD3D ()->m_getDevCon ().get () );
 
     _3d_cube = new (std::nothrow) Cube ( m_core->m_getD3D ()->m_getDevice ().get (), m_core->m_getD3D ()->m_getDevCon ().get () );
+
+    _3d_meshCube = new (std::nothrow) MeshCube ( m_core, dynamic_cast<Shader*>(m_shaderColour), m_texture );
 
     m_allocated = true;
 
@@ -114,15 +145,41 @@ const bool Game::m_run ( void )
     unsigned short counter { 1 };
 
     // setting the needed starting points
-    m_core->m_getTimer ()->m_event ( "reset" ); // reset (start)
+    m_core->m_getTimer ()->m_event ( typeEvent::reset ); // reset (start)
 
-    m_universe->m_getCamera ()->setPosition ( 0.0f, 0.0f, -2.2f ); // set the start view
+    m_universe->m_getCamera ()->setPosition ( 0.0f, 0.0f, -2.5f ); // set the start view
 
     const float colour [] { 0.2f, 0.6f, 0.6f, 1.0f };
     m_universe->m_getDiffuseLight ()->m_setColour ( colour ); // diffuse light colour
 
     const float direction [] { 0.0f, 0.0f, 1.0f };
     m_universe->m_getDiffuseLight ()->m_setDirection ( direction ); // light direction: point down the positive Z axis
+
+
+
+    //auto workItemHandler =
+    //  winrt::Windows::System::Threading::WorkItemHandler
+    //  ( [this]( winrt::Windows::Foundation::IAsyncAction )
+    //    {
+    //      do
+    //      {
+
+    //        if (!m_paused)
+    //        {
+    //          m_update ();
+    //        }
+
+    //        std::this_thread::sleep_for ( std::chrono::milliseconds ( 10 ) );
+
+    //      } while (PointerProvider::getVariables ()->running == true);
+
+    //    } );
+    //// run the task on a high priority background thread
+    //winrt::Windows::Foundation::IAsyncAction loop;
+    //loop = winrt::Windows::System::Threading::ThreadPool::RunAsync (
+    //  workItemHandler,
+    //  winrt::Windows::System::Threading::WorkItemPriority::High,
+    //  winrt::Windows::System::Threading::WorkItemOptions::TimeSliced );
 
 
 
@@ -148,6 +205,11 @@ const bool Game::m_run ( void )
 
       // tick the timer to calculate a frame
       m_core->m_getTimer ()->m_tick ();
+
+
+
+
+
 
       if (!m_paused)
       {
@@ -194,13 +256,12 @@ const bool Game::m_run ( void )
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-
     return true;
 
   }
   catch (const std::exception& ex)
   {
-    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "gameThread",
                                                 ex.what () );
     return false;
   }
@@ -211,6 +272,13 @@ void Game::m_render ( void )
 {
   try
   {
+
+    // engine test
+    //int temp { 0 };
+    //do
+    //{
+    //  temp++;
+    //} while (temp < 10000000);
 
     m_core->m_getD3D ()->m_clearBuffers ();
 
@@ -247,11 +315,13 @@ void Game::m_render ( void )
     m_core->m_getD3D ()->m_getDevCon ()->DrawIndexed ( _2d_triangles->m_getVerticesCount (), 0, 0 );
 
 
-
+    //if (!_2d_line->m_getMapped ())
+    //{
     m_core->m_getD3D ()->m_getDevCon ()->IASetVertexBuffers ( 0, 1, _2d_line->m_getVertexBuffer (), &strides, &offset );
     m_core->m_getD3D ()->m_getDevCon ()->IASetIndexBuffer ( _2d_line->m_getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
     m_core->m_getD3D ()->m_getDevCon ()->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_LINELIST );
     m_core->m_getD3D ()->m_getDevCon ()->DrawIndexed ( _2d_line->m_getVerticesCount (), 0, 0 );
+    //}
 
 
 
@@ -292,10 +362,13 @@ void Game::m_render ( void )
     m_core->m_getD3D ()->m_getDevCon ()->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
     m_core->m_getD3D ()->m_getDevCon ()->DrawIndexed ( _3d_cube->m_getVerticesCount (), 0, 0 );
 
+
+    _3d_meshCube->m_render ();
+
   }
   catch (const std::exception& ex)
   {
-    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "gameThread",
                                                 ex.what () );
   }
 };
@@ -307,18 +380,26 @@ void Game::m_update ( void )
   {
 
     _2d_line->m_update ();
+    _3d_meshCube->m_update ();
+
     m_universe->m_update ();
 
   }
   catch (const std::exception& ex)
   {
-    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "gameThread",
                                                 ex.what () );
   }
 };
 
 
-void Game::m_onSuspending ( void )
+void Game::m_updateDisplay ( void )
+{
+  m_universe->m_createResources ();
+};
+
+
+void Game::m_release ( void )
 {
   try
   {
@@ -336,6 +417,12 @@ void Game::m_onSuspending ( void )
 
 
     // object models
+    if (_3d_meshCube)
+    {
+      _3d_meshCube->m_releaseData ();
+      delete _3d_cube;
+      _3d_cube = nullptr;
+    }
     if (_3d_cube)
     {
       _3d_cube->m_release ();
@@ -409,10 +496,4 @@ void Game::m_onSuspending ( void )
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
   }
-};
-
-
-void Game::m_validate ( void )
-{
-  m_core->m_validate ();
 };

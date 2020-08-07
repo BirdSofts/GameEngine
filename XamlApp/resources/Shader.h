@@ -10,25 +10,27 @@
 #define SHADER_H
 
 
+#include "Core.h"
 #include "../directx/Universe.h"
 
 
-// shader buffer
+struct Buffer // shader buffer (compiled .cso files holder)
+{
+  byte* buffer;
+  long long size;
+
+  Buffer ( void );
+  ~Buffer ( void );
+
+  void release ( void );
+};
+
+
+// shader base class wrapper
 class Shader
 {
 private:
-  struct Buffer // shader buffer (compiled .cso files holder)
-  {
-    byte* buffer;
-    long long size;
-
-    Buffer ( void );
-    ~Buffer ( void );
-
-    void release ( void );
-  };
-protected:
-  ID3D11Device* m_device; // pointer to Direct device
+  TheCore* m_core; // pointer to Direct device
 
   ID3D10Blob* m_vertexBuffer; // texture buffer
   ID3D10Blob* m_pixelBuffer; // pixel buffer
@@ -41,7 +43,7 @@ protected:
 
   std::string m_entryPoint;
 public:
-  Shader ( ID3D11Device* dev, std::string entry );
+  Shader ( TheCore* coreObj, std::string entry );
   //~Shader ( void );
 
   void m_loadCompiled ( std::string& fileName, Buffer* csoBuffer ); // read shader data (compiled .cso files)
@@ -69,7 +71,7 @@ private:
 
   bool m_initialized; // true if initialization was successful
 public:
-  ShaderColour ( ID3D11Device* dev );
+  ShaderColour ( TheCore* coreObj );
   //~ShaderColour ( void );
 
   const bool& m_isInitialized ( void ) { return m_initialized; }; // get the initialized state
@@ -87,14 +89,31 @@ private:
 
   bool m_initialized; // true if initialization was successful
 public:
-  ShaderTexture ( ID3D11Device* dev );
+  ShaderTexture ( TheCore* coreObj );
   //~ShaderTexture ( void );
 
   const bool& m_isInitialized ( void ) { return m_initialized; }; // get the initialized state
 };
 
 
-class ShaderDiffuseLight : public Shader
+class ShaderColDiffLight : public Shader
+{
+private:
+  D3D11_INPUT_ELEMENT_DESC m_polygonLayoutDesc [3];
+  unsigned int m_elementsCount;
+  LPCWSTR m_files [2];
+  //unsigned short filesCount;
+
+  bool m_initialized; // true if initialization was successful
+public:
+  ShaderColDiffLight ( TheCore* coreObj );
+  //~ShaderDiffuseLight ( void );
+
+  const bool& m_isInitialized ( void ) { return m_initialized; }; // get the initialized state
+};
+
+
+class ShaderTexDiffLight : public Shader
 {
 private:
   D3D11_INPUT_ELEMENT_DESC m_polygonLayoutDesc [3];
@@ -105,10 +124,10 @@ private:
 
   bool m_initialized; // true if initialization was successful
 public:
-  ShaderDiffuseLight ( ID3D11Device* dev );
+  ShaderTexDiffLight ( TheCore* coreObj );
   //~ShaderDiffuseLight ( void );
 
-  const bool& ShaderDiffuseLight::m_isInitialized ( void ) { return m_initialized; }; // get the initialized state
+  const bool& m_isInitialized ( void ) { return m_initialized; }; // get the initialized state
 };
 
 

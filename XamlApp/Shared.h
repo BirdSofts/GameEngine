@@ -19,10 +19,12 @@
 struct Variables
 {
   bool running;
+
   // Todo add
   //enum stateType { uninitialized = 0, };
   //std::list<std::string> paststates;
   std::string currentState;
+
   Variables ( void );
   //~Variables ( void );
 };

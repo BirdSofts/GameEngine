@@ -33,6 +33,7 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Shared.cpp" />
     <ClCompile Include="MainPageTypes.cpp" />
+    <ClCompile Include="objects\Mesh.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -54,6 +55,7 @@
     <ClInclude Include="Game.h" />
     <ClInclude Include="Shared.h" />
     <ClInclude Include="MainPageTypes.h" />
+    <ClInclude Include="objects\Mesh.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\Wide310x150Logo.scale-200.png">

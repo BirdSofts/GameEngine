@@ -19,13 +19,15 @@
 class DiffuseLight
 {
 private:
-  DirectX::XMFLOAT4 m_diffuseColour;
+    DirectX::XMFLOAT4 m_diffuseColour;
   DirectX::XMFLOAT3 m_diffuseDirection;
+
   bool m_initialized; // true if initialization was successful
 public:
   DiffuseLight ( void );
   //~DiffuseLight ( void );
 
+  //void m_update ( void ); // update diffuse light resource
   void m_setColour ( const float* colour ); // set diffuse light colour
   void m_setDirection ( const float* direction ); // set diffuse light direction
 

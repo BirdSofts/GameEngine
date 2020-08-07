@@ -11,18 +11,23 @@
 #include "Shared.h"
 
 
-template <typename fileType>
-Texture<fileType>::Texture ( ID3D11Device* dev, ID3D11DeviceContext* devC, const char* path ) :
-  m_device ( dev ), m_deviceContext ( devC ),
-  m_data ( nullptr ), m_texture ( nullptr ), m_textureView ( nullptr ), m_initialized ( false )
+Texture::Texture ( TheCore* coreObj, const char* path ) :
+  m_core ( coreObj ),
+  m_fileTga ( nullptr ), m_filePng ( nullptr ), m_data ( nullptr ),
+  m_texture ( nullptr ), m_textureView ( nullptr ), m_initialized ( false )
 {
   try
   {
 
     HRESULT hR;
+    winrt::com_ptr<ID3D11Device3> device { m_core->m_getD3D ()->m_getDevice () };
+    winrt::com_ptr<ID3D11DeviceContext3> devCon { m_core->m_getD3D ()->m_getDevCon () };
 
 
-    if (!m_load ( path ))
+    m_fileTga = new (std::nothrow) TgaHeader ();
+
+
+    if (!m_loadTga ( path ))
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                   "Loading the texture failed! file: "
@@ -36,8 +41,8 @@ Texture<fileType>::Texture ( ID3D11Device* dev, ID3D11DeviceContext* devC, const
 
     // texture description
     D3D11_TEXTURE2D_DESC textureDesc;
-    textureDesc.Height = m_file.height;
-    textureDesc.Width = m_file.width;
+    textureDesc.Height = m_fileTga->height;
+    textureDesc.Width = m_fileTga->width;
     textureDesc.MipLevels = 0;
     textureDesc.ArraySize = 1;
     textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // 32 bit RGBA
@@ -53,7 +58,7 @@ Texture<fileType>::Texture ( ID3D11Device* dev, ID3D11DeviceContext* devC, const
     textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
 
     // empty texture creation
-    hR = m_device->CreateTexture2D ( &textureDesc, nullptr, &m_texture );
+    hR = device->CreateTexture2D ( &textureDesc, nullptr, &m_texture );
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -64,14 +69,14 @@ Texture<fileType>::Texture ( ID3D11Device* dev, ID3D11DeviceContext* devC, const
 
 
     // row pitch of targa image data
-    unsigned int rowPitch = (m_file.width * 4) * sizeof ( char );
+    unsigned int rowPitch = (m_fileTga->width * 4) * sizeof ( char );
 
     // targa image data array into texture
     // note that the use of Map and Unmap is possible and generally a lot quicker
     // recommendations for correct choice:
     //-- Map and Unmap for data that is reloaded each frame or on a very regular basis.
     //-- UpdateSubresource: for data that is loaded once or rarely during loading sequences
-    m_deviceContext->UpdateSubresource ( m_texture, 0, nullptr, m_data, rowPitch, 0 );
+    devCon->UpdateSubresource ( m_texture, 0, nullptr, m_data, rowPitch, 0 );
 
 
     // shader view description
@@ -85,7 +90,7 @@ Texture<fileType>::Texture ( ID3D11Device* dev, ID3D11DeviceContext* devC, const
 
     // texture shader resource view creation
     // purpose: to set the texture in shaders
-    hR = m_device->CreateShaderResourceView ( m_texture, &shaderResDataDesc, &m_textureView );
+    hR = device->CreateShaderResourceView ( m_texture, &shaderResDataDesc, &m_textureView );
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -97,7 +102,7 @@ Texture<fileType>::Texture ( ID3D11Device* dev, ID3D11DeviceContext* devC, const
 
 
     // texture mipmaps generation
-    m_deviceContext->GenerateMips ( m_textureView );
+    devCon->GenerateMips ( m_textureView );
 
 
     delete [] m_data;
@@ -106,7 +111,7 @@ Texture<fileType>::Texture ( ID3D11Device* dev, ID3D11DeviceContext* devC, const
     m_initialized = true;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -114,16 +119,14 @@ Texture<fileType>::Texture ( ID3D11Device* dev, ID3D11DeviceContext* devC, const
 };
 
 
-//template <typename fileType>
-//Texture<fileType>::~Texture ()
+//Texture::~Texture ()
 //{
 //
 //};
 
 
-// .tga loader specialization
-//template<typename TargaHeader>
-bool Texture<TargaHeader>::m_load ( const char* path )
+// .tga loader
+bool Texture::m_loadTga ( const char* path )
 {
   try
   {
@@ -137,18 +140,18 @@ bool Texture<TargaHeader>::m_load ( const char* path )
 
     // read one full item (targa file Header) introduced by count parameter
     // note that the function returns the number of full items successfully read
-    if (fread ( &m_file, sizeof ( TargaHeader ), 1, filePtr ) != 1) // file header
+    if (fread ( m_fileTga, sizeof ( TgaHeader ), 1, filePtr ) != 1) // file header
       return false;
 
 
     // format description
-    int imageSize { m_file.width * m_file.height * 4 };
+    int imageSize { m_fileTga->width * m_fileTga->height * 4 };
     int imageSizeCalculated { 0 }; // 24 bit targa image file support
 
-    if (m_file.bpp == 24) // if 24 bit (32 bit targa files with support for alpha channels)
-      imageSizeCalculated = m_file.width * m_file.height * 3; // 32 bit image data size calculation
+    if (m_fileTga->bpp == 24) // if 24 bit (32 bit targa files with support for alpha channels)
+      imageSizeCalculated = m_fileTga->width * m_fileTga->height * 3; // 32 bit image data size calculation
     else
-      if (m_file.bpp == 32)
+      if (m_fileTga->bpp == 32)
         imageSizeCalculated = imageSize;
       else
         return false;
@@ -178,16 +181,16 @@ bool Texture<TargaHeader>::m_load ( const char* path )
 
 
     // correction procedure
-    if (m_file.bpp == 32) // if 24 bit (32 bit targa files with support for alpha channels)
+    if (m_fileTga->bpp == 32) // if 24 bit (32 bit targa files with support for alpha channels)
     {
 
       int indexD { 0 }; // index (targa destination data array)
-      int indexS { imageSize - (m_file.width * 4) }; // index (the actual on disk targa image data)
+      int indexS { imageSize - (m_fileTga->width * 4) }; // index (the actual on disk targa image data)
 
       // the actual restoring in correct order
-      for (int i = 0; i < m_file.height; i++)
+      for (int i = 0; i < m_fileTga->height; i++)
       {
-        for (int j = 0; j < m_file.width; j++)
+        for (int j = 0; j < m_fileTga->width; j++)
         {
 
           m_data [indexD + 0] = tempData [indexS + 0]; // Read
@@ -199,20 +202,20 @@ bool Texture<TargaHeader>::m_load ( const char* path )
           indexS += 4;
 
         }
-        indexS -= (m_file.width * 8); // set to begin of the column of next preceding row
+        indexS -= (m_fileTga->width * 8); // set to begin of the column of next preceding row
       }
 
     } else
     {
 
       int indexD { 0 }; // index (targa destination data array)
-      int indexS { imageSizeCalculated - (m_file.width * 3) }; // index (the actual on disk targa image data)
+      int indexS { imageSizeCalculated - (m_fileTga->width * 3) }; // index (the actual on disk targa image data)
 
       unsigned char alpha { 0 };
 
-      for (int i = 0; i < m_file.height; i++)
+      for (int i = 0; i < m_fileTga->height; i++)
       {
-        for (int j = 0; j < m_file.width; j++)
+        for (int j = 0; j < m_fileTga->width; j++)
         {
 
           m_data [indexD + 0] = tempData [indexS + 0]; // Read
@@ -224,7 +227,7 @@ bool Texture<TargaHeader>::m_load ( const char* path )
           indexS += 3;
 
         }
-        indexS -= (m_file.width * 6);
+        indexS -= (m_fileTga->width * 6);
       }
 
     }
@@ -234,7 +237,7 @@ bool Texture<TargaHeader>::m_load ( const char* path )
     return true;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -245,39 +248,53 @@ bool Texture<TargaHeader>::m_load ( const char* path )
 
 // .png loader specialization
 //template<typename PngHeader>
-bool Texture<PngHeader>::m_load ( const char* /*path*/ )
-{
-  //Todo research more interesting formats to add
-  return false;
-};
+//bool Texture::m_load ( const char* /*path*/ )
+//{
+//  //Todo research more interesting formats to add
+//  return false;
+//};
 
 
-template<typename fileType>
-void Texture<fileType>::m_release ()
+void Texture::m_release ()
 {
   try
   {
 
     m_initialized = false;
 
-    if (m_data)
+    if (m_fileTga != nullptr)
+    {
+      delete m_fileTga;
+      m_fileTga = nullptr;
+    }
+
+    if (m_filePng != nullptr)
+    {
+      delete m_filePng;
+      m_filePng = nullptr;
+    }
+
+    if (m_data != nullptr)
+    {
       delete [] m_data;
-    if (m_texture)
+      m_data = nullptr;
+    }
+
+    if (m_texture != nullptr)
     {
       m_texture->Release ();
       m_texture = nullptr;
     }
-    if (m_textureView)
+    if (m_textureView != nullptr)
     {
       m_textureView->Release ();
       m_textureView = nullptr;
     }
 
-    m_device = nullptr;
-    m_deviceContext = nullptr;
+    m_core = nullptr;
 
   }
-  catch (const std::exception & ex)
+  catch (const std::exception& ex)
   {
     PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
                                                 ex.what () );
@@ -285,13 +302,12 @@ void Texture<fileType>::m_release ()
 };
 
 
-void TextureClassLinker ( void ) // don't call this function: solution for linker error, when using templates.
-{
-
-  ID3D11Device* dev { nullptr };
-  ID3D11DeviceContext* devCon { nullptr };
-  Texture<TargaHeader> tempTex ( dev, devCon, "" );
-  tempTex.m_getTexture ();
-  tempTex.m_release ();
-
-}
+//void TextureClassLinker ( void ) // don't call this function: solution for linker error, when using templates.
+//{
+//
+//  TheCore* core { nullptr };
+//  Texture<TargaHeader> tempTex ( core, "" );
+//  tempTex.m_getTexture ();
+//  tempTex.m_release ();
+//
+//}

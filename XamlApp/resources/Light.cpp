@@ -10,11 +10,20 @@
 #include "Light.h"
 
 
-DiffuseLight::DiffuseLight () : m_initialized ( false )
+DiffuseLight::DiffuseLight () :
+  /*m_diffuseLightBuffer ( nullptr ),*/ m_initialized ( false )
 {
+
   m_diffuseColour = DirectX::XMFLOAT4 ( 0.0f, 0.0f, 0.0f, 1.0f );
   m_diffuseDirection = DirectX::XMFLOAT3 ( 0.0f, 0.0f, 0.0f );
   m_initialized = true;
+
+  //if (m_diffuseLightBuffer)
+  //{
+  //  m_diffuseLightBuffer->Release ();
+  //  m_diffuseLightBuffer = nullptr;
+  //}
+
 };
 
 
