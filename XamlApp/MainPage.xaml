@@ -17,10 +17,10 @@
   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
   mc:Ignorable="d">
 
-  <Grid x:Name="gridLayout" Padding="20,20,20,20">
+  <Grid x:Name="gridLayout" Padding="0,20,0,0">
     <Grid.RowDefinitions>
-      <RowDefinition x:Name="gridRowOne" Height="Auto" />
-      <RowDefinition x:Name="gridRowTwo" Height="*" />
+      <RowDefinition x:Name="gridRow1" Height="Auto" />
+      <RowDefinition x:Name="gridRow2" Height="*" />
     </Grid.RowDefinitions>
 
 
@@ -37,22 +37,22 @@
       <TextBlock
         x:Name="textBlock1"
         Grid.Column="0"
-        Grid.ColumnSpan="2"
         HorizontalAlignment="Left"
         VerticalAlignment="Center"
         FontSize="15"
         Text="Pointer" />
+      <!--  Grid.ColumnSpan="2"  -->
+
       <TextBlock
         x:Name="textBlock2"
         Grid.Column="1"
-        Grid.ColumnSpan="2"
         HorizontalAlignment="Center"
         VerticalAlignment="Center"
         FontSize="15"
         Text="Hello XAML" />
+
       <Button
         Grid.Column="2"
-        Grid.ColumnSpan="2"
         Padding="5,5,5,5"
         HorizontalAlignment="Right"
         VerticalAlignment="Center"
@@ -64,7 +64,32 @@
 
 
     <Grid Grid.Row="1" Grid.RowSpan="1">
-      <SwapChainPanel x:Name="swapChainPanel" />
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition x:Name="gridColumn1" Width="Auto" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition x:Name="gridColumn3" Width="Auto" />
+      </Grid.ColumnDefinitions>
+
+      <TextBlock
+        x:Name="textBlock3"
+        Grid.Column="0"
+        Padding="5,5,5,5"
+        HorizontalAlignment="Left"
+        VerticalAlignment="Top"
+        FontSize="15"
+        Text="-------------" />
+
+      <SwapChainPanel x:Name="swapChainPanel" Grid.Column="1" />
+
+      <TextBlock
+        x:Name="textBlock4"
+        Grid.Column="2"
+        Padding="5,5,5,5"
+        HorizontalAlignment="left"
+        VerticalAlignment="Top"
+        FontSize="15"
+        Text="-------------" />
+
     </Grid>
   </Grid>
 

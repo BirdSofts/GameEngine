@@ -92,7 +92,6 @@ void Game::m_allocateResources ( void )
 
     // the game framework instantiation
     m_universe = new (std::nothrow) Universe ( m_core );
-
     if (!m_universe->m_isInitialized ())
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -102,6 +101,13 @@ void Game::m_allocateResources ( void )
     m_shaderColour = new (std::nothrow) ShaderColour ( m_core );
 
     m_shaderTexture = new (std::nothrow) ShaderTexture ( m_core );
+
+    m_terrain = new (std::nothrow) Terrain ( m_core, dynamic_cast<Shader*>(m_shaderColour) );
+    if (!m_terrain->m_isInitialized ())
+    {
+      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Initialization of terrain failed!" );
+    }
 
     _2d_triangles = new (std::nothrow) Triangles ( m_core->m_getD3D ()->m_getDevice ().get (), m_core->m_getD3D ()->m_getDevCon ().get () );
 
@@ -147,7 +153,7 @@ const bool Game::m_run ( void )
     // setting the needed starting points
     m_core->m_getTimer ()->m_event ( typeEvent::reset ); // reset (start)
 
-    m_universe->m_getCamera ()->setPosition ( 0.0f, 0.0f, -2.5f ); // set the start view
+    m_universe->m_getCamera ()->m_setPosition ( 0.0f, 0.2f, -3.0f ); // set the start view
 
     const float colour [] { 0.2f, 0.6f, 0.6f, 1.0f };
     m_universe->m_getDiffuseLight ()->m_setColour ( colour ); // diffuse light colour
@@ -283,11 +289,12 @@ void Game::m_render ( void )
     m_core->m_getD3D ()->m_clearBuffers ();
 
     m_universe->m_renderResources ();
-    m_universe->m_getCamera ()->renderCamera ();
+    m_universe->m_getCamera ()->m_renderCamera ();
 
     if (m_core->m_getD2D () && m_core->m_isDebugging ())
       m_core->m_getD2D ()->m_debugInfos (); // -- fps on screen representation
 
+    m_terrain->m_render ();
 
 
     // setting the active vertex/pixel shaders (active shader technique)
@@ -382,7 +389,7 @@ void Game::m_update ( void )
     _2d_line->m_update ();
     _3d_meshCube->m_update ();
 
-    m_universe->m_update ();
+    //m_universe->m_update ();
 
   }
   catch (const std::exception& ex)

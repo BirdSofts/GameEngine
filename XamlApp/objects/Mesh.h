@@ -30,9 +30,9 @@ private:
   std::string m_entryPoint;
   bool m_dynamic; // true: dynamic usage + write access for CPU
 protected:
-  TheCore* m_core;
-  Shader* m_shader;
-  Texture* m_texture;
+  TheCore* m_core; // pointer to application core
+  Shader* m_shader; // pointer to shader base class
+  Texture* m_texture; // pointer to texture base class
 
   DirectX::XMFLOAT3 m_position;
   float m_scale;
@@ -48,13 +48,13 @@ protected:
   // Note index buffers purposes: record the location of each vertex introduced in vertex buffer,
   // achieving much hider speed, and helps to cache the vertices data in faster locations of video memory.
 
-  bool m_allocate ( tType*, unsigned long*, unsigned long& ); // object model resources allocation
+  bool m_allocate ( tType* data, unsigned long* index, unsigned long& count ); // object model resources allocation
 public:
   Mesh ( TheCore* coreObj, Shader* shadObj, Texture* texObj, std::string entry, bool rewrite );
   //~Model ( void );
 
   void m_render ( void ); // render object model
-  void m_updateBuffer ( tType* ); // update object model
+  void m_updateBuffer ( tType* data ); // update object model
   void m_release ( void ); // release object model
 
   DirectX::XMFLOAT3& m_getPosition ( void ) { return m_position; }; // get/set object position

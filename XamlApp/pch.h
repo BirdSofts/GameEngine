@@ -45,6 +45,7 @@
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Storage.h>
 #include <winrt/Windows.System.Threading.h>
+#include <winrt/Windows.System.Diagnostics.h>
 #include <winrt/Windows.Graphics.Display.h>
 #include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.ViewManagement.h>

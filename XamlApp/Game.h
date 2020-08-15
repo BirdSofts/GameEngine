@@ -13,6 +13,7 @@
 #include "Core.h"
 #include "directx/Universe.h"
 #include "resources/Shader.h"
+#include "directx/Terrain.h"
 #include "resources/Texture.h"
 #include "objects/Polygons.h"
 #include "objects/Mesh.h"
@@ -29,6 +30,8 @@ private:
   ShaderTexture* m_shaderTexture;
   Texture* m_texture; // texture resource
   ShaderTexDiffLight* m_shaderDiffuseLight;
+
+  Terrain* m_terrain; // terrain
 
   // 2D models:
   Triangles* _2d_triangles; // three triangles

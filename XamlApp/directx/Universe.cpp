@@ -95,7 +95,8 @@ void Universe::m_createResources ()
     // additionally to rotate, translate and scale our objects in 3D space
     //m_worldMatrix = DirectX::XMMatrixIdentity ();
 
-    DirectX::XMStoreFloat4x4 ( &m_worldViewProjectionDate.world, DirectX::XMMatrixIdentity () );
+    //DirectX::XMStoreFloat4x4 ( &m_worldViewProjectionDate.world, DirectX::XMMatrixIdentity () );
+    DirectX::XMStoreFloat4x4 ( &m_worldViewProjectionDate.world, DirectX::XMMatrixRotationX ( 0.2f ) );
 
     // generally a view matrix representing the camera is initialized in this section (camera class)
 
@@ -129,7 +130,7 @@ void Universe::m_createResources ()
     // Camera application instantiation
     if (m_camera == nullptr)
     {
-      m_camera = new (std::nothrow) Camera;
+      m_camera = new (std::nothrow) Camera ( m_core );
       if (!m_camera->isInitialized ())
       {
         PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
@@ -317,6 +318,7 @@ void Universe::m_release ( void )
 
     if (m_camera)
     {
+      m_camera->m_release ();
       delete m_camera;
       m_camera = nullptr;
     }

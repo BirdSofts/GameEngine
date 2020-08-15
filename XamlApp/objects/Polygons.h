@@ -35,7 +35,7 @@ protected:
   // Note index buffers purposes: record the location of each vertex introduced in vertex buffer,
   // achieving much hider speed, and helps to cache the vertices data in faster locations of video memory.
 
-  bool m_allocate ( tType*, unsigned long*, unsigned long& ); // object model resources allocation
+  bool m_allocate ( tType* data, unsigned long* index, unsigned long& count ); // object model resources allocation
 public:
   Model ( ID3D11Device3* dev, ID3D11DeviceContext3* devC, std::string entry, bool rewrite );
   //~Model ( void );

@@ -14,6 +14,7 @@ MainPageTypes::MainPageTypes ()
 {
 
   m_pointer = L"";
+  m_cameraPosition = L"";
 
 };
 

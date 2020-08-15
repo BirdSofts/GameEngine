@@ -280,14 +280,15 @@ void TheCore::m_frameStatistics ( void )
         m_D2D->m_textLayoutsDebug = false;
 
         // FPS information text layouts
-        std::wostringstream outFPS;
+        std::wstringstream outFPS;
         outFPS.precision ( 6 );
         outFPS << "Resolution: " << m_mainPageTypes->m_getDisplay ()->panelWidthPixels << " x " << m_mainPageTypes->m_getDisplay ()->panelHeightPixels
           << " - Display mode #" << m_D3D->m_displayModeIndex + 1 << " of " << m_D3D->m_displayModesCount << " @ "
           << m_D3D->m_displayMode.RefreshRate.Numerator / m_D3D->m_displayMode.RefreshRate.Denominator << " Hz" << std::endl
           << "Display Adapter: " << m_D3D->m_videoCardDescription
           << " - Dedicated memory: " << m_D3D->m_videoCardMemory << "MB" << std::endl
-          << "^_^ - FPS: " << m_timer->m_getFPS () << L" - mSPF: " << m_timer->m_getMilliSPF () << std::endl;
+          << "^_^ - FPS: " << m_timer->m_getFPS () << L" - mSPF: " << m_timer->m_getMilliSPF () << std::endl
+          << "Process CPU usage: " << m_timer->m_getProcCpuUsage () << L" - System CPU Usage: " << m_timer->m_getSysCpuUsage ();
 
         if (m_D2D->m_textLayoutFPS)
         {
@@ -314,9 +315,9 @@ void TheCore::m_frameStatistics ( void )
     }
 
     // last log entity text layout
-    std::wostringstream outLastlog;
+    std::wstringstream outLastlog;
     outLastlog << L"Last event: ";
-    outLastlog << Converter::strConverter ( PointerProvider::getFileLogger ()->m_getLogRawStr () ) << std::endl;
+    outLastlog << Converter::strConverter ( PointerProvider::getFileLogger ()->m_getLogRawStr () );
 
     if (m_D2D->m_textLayoutLogs)
     {
@@ -325,7 +326,7 @@ void TheCore::m_frameStatistics ( void )
       m_D2D->m_textLayoutLogs.detach ();
     }
 
-    hR = m_D2D->m_directWriteFactory->CreateTextLayout ( outLastlog.str ().c_str (), (UINT32) (UINT32) outLastlog.str ().size (),
+    hR = m_D2D->m_directWriteFactory->CreateTextLayout ( outLastlog.str ().c_str (), (UINT32) outLastlog.str ().size (),
                                                          m_D2D->m_textFormatLogs.get (), m_mainPageTypes->m_getDisplay ()->panelWidthDips, 50.f,
                                                          reinterpret_cast<IDWriteTextLayout**>(m_D2D->m_textLayoutLogs.put ()) );
     if (SUCCEEDED ( hR ))
@@ -338,8 +339,10 @@ void TheCore::m_frameStatistics ( void )
     }
 
     // pointer position text layout
-    std::wostringstream outPointer;
+    std::wstringstream outPointer;
     outPointer << m_mainPageTypes->m_getPointer ().c_str () << std::endl;
+    outPointer << m_mainPageTypes->m_getCameraPosition ().c_str () << std::endl;
+    outPointer << m_mainPageTypes->m_getCameraRotation ().c_str ();
 
     if (m_D2D->m_textLayoutPointer)
     {
@@ -348,7 +351,7 @@ void TheCore::m_frameStatistics ( void )
       m_D2D->m_textLayoutPointer.detach ();
     }
 
-    hR = m_D2D->m_directWriteFactory->CreateTextLayout ( outPointer.str ().c_str (), (UINT32) (UINT32) outPointer.str ().size (),
+    hR = m_D2D->m_directWriteFactory->CreateTextLayout ( outPointer.str ().c_str (), (UINT32) outPointer.str ().size (),
                                                          m_D2D->m_textFormatPointer.get (), 300.f, 30.f,
                                                          reinterpret_cast<IDWriteTextLayout**>(m_D2D->m_textLayoutPointer.put ()) );
     if (SUCCEEDED ( hR ))

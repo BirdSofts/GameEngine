@@ -24,8 +24,8 @@ Configurations::Configurations ( void ) :
 
 
     // defaults initialization:
-    m_defaults.Width = 800;
-    m_defaults.Height = 600;
+    m_defaults.Width = 1366;
+    m_defaults.Height = 768;
     m_defaults.fullscreen = false;
 
     // currents initialization:
@@ -123,7 +123,7 @@ const bool Configurations::m_apply ( const Configs& object )
       std::stringstream settingsLine;
       settingsLine << "configurations =\n\t{\n" <<
         "\t\tresolution = { width = " << std::to_string ( object.Width ) <<
-        " , height = " << std::to_string ( object.Height ) << " },\n" <<
+        ", height = " << std::to_string ( object.Height ) << " },\n" <<
         "\t\tdisplay = { fullscreen = " << std::to_string ( object.fullscreen ) << " }\n\t}";
       writeStream << settingsLine.str ();
       writeStream.close ();

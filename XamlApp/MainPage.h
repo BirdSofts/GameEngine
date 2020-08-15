@@ -30,6 +30,8 @@ namespace winrt::GameEngine::implementation
     bool m_inResizeMove; // true if client window is set to resize and/or move
 
     MainPageTypes m_types;
+
+    // event properties
     hstring m_test;
     winrt::event<Windows::UI::Xaml::Data::PropertyChangedEventHandler> m_propertyChanged;
 
@@ -41,6 +43,9 @@ namespace winrt::GameEngine::implementation
     // pointers to input (background worker thread)
     Windows::Foundation::IAsyncAction m_inputLoop; // worker thread
     Windows::UI::Core::CoreIndependentInputSource m_inputCore; // independent input
+    float m_pointerX;
+    float m_pointerY;
+    bool m_isPointerPressed;
 
     bool m_initialized; // true in case of successful initialization
     bool m_allocated; // true in case of successful allocation
@@ -90,6 +95,7 @@ namespace winrt::GameEngine::implementation
     int32_t MyProperty ();
     void MyProperty ( int32_t value );
 
+    // raise an event
     hstring Test ();
     void Test ( hstring const& value );
     winrt::event_token PropertyChanged ( Windows::UI::Xaml::Data::PropertyChangedEventHandler const& handler );

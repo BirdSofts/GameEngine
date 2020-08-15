@@ -46,6 +46,11 @@ Timer::Timer ( void ) :
 
     m_milliSPF = 0.0;
 
+    m_ticksProcCpuUsage = 0;
+    m_ticksSysCpuUsage = 0;
+    m_percentProcCpuUsage = 0;
+    m_percentSysCpuUsage = 0;
+
 
     LARGE_INTEGER frequency;
 
@@ -230,8 +235,6 @@ void Timer::m_tick ( void )
         m_secondsCounter %= m_frequency;
 
 
-
-
         //// a static local variable retains its state between the calls:
         //static int frameCounter; // frame counter (a frame is a full cycle of the game loop)
         //static double elapsed; // the elapsed time since the last call
@@ -248,6 +251,23 @@ void Timer::m_tick ( void )
         //  frameCounter = 0;
         //  elapsed += 1.0;
         //}
+
+
+        uint64_t currentProc { 0 }, currentSys { 0 };
+        uint64_t temp1 { 0 }, temp2 { 0 };
+
+        currentProc = winrt::Windows::System::Diagnostics::ProcessDiagnosticInfo::GetForCurrentProcess ().CpuUsage ().GetReport ().UserTime ().count ();
+        currentSys = winrt::Windows::System::Diagnostics::SystemDiagnosticInfo::GetForCurrentSystem ().CpuUsage ().GetReport ().UserTime ().count ();
+        //currentProc = winrt::Windows::System::Diagnostics::ProcessDiagnosticInfo::GetForCurrentProcess ().CpuUsage ().GetReport ().KernelTime ().count ();
+        //currentSys = winrt::Windows::System::Diagnostics::SystemDiagnosticInfo::GetForCurrentSystem ().CpuUsage ().GetReport ().KernelTime ().count ();
+
+        temp1 = currentProc - m_ticksProcCpuUsage;
+        m_ticksProcCpuUsage = currentProc;
+        temp2 = currentSys - m_ticksSysCpuUsage;
+        m_ticksSysCpuUsage = currentSys;
+
+        m_percentProcCpuUsage = (100 * temp1) / m_frequency;
+        m_percentSysCpuUsage = (100 * temp2) / m_frequency;
 
       }
 

@@ -239,7 +239,7 @@ bool Direct2D::m_initializeTextFormats ( void )
     winrt::com_ptr<IDWriteTextFormat> m_textFormat;
     hR = m_directWriteFactory.get ()->CreateTextFormat ( L"Lucida Console", nullptr,
                                                          DWRITE_FONT_WEIGHT_EXTRA_LIGHT, DWRITE_FONT_STYLE_NORMAL,
-                                                         DWRITE_FONT_STRETCH_NORMAL, 12.0f, L"en-GB",
+                                                         DWRITE_FONT_STRETCH_NORMAL, 13.0f, L"en-GB",
                                                          /*m_textFormatFPS.try_as<IDWriteTextFormat> ().put ()*/
                                                          reinterpret_cast<IDWriteTextFormat**>(m_textFormatFPS.put ()) );
     //if (SUCCEEDED ( hR ))
@@ -253,7 +253,7 @@ bool Direct2D::m_initializeTextFormats ( void )
     if (SUCCEEDED ( hR ))
       hR = m_directWriteFactory.get ()->CreateTextFormat ( L"Lucida Console", nullptr,
                                                            DWRITE_FONT_WEIGHT_EXTRA_LIGHT, DWRITE_FONT_STYLE_NORMAL,
-                                                           DWRITE_FONT_STRETCH_NORMAL, 12.0f, L"en-GB", m_textFormat.put () );
+                                                           DWRITE_FONT_STRETCH_NORMAL, 13.0f, L"en-GB", m_textFormat.put () );
     if (SUCCEEDED ( hR ))
     {
       hR = m_textFormat.try_as ( m_textFormatLogs );
@@ -360,7 +360,7 @@ void Direct2D::m_debugInfos ( void )
       // positioning on bottom left
       D2D1::Matrix3x2F screenTranslationLogs =
         D2D1::Matrix3x2F::Translation ( screenWidth - m_textMetricsLogs.layoutWidth + 3,
-                                        screenHeight - m_textMetricsLogs.height + (m_textMetricsLogs.height / m_textMetricsLogs.lineCount) );
+                                        screenHeight - m_textMetricsLogs.height );
       m_deviceContext->SetTransform ( screenTranslationLogs * m_core->m_mainPageTypes->m_getDisplay ()->orientationTransform2D );
       if (m_textLayoutLogs)
         m_deviceContext->DrawTextLayout ( D2D1::Point2F ( 0.0f, 0.0f ), m_textLayoutLogs.get (),
@@ -368,7 +368,7 @@ void Direct2D::m_debugInfos ( void )
 
       // positioning on left and somewhat middle
       D2D1::Matrix3x2F screenTranslationPointer =
-        D2D1::Matrix3x2F::Translation ( 3, 40 );
+        D2D1::Matrix3x2F::Translation ( 3, m_textMetricsFPS.heightIncludingTrailingWhitespace + 3 );
       m_deviceContext->SetTransform ( screenTranslationPointer * m_core->m_mainPageTypes->m_getDisplay ()->orientationTransform2D );
       if (m_textLayoutLogs)
         m_deviceContext->DrawTextLayout ( D2D1::Point2F ( 0.0f, 0.0f ), m_textLayoutPointer.get (),

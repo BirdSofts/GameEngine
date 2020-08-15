@@ -22,6 +22,7 @@ namespace winrt::GameEngine::implementation
     m_appWindow ( nullptr ), m_visible ( false ), m_inResizeMove ( false ),
     m_core ( nullptr ), m_game ( nullptr ),
     m_inputLoop ( nullptr ), m_inputCore ( nullptr ),
+    m_pointerX ( 0.0f ), m_pointerY ( 0.0f ), m_isPointerPressed ( false ),
     m_initialized ( false ), m_allocated ( false )
   {
 
@@ -305,15 +306,15 @@ namespace winrt::GameEngine::implementation
 
     if (m_core != nullptr) ///
     {
-      if (sender.ActivationMode () == Windows::UI::Core::CoreWindowActivationMode::ActivatedInForeground)
-      {
-        m_game->m_isPaused () = false;
-        m_game->m_getCore ()->m_getTimer ()->m_event ( typeEvent::start );
-      } else
-      {
-        m_game->m_isPaused () = true;
-        m_game->m_getCore ()->m_getTimer ()->m_event ( typeEvent::pause );
-      }
+      //if (sender.ActivationMode () == Windows::UI::Core::CoreWindowActivationMode::ActivatedInForeground)
+      //{
+      //  m_game->m_isPaused () = false;
+      //  m_game->m_getCore ()->m_getTimer ()->m_event ( typeEvent::start );
+      //} else
+      //{
+      //  m_game->m_isPaused () = true;
+      //  m_game->m_getCore ()->m_getTimer ()->m_event ( typeEvent::pause );
+      //}
     }
   };
 
@@ -488,74 +489,116 @@ namespace winrt::GameEngine::implementation
   {
 
     // ALT+Enter: fullscreen + highest/lowest resolution switch
-    if (e.EventType () == winrt::Windows::UI::Core::CoreAcceleratorKeyEventType::SystemKeyDown
-         && e.VirtualKey () == winrt::Windows::System::VirtualKey::Enter
-         && e.KeyStatus ().IsMenuKeyDown)
+    if (e.EventType () == winrt::Windows::UI::Core::CoreAcceleratorKeyEventType::SystemKeyDown)
     {
-      auto view = winrt::Windows::UI::ViewManagement::ApplicationView::GetForCurrentView ();
-
-      winrt::Windows::UI::Xaml::Thickness padding { 0 };
-      winrt::Windows::UI::Xaml::GridLength height { 0 };
-
-      if (view.IsFullScreen ())
+      auto alt = m_appWindow.get ().GetAsyncKeyState ( winrt::Windows::System::VirtualKey::RightMenu );
+      if (alt == winrt::Windows::UI::Core::CoreVirtualKeyStates::Down
+           && e.VirtualKey () == winrt::Windows::System::VirtualKey::Enter)
       {
-        padding = { 20,20,20,20 };
-        height.GridUnitType = winrt::Windows::UI::Xaml::GridUnitType::Auto;
-        bottomAppBar ().Visibility ( winrt::Windows::UI::Xaml::Visibility::Visible );
-        view.ExitFullScreenMode ();
+        auto view = winrt::Windows::UI::ViewManagement::ApplicationView::GetForCurrentView ();
 
-        if (m_initialized && m_game != nullptr)
+        winrt::Windows::UI::Xaml::Thickness gridPadding { 0 };
+        winrt::Windows::UI::Xaml::GridLength gridSize { 0 };
+
+        if (view.IsFullScreen ())
         {
-          m_game->m_isPaused () = true;
-          m_game->m_getCore ()->m_getTimer ()->m_event ( typeEvent::pause );
-          std::this_thread::sleep_for ( std::chrono::milliseconds ( 40 ) );
+          gridPadding = { 0, 20, 0, 0 };
+          gridSize.GridUnitType = winrt::Windows::UI::Xaml::GridUnitType::Auto;
+          bottomAppBar ().Visibility ( winrt::Windows::UI::Xaml::Visibility::Visible );
+          view.ExitFullScreenMode ();
 
-          m_core->m_updateDisplay ();
-          m_game->m_updateDisplay ();
+          if (m_initialized && m_game != nullptr)
+          {
+            m_game->m_isPaused () = true;
+            m_game->m_getCore ()->m_getTimer ()->m_event ( typeEvent::pause );
+            std::this_thread::sleep_for ( std::chrono::milliseconds ( 40 ) );
 
-          m_game->m_isPaused () = false;
-          m_game->m_getCore ()->m_getTimer ()->m_event ( typeEvent::start );
-        }
-      } else
-      {
-        height.GridUnitType = winrt::Windows::UI::Xaml::GridUnitType::Pixel;
-        bottomAppBar ().Visibility ( winrt::Windows::UI::Xaml::Visibility::Collapsed );
-        view.TryEnterFullScreenMode ();
+            m_core->m_updateDisplay ();
+            m_game->m_updateDisplay ();
 
-        if (m_initialized && m_game != nullptr)
+            m_game->m_isPaused () = false;
+            m_game->m_getCore ()->m_getTimer ()->m_event ( typeEvent::start );
+          }
+        } else
         {
-          m_game->m_isPaused () = true;
-          m_game->m_getCore ()->m_getTimer ()->m_event ( typeEvent::pause );
-          std::this_thread::sleep_for ( std::chrono::milliseconds ( 40 ) );
+          gridSize.GridUnitType = winrt::Windows::UI::Xaml::GridUnitType::Pixel;
+          bottomAppBar ().Visibility ( winrt::Windows::UI::Xaml::Visibility::Collapsed );
+          view.TryEnterFullScreenMode ();
 
-          m_core->m_updateDisplay ();
-          m_game->m_updateDisplay ();
+          if (m_initialized && m_game != nullptr)
+          {
+            m_game->m_isPaused () = true;
+            m_game->m_getCore ()->m_getTimer ()->m_event ( typeEvent::pause );
+            std::this_thread::sleep_for ( std::chrono::milliseconds ( 40 ) );
 
-          m_game->m_isPaused () = false;
-          m_game->m_getCore ()->m_getTimer ()->m_event ( typeEvent::start );
+            m_core->m_updateDisplay ();
+            m_game->m_updateDisplay ();
+
+            m_game->m_isPaused () = false;
+            m_game->m_getCore ()->m_getTimer ()->m_event ( typeEvent::start );
+          }
         }
+        gridLayout ().Padding ( gridPadding );
+        gridRow1 ().Height ( gridSize );
+        gridColumn1 ().Width ( gridSize );
+        gridColumn3 ().Width ( gridSize );
+
+        e.Handled ( true );
       }
-      gridLayout ().Padding ( padding );
-      gridRowOne ().Height ( height );
-
-      e.Handled ( true );
     }
 
 
-    // Todo: DirectInput
     if (e.EventType () == winrt::Windows::UI::Core::CoreAcceleratorKeyEventType::KeyDown)
     {
 
-      // Escape: up
-      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::Up)
+      // Todo prevent frame losses
+
+      // key A: go left
+      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::A)
       {
-        m_game->m_getUniverse ()->m_getCamera ()->forwardBackward ( 0.05f );
+        m_game->m_getUniverse ()->m_getCamera ()->m_goLeftRight ( -0.1f );
       }
 
-      // Escape: down
-      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::Down)
+      // key D: go right
+      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::D)
       {
-        m_game->m_getUniverse ()->m_getCamera ()->forwardBackward ( -0.05f );
+        m_game->m_getUniverse ()->m_getCamera ()->m_goLeftRight ( 0.1f );
+      }
+
+      // page up: go up
+      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::PageUp)
+      {
+        m_game->m_getUniverse ()->m_getCamera ()->m_goUpDown ( 0.1f );
+      }
+
+      // page down: go down
+      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::PageDown)
+      {
+        m_game->m_getUniverse ()->m_getCamera ()->m_goUpDown ( -0.1f );
+      }
+
+      // key W: go forward
+      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::W)
+      {
+        m_game->m_getUniverse ()->m_getCamera ()->m_goForwardBackward ( 0.1f );
+      }
+
+      // key S: go backward
+      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::S)
+      {
+        m_game->m_getUniverse ()->m_getCamera ()->m_goForwardBackward ( -0.1f );
+      }
+
+      // key E: go forward
+      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::E)
+      {
+        m_game->m_getUniverse ()->m_getCamera ()->m_lookSidedLeftRight ( 0.5f );
+      }
+
+      // key Q: go backward
+      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::Q)
+      {
+        m_game->m_getUniverse ()->m_getCamera ()->m_lookSidedLeftRight ( -0.5f );
       }
 
       // Escape: exit
@@ -583,6 +626,9 @@ namespace winrt::GameEngine::implementation
   {
     // Todo sample: start pointer movement tracking
     // add interactions caused by courser
+
+    m_isPointerPressed = true;
+
   };
 
 
@@ -593,12 +639,21 @@ namespace winrt::GameEngine::implementation
     // add interactions caused by courser
     //trackingUpdate(e.CurrentPoint().Position().X)
 
-    std::string a { "" };
-    a += "Pointer: " + std::to_string ( e.CurrentPoint ().RawPosition ().X );
-    a += ", ";
-    a += std::to_string ( e.CurrentPoint ().RawPosition ().Y );
+    float currentX { e.CurrentPoint ().Position ().X };
+    float currentY { e.CurrentPoint ().Position ().Y };
 
-    m_types.m_getPointer () = (Converter::strConverter ( a ));
+    if ((m_pointerX == 0.0f) && (m_pointerY == 0.0f))
+    {
+      m_pointerX = currentX;
+      m_pointerY = currentY;
+    }
+
+    std::string temp { "" };
+    temp += "Pointer: " + std::to_string ( currentX );
+    temp += ", ";
+    temp += std::to_string ( currentY );
+
+    m_types.m_getPointer () = (Converter::strConverter ( temp ));
 
     winrt::Windows::UI::Core::DispatchedHandler task ( [this]()
                                                        {
@@ -606,6 +661,35 @@ namespace winrt::GameEngine::implementation
                                                          //Test ( winrt::to_hstring ( m_types.m_getPointer () ) );
                                                        } );
     textBlock1 ().Dispatcher ().RunAsync ( winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, task );
+
+    if (m_isPointerPressed == true)
+    {
+
+      // Undone sided look (z) must be corrected (between -10 und plus 10)
+
+      if (currentX < m_pointerX)
+      {
+        m_game->m_getUniverse ()->m_getCamera ()->m_lookLeftRight ( -static_cast<long>(m_pointerX - currentX) % 3 );
+        m_pointerX = currentX;
+      } else
+        if (currentX > m_pointerX)
+        {
+          m_game->m_getUniverse ()->m_getCamera ()->m_lookLeftRight ( static_cast<long>(currentX - m_pointerX) % 3 );
+          m_pointerX = currentX;
+        }
+
+      if (currentY < m_pointerY)
+      {
+        m_game->m_getUniverse ()->m_getCamera ()->m_lookUpDown ( -static_cast<long>(m_pointerY - currentY) % 3 );
+        m_pointerY = currentY;
+      } else
+        if (currentY > m_pointerY)
+        {
+          m_game->m_getUniverse ()->m_getCamera ()->m_lookUpDown ( static_cast<long>(currentY - m_pointerY) % 3 );
+          m_pointerY = currentY;
+
+        }
+    }
 
   };
 
@@ -615,6 +699,9 @@ namespace winrt::GameEngine::implementation
   {
     // Todo 
     // add interactions caused by courser
+
+    m_isPointerPressed = false;
+
   };
 
 

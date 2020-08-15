@@ -62,6 +62,8 @@ private:
   } m_display;
 
   winrt::hstring m_pointer;
+  winrt::hstring m_cameraPosition;
+  winrt::hstring m_cameraRotation;
 
 public:
   MainPageTypes ();
@@ -69,6 +71,8 @@ public:
 
   Display* m_getDisplay ( void ) { return &m_display; };
   winrt::hstring& m_getPointer ( void ) { return m_pointer; };
+  winrt::hstring& m_getCameraPosition ( void ) { return m_cameraPosition; };
+  winrt::hstring& m_getCameraRotation ( void ) { return m_cameraRotation; };
 };
 
 

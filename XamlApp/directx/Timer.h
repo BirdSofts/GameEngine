@@ -50,8 +50,13 @@ private:
   uint64_t m_framesCounter; // frames counter (the amount of application frames)
   uint32_t m_framesThisSecond; // frames counter (frames of a second)
   uint32_t m_FPS; // frames per second
-
   double m_milliSPF; // render time of a frame in milliseconds
+
+  // CPU performance properties (measured in canonical tick format)
+  uint64_t m_ticksProcCpuUsage;
+  uint64_t m_ticksSysCpuUsage;
+  uint16_t m_percentProcCpuUsage;
+  uint16_t m_percentSysCpuUsage;
 
   bool m_screenIt; // screen a frame only once a second
   bool m_initialized; // true if the initialization was successful
@@ -69,6 +74,8 @@ public:
   const double& m_getDeltaTime ( void ) { return m_deltaTime; }; // get the delta time
   uint32_t& const m_getFPS ( void ) { return m_FPS; }; // get frame per seconds
   double& const m_getMilliSPF ( void ) { return m_milliSPF; }; // get render time of a frame
+  uint16_t& const m_getProcCpuUsage ( void ) { return m_percentProcCpuUsage; }; // get process CPU usage
+  uint16_t& const m_getSysCpuUsage ( void ) { return m_percentSysCpuUsage; }; // get process CPU usage
 };
 
 
