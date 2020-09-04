@@ -95,11 +95,13 @@
     <None Include="PropertySheet.props" />
     <None Include="packages.config" />
     <None Include="GameEngine_TemporaryKey.pfx" />
+    <None Include="README.md" />
     <None Include="graphics\pixelL.hlsl" />
     <None Include="graphics\pixelT.hlsl" />
     <None Include="graphics\vertexL.hlsl" />
     <None Include="graphics\vertexT.hlsl" />
-    <None Include="README.md" />
+    <None Include="graphics\pixelDAL.hlsl" />
+    <None Include="graphics\vertexDAL.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="readme.txt" />

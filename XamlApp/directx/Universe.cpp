@@ -142,13 +142,13 @@ void Universe::m_createResources ()
 
     // dynamic diffuse light constant buffer description
     // purpose: to access internal variables introduced in pixel shader
-    D3D11_BUFFER_DESC lightBufferDiffuseDesc;
-    lightBufferDiffuseDesc.Usage = D3D11_USAGE_DEFAULT;
-    lightBufferDiffuseDesc.ByteWidth = sizeof ( LightBuffer );
-    lightBufferDiffuseDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    //lightBufferDiffuseDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    lightBufferDiffuseDesc.MiscFlags = 0;
-    lightBufferDiffuseDesc.StructureByteStride = 0; // DirectX 11
+    D3D11_BUFFER_DESC diffuesLightBufferDesc;
+    diffuesLightBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    diffuesLightBufferDesc.ByteWidth = sizeof ( LightBuffer );
+    diffuesLightBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    //diffuesLightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    diffuesLightBufferDesc.MiscFlags = 0;
+    diffuesLightBufferDesc.StructureByteStride = 0; // DirectX 11
 
     // diffuse light constant buffer creation (usable to access pixel shader constant buffer)
     hR = m_core->m_getD3D ()->m_getDevice ()->CreateBuffer ( &matrixBufferDesc, nullptr, &m_diffuseLightBuffer );
@@ -257,7 +257,8 @@ void Universe::m_renderResources ( void )
     //dataPtrDiffuseLight = (LightBuffer*) mappedResource.pData;
 
     // copy the diffuse light structure to the constant buffer
-    dataPtrDiffuseLight.diffuseColour = m_diffuseLight->m_getColour ();
+    dataPtrDiffuseLight.ambientColour = m_diffuseLight->m_getAmbientColour ();
+    dataPtrDiffuseLight.diffuseColour = m_diffuseLight->m_getDiffuseColour ();
     dataPtrDiffuseLight.diffuseDirection = m_diffuseLight->m_getDirection ();
     dataPtrDiffuseLight.padding = 0.0f;
 

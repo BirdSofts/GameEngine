@@ -29,7 +29,8 @@ private:
   ShaderColour* m_shaderColour;
   ShaderTexture* m_shaderTexture;
   Texture* m_texture; // texture resource
-  ShaderTexDiffLight* m_shaderDiffuseLight;
+  ShaderColDiffAmbiLight* m_shaderColDiffAmbiLight;
+  ShaderTexDiffLight* m_shaderTexDiffuseLight;
 
   Terrain* m_terrain; // terrain
 

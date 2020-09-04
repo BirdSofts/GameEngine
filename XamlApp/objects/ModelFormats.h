@@ -27,8 +27,23 @@ struct VertexT
 struct VertexL
 {
   DirectX::XMFLOAT3 position;
+  DirectX::XMFLOAT3 normal;
+};
+
+
+struct VertexTL
+{
+  DirectX::XMFLOAT3 position;
   DirectX::XMFLOAT2 texture;
   DirectX::XMFLOAT3 normal; // normal light
+};
+
+
+struct VertexCL
+{
+  DirectX::XMFLOAT3 position;
+  DirectX::XMFLOAT4 color;
+  DirectX::XMFLOAT3 normal;
 };
 
 
@@ -37,8 +52,8 @@ struct VertexL
 class VertexTexDiffuseL
 {
 public:
-  static unsigned int read ( const char* path, VertexL** vertices ); // read polygon vertices
-  //static void write ( VertexL*, unsigned int& ); // write a polygon
+  static unsigned int read ( const char* path, VertexTL** vertices ); // read polygon vertices
+  //static void write ( VertexTL*, unsigned int& ); // write a polygon
 };
 
 

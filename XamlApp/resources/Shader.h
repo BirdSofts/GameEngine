@@ -51,7 +51,7 @@ public:
                               unsigned int elmCount ); // rendering pipeline (GPU initialization)
   bool m_compile ( LPCWSTR* files ); // compile HLSL using DirectX APIs
   bool m_initialize ( D3D11_INPUT_ELEMENT_DESC* polygonLayout, unsigned int elmCount,
-                      D3D11_SAMPLER_DESC* sampler ); // rendering pipeline (GPU initialization)
+                      D3D11_SAMPLER_DESC* sampler = nullptr ); // rendering pipeline (GPU initialization)
   void m_release ( void ); // release the shaders resources
 
   ID3D11VertexShader* const m_getVertexShader ( void ) { return m_vertexShader; };
@@ -96,7 +96,7 @@ public:
 };
 
 
-class ShaderColDiffLight : public Shader
+class ShaderColDiffAmbiLight : public Shader
 {
 private:
   D3D11_INPUT_ELEMENT_DESC m_polygonLayoutDesc [3];
@@ -106,7 +106,7 @@ private:
 
   bool m_initialized; // true if initialization was successful
 public:
-  ShaderColDiffLight ( TheCore* coreObj );
+  ShaderColDiffAmbiLight ( TheCore* coreObj );
   //~ShaderDiffuseLight ( void );
 
   const bool& m_isInitialized ( void ) { return m_initialized; }; // get the initialized state

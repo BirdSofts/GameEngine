@@ -273,7 +273,7 @@ bool Shader::m_initialize ( D3D11_INPUT_ELEMENT_DESC* polygonLayout, unsigned in
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "Creation of texture vertex shader failed!" + m_entryPoint );
+                                                  "Creation of vertex shader failed!" + m_entryPoint );
       return false;
     }
 
@@ -283,7 +283,7 @@ bool Shader::m_initialize ( D3D11_INPUT_ELEMENT_DESC* polygonLayout, unsigned in
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "Creation of texture pixel shader failed!" + m_entryPoint );
+                                                  "Creation of pixel shader failed!" + m_entryPoint );
       return false;
     }
 
@@ -294,7 +294,7 @@ bool Shader::m_initialize ( D3D11_INPUT_ELEMENT_DESC* polygonLayout, unsigned in
     if (FAILED ( hR ))
     {
       PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "Creation of texture input layout failed!" + m_entryPoint );
+                                                  "Creation of input layout failed!" + m_entryPoint );
       return false;
     }
 
@@ -305,14 +305,14 @@ bool Shader::m_initialize ( D3D11_INPUT_ELEMENT_DESC* polygonLayout, unsigned in
     m_pixelBuffer = nullptr;
 
 
-    if (sampler)
+    if (sampler != nullptr)
     {
       // testure sampler state creation
       hR = device->CreateSamplerState ( sampler, &m_samplerState );
       if (FAILED ( hR ))
       {
         PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                    "Creation of texture sampler state failed!" + m_entryPoint );
+                                                    "Creation of sampler state failed!" + m_entryPoint );
         return false;
       }
     }
@@ -484,8 +484,62 @@ ShaderTexture::ShaderTexture ( TheCore* coreObj ) :
 //};
 
 
+ShaderColDiffAmbiLight::ShaderColDiffAmbiLight ( TheCore* coreObj ) :
+  Shader ( coreObj, "DiffuseAmbientLightColourShader" ),
+  m_initialized ( false )
+{
+  try
+  {
+
+    m_polygonLayoutDesc [0].SemanticName = "POSITION";
+    m_polygonLayoutDesc [0].SemanticIndex = 0;
+    m_polygonLayoutDesc [0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+    m_polygonLayoutDesc [0].InputSlot = 0;
+    m_polygonLayoutDesc [0].AlignedByteOffset = 0;
+    m_polygonLayoutDesc [0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+    m_polygonLayoutDesc [0].InstanceDataStepRate = 0;
+
+    m_polygonLayoutDesc [1].SemanticName = "COLOR"; // colour semantic
+    m_polygonLayoutDesc [1].SemanticIndex = 0;
+    m_polygonLayoutDesc [1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT; // 32 bits for each x, y and z
+    m_polygonLayoutDesc [1].InputSlot = 0;
+    m_polygonLayoutDesc [1].AlignedByteOffset = 12; // offset: 3*4 byte of float type
+    m_polygonLayoutDesc [1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+    m_polygonLayoutDesc [1].InstanceDataStepRate = 0;
+
+    m_polygonLayoutDesc [2].SemanticName = "NORMAL";
+    m_polygonLayoutDesc [2].SemanticIndex = 0;
+    m_polygonLayoutDesc [2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+    m_polygonLayoutDesc [2].InputSlot = 0;
+    m_polygonLayoutDesc [2].AlignedByteOffset = 24; //D3D11_APPEND_ALIGNED_ELEMENT
+    m_polygonLayoutDesc [2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+    m_polygonLayoutDesc [2].InstanceDataStepRate = 0;
+
+    m_elementsCount = 3;
+
+    m_files [0] = L"./graphics/vertexDAL.hlsl";
+    m_files [1] = L"./graphics/pixelDAL.hlsl";
+
+    if (m_compile ( m_files ))
+      m_initialized = m_initialize ( m_polygonLayoutDesc, m_elementsCount );
+
+  }
+  catch (const std::exception& ex)
+  {
+    PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                ex.what () );
+  }
+};
+
+
+//ShaderColDiffAmbiLight::~ShaderColDiffAmbiLight ( void )
+//{
+//
+//};
+
+
 ShaderTexDiffLight::ShaderTexDiffLight ( TheCore* coreObj ) :
-  Shader ( coreObj, "TexturedDiffuseLightShader" ),
+  Shader ( coreObj, "DiffuseLightTextureShader" ),
   m_initialized ( false )
 {
   try
@@ -507,13 +561,15 @@ ShaderTexDiffLight::ShaderTexDiffLight ( TheCore* coreObj ) :
     m_polygonLayoutDesc [1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
     m_polygonLayoutDesc [1].InstanceDataStepRate = 0;
 
-    m_polygonLayoutDesc [2].SemanticName = "NORMAL"; // normal light semantic
+    m_polygonLayoutDesc [2].SemanticName = "NORMAL";
     m_polygonLayoutDesc [2].SemanticIndex = 0;
-    m_polygonLayoutDesc [2].Format = DXGI_FORMAT_R32G32B32_FLOAT; // each x, y and z of the normal vector 32 bits
+    m_polygonLayoutDesc [2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
     m_polygonLayoutDesc [2].InputSlot = 0;
     m_polygonLayoutDesc [2].AlignedByteOffset = 20; //D3D11_APPEND_ALIGNED_ELEMENT
     m_polygonLayoutDesc [2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
     m_polygonLayoutDesc [2].InstanceDataStepRate = 0;
+
+    m_elementsCount = 3;
 
     m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -528,8 +584,6 @@ ShaderTexDiffLight::ShaderTexDiffLight ( TheCore* coreObj ) :
     m_samplerDesc.BorderColor [3] = 0.0f;
     m_samplerDesc.MinLOD = 0.0f;
     m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-    m_elementsCount = 3;
 
     m_files [0] = L"./graphics/vertexL.hlsl";
     m_files [1] = L"./graphics/pixelL.hlsl";

@@ -57,6 +57,9 @@ namespace winrt::GameEngine::implementation
     //auto dispatcher = CoreWindow
     m_appWindow.get ().Dispatcher ().AcceleratorKeyActivated ( { this, &MainPage::m_onAcceleratorKeyActivated } );
 
+    m_appWindow.get ().KeyDown ( { this, &MainPage::m_onKeyDown } );
+    m_appWindow.get ().KeyUp ( { this, &MainPage::m_onKeyUp } );
+
     // response to window close events // because of suspension procedure, following event rarely occurs.
     //m_appWindow.get ().Closed ( [this]( auto&&, auto&& ) { PointerProvider::getVariables ()->running = false; } );
 
@@ -488,12 +491,16 @@ namespace winrt::GameEngine::implementation
                                                winrt::Windows::UI::Core::AcceleratorKeyEventArgs const& e )
   {
 
+    auto eventType = e.EventType ();
+    auto virtualKey = e.VirtualKey ();
+
+
     // ALT+Enter: fullscreen + highest/lowest resolution switch
-    if (e.EventType () == winrt::Windows::UI::Core::CoreAcceleratorKeyEventType::SystemKeyDown)
+    if (eventType == winrt::Windows::UI::Core::CoreAcceleratorKeyEventType::SystemKeyDown)
     {
       auto alt = m_appWindow.get ().GetAsyncKeyState ( winrt::Windows::System::VirtualKey::RightMenu );
       if (alt == winrt::Windows::UI::Core::CoreVirtualKeyStates::Down
-           && e.VirtualKey () == winrt::Windows::System::VirtualKey::Enter)
+           && virtualKey == winrt::Windows::System::VirtualKey::Enter)
       {
         auto view = winrt::Windows::UI::ViewManagement::ApplicationView::GetForCurrentView ();
 
@@ -548,61 +555,61 @@ namespace winrt::GameEngine::implementation
     }
 
 
-    if (e.EventType () == winrt::Windows::UI::Core::CoreAcceleratorKeyEventType::KeyDown)
+    if (eventType == winrt::Windows::UI::Core::CoreAcceleratorKeyEventType::KeyDown)
     {
 
       // Todo prevent frame losses
 
       // key A: go left
-      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::A)
+      if (virtualKey == winrt::Windows::System::VirtualKey::A)
       {
         m_game->m_getUniverse ()->m_getCamera ()->m_goLeftRight ( -0.1f );
       }
 
       // key D: go right
-      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::D)
+      if (virtualKey == winrt::Windows::System::VirtualKey::D)
       {
         m_game->m_getUniverse ()->m_getCamera ()->m_goLeftRight ( 0.1f );
       }
 
       // page up: go up
-      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::PageUp)
+      if (virtualKey == winrt::Windows::System::VirtualKey::PageUp)
       {
         m_game->m_getUniverse ()->m_getCamera ()->m_goUpDown ( 0.1f );
       }
 
       // page down: go down
-      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::PageDown)
+      if (virtualKey == winrt::Windows::System::VirtualKey::PageDown)
       {
         m_game->m_getUniverse ()->m_getCamera ()->m_goUpDown ( -0.1f );
       }
 
       // key W: go forward
-      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::W)
+      if (virtualKey == winrt::Windows::System::VirtualKey::W)
       {
         m_game->m_getUniverse ()->m_getCamera ()->m_goForwardBackward ( 0.1f );
       }
 
       // key S: go backward
-      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::S)
+      if (virtualKey == winrt::Windows::System::VirtualKey::S)
       {
         m_game->m_getUniverse ()->m_getCamera ()->m_goForwardBackward ( -0.1f );
       }
 
       // key E: go forward
-      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::E)
+      if (virtualKey == winrt::Windows::System::VirtualKey::E)
       {
         m_game->m_getUniverse ()->m_getCamera ()->m_lookSidedLeftRight ( 0.5f );
       }
 
       // key Q: go backward
-      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::Q)
+      if (virtualKey == winrt::Windows::System::VirtualKey::Q)
       {
         m_game->m_getUniverse ()->m_getCamera ()->m_lookSidedLeftRight ( -0.5f );
       }
 
       // Escape: exit
-      if (e.VirtualKey () == winrt::Windows::System::VirtualKey::Escape)
+      if (virtualKey == winrt::Windows::System::VirtualKey::Escape)
       {
         m_game->m_isPaused () = true;
         m_game->m_getCore ()->m_getTimer ()->m_event ( typeEvent::pause );
@@ -618,6 +625,26 @@ namespace winrt::GameEngine::implementation
       }
     }
 
+  };
+
+
+  void MainPage::m_onKeyDown ( winrt::Windows::UI::Core::CoreWindow const& sender,
+                               winrt::Windows::UI::Core::KeyEventArgs const& e )
+  {
+    if (true)
+    {
+
+    }
+  };
+
+
+  void MainPage::m_onKeyUp ( winrt::Windows::UI::Core::CoreWindow const& sender,
+                             winrt::Windows::UI::Core::KeyEventArgs const& e )
+  {
+    if (true)
+    {
+
+    }
   };
 
 

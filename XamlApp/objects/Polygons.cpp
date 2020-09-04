@@ -146,7 +146,7 @@ void ModelClassLinker ( void ) // don't call this function: solution for linker 
   tempVertexT.m_getIndexBuffer ();
   tempVertexT.m_getVertexBuffer ();
   tempVertexT.m_release ();
-  Model<VertexL> tempVertexL ( dev, devCon, "", false );
+  Model<VertexTL> tempVertexL ( dev, devCon, "", false );
   tempVertexL.m_getIndexBuffer ();
   tempVertexL.m_getVertexBuffer ();
   tempVertexL.m_release ();
@@ -399,7 +399,7 @@ TexturedTriangles::TexturedTriangles ( ID3D11Device3* dev, ID3D11DeviceContext3*
 
 
 LightedTriangle::LightedTriangle ( ID3D11Device3* dev, ID3D11DeviceContext3* devC ) :
-  Model ( dev, devC, "\tLightedTriangles", false ),
+  Model ( dev, devC, "\tLightedTriangle", false ),
   m_verticesCount ( 0 ), m_allocated ( false )
 {
   try
@@ -411,17 +411,17 @@ LightedTriangle::LightedTriangle ( ID3D11Device3* dev, ID3D11DeviceContext3* dev
     // the lighted triangle
     m_verticesData [0].position = DirectX::XMFLOAT3 { -0.4f, -0.9f, 0.0f };
     m_verticesData [0].texture = DirectX::XMFLOAT2 { 0.0f, 1.0f };
-    m_verticesData [0].normal = DirectX::XMFLOAT3 { 0.0f, 0.0f, -1.0f };
+    m_verticesData [0].normal = DirectX::XMFLOAT3 { 0.0f, 1.0f, -1.0f };
     // normal vector: perpendicular to the polygon's face,
     // thus the exact direction the face is pointing is calculable.
     // note: set along the Z axis (-1) so the normal point toward the viewer.
 
     m_verticesData [1].position = DirectX::XMFLOAT3 { -0.2f, -0.5f, 0.0f };
     m_verticesData [1].texture = DirectX::XMFLOAT2 { 0.5f, 0.0f };
-    m_verticesData [1].normal = DirectX::XMFLOAT3 { 0.0f, 0.0f, -1.0f };
+    m_verticesData [1].normal = DirectX::XMFLOAT3 { 0.0f, 1.0f, -1.0f };
     m_verticesData [2].position = DirectX::XMFLOAT3 { 0.0f, -0.9f, 0.0f };
     m_verticesData [2].texture = DirectX::XMFLOAT2 { 1.0f, 1.0f };
-    m_verticesData [2].normal = DirectX::XMFLOAT3 { 0.0f, 0.0f, -1.0f };
+    m_verticesData [2].normal = DirectX::XMFLOAT3 { 0.0f, 1.0f, -1.0f };
 
     // triangles' vertices indices
     for (unsigned long i = 0; i < 3; i++)
@@ -446,7 +446,7 @@ LightedTriangle::LightedTriangle ( ID3D11Device3* dev, ID3D11DeviceContext3* dev
 
 
 Cube::Cube ( ID3D11Device3* dev, ID3D11DeviceContext3* devC ) :
-  Model ( dev, devC, "\tLightedTriangles", false ),
+  Model ( dev, devC, "\tLightedTexturedCube", false ),
   m_verticesCount ( 0 ), m_allocated ( false )
 {
   try
@@ -464,7 +464,11 @@ Cube::Cube ( ID3D11Device3* dev, ID3D11DeviceContext3* devC ) :
       if (m_verticesIndex)
       {
         for (unsigned long i = 0; i < m_verticesCount; i++)
+        {
+          m_verticesData [i].position.y += 0.2;
+
           m_verticesIndex [i] = i;
+        }
 
         if (m_allocate ( m_verticesData, m_verticesIndex, m_verticesCount ))
           m_allocated = true;

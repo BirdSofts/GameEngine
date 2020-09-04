@@ -81,6 +81,10 @@ namespace winrt::GameEngine::implementation
     // input events
     void m_onAcceleratorKeyActivated ( winrt::Windows::UI::Core::CoreDispatcher const& sender,
                                        winrt::Windows::UI::Core::AcceleratorKeyEventArgs const& e ); // on accelerator key pressed
+    void m_onKeyDown ( winrt::Windows::UI::Core::CoreWindow const& sender,
+                       winrt::Windows::UI::Core::KeyEventArgs const& e ); // on key press
+    void m_onKeyUp ( winrt::Windows::UI::Core::CoreWindow const& sender,
+                     winrt::Windows::UI::Core::KeyEventArgs const& e ); // on key release
     void m_onPointerPressed ( Windows::Foundation::IInspectable const& sender,
                               winrt::Windows::UI::Core::PointerEventArgs const& e ); // on pointer pressed
     void m_onPointerMoved ( Windows::Foundation::IInspectable const& sender,

@@ -21,7 +21,7 @@ Game::Game ( TheCore* coreObj ) :
     m_shaderColour = nullptr;
     m_shaderTexture = nullptr;
     m_texture = nullptr;
-    m_shaderDiffuseLight = nullptr;
+    m_shaderTexDiffuseLight = nullptr;
 
     _2d_triangles = nullptr;
     _2d_line = nullptr;
@@ -102,13 +102,6 @@ void Game::m_allocateResources ( void )
 
     m_shaderTexture = new (std::nothrow) ShaderTexture ( m_core );
 
-    m_terrain = new (std::nothrow) Terrain ( m_core, dynamic_cast<Shader*>(m_shaderColour) );
-    if (!m_terrain->m_isInitialized ())
-    {
-      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
-                                                  "Initialization of terrain failed!" );
-    }
-
     _2d_triangles = new (std::nothrow) Triangles ( m_core->m_getD3D ()->m_getDevice ().get (), m_core->m_getD3D ()->m_getDevCon ().get () );
 
     _2d_line = new (std::nothrow) Line ( m_core->m_getD3D ()->m_getDevice ().get (), m_core->m_getD3D ()->m_getDevCon ().get () );
@@ -122,7 +115,16 @@ void Game::m_allocateResources ( void )
     }
     _2d_texturedTriangles = new (std::nothrow) TexturedTriangles ( m_core->m_getD3D ()->m_getDevice ().get (), m_core->m_getD3D ()->m_getDevCon ().get () );
 
-    m_shaderDiffuseLight = new (std::nothrow) ShaderTexDiffLight ( m_core );
+    m_shaderColDiffAmbiLight = new (std::nothrow) ShaderColDiffAmbiLight ( m_core );
+
+    m_shaderTexDiffuseLight = new (std::nothrow) ShaderTexDiffLight ( m_core );
+
+    m_terrain = new (std::nothrow) Terrain ( m_core, dynamic_cast<Shader*>(m_shaderColDiffAmbiLight) );
+    if (!m_terrain->m_isInitialized ())
+    {
+      PointerProvider::getFileLogger ()->m_push ( logType::error, std::this_thread::get_id (), "mainThread",
+                                                  "Initialization of terrain failed!" );
+    }
 
     _2d_lightedTriangle = new (std::nothrow) LightedTriangle ( m_core->m_getD3D ()->m_getDevice ().get (), m_core->m_getD3D ()->m_getDevCon ().get () );
 
@@ -153,13 +155,16 @@ const bool Game::m_run ( void )
     // setting the needed starting points
     m_core->m_getTimer ()->m_event ( typeEvent::reset ); // reset (start)
 
-    m_universe->m_getCamera ()->m_setPosition ( 0.0f, 0.2f, -3.0f ); // set the start view
+    m_universe->m_getCamera ()->m_setPosition ( 0.0f, 0.2f, -5.0f ); // set the start view
 
-    const float colour [] { 0.2f, 0.6f, 0.6f, 1.0f };
-    m_universe->m_getDiffuseLight ()->m_setColour ( colour ); // diffuse light colour
+    const float colourA [] { 0.2f, 0.2f, 0.2f, 1.0f };
+    m_universe->m_getDiffuseLight ()->m_setAmbientColour ( colourA ); // ambient light colour
 
-    const float direction [] { 0.0f, 0.0f, 1.0f };
-    m_universe->m_getDiffuseLight ()->m_setDirection ( direction ); // light direction: point down the positive Z axis
+    const float colourD [] { 1.0f, 1.0f, 1.0f, 1.0f };
+    m_universe->m_getDiffuseLight ()->m_setDiffuseColour ( colourD ); // diffuse light colour
+
+    const float direction [] { 0.0f, -1.0f, 0.0f };
+    m_universe->m_getDiffuseLight ()->m_setDirection ( direction ); // light direction: point down the positive Y axis
 
 
 
@@ -352,11 +357,11 @@ void Game::m_render ( void )
 
 
 
-    m_core->m_getD3D ()->m_getDevCon ()->VSSetShader ( m_shaderDiffuseLight->m_getVertexShader (), nullptr, 0 );
-    m_core->m_getD3D ()->m_getDevCon ()->PSSetShader ( m_shaderDiffuseLight->m_getPixelShader (), nullptr, 0 );
-    m_core->m_getD3D ()->m_getDevCon ()->IASetInputLayout ( m_shaderDiffuseLight->m_getInputLayout () );
-    m_core->m_getD3D ()->m_getDevCon ()->PSSetSamplers ( 0, 1, m_shaderDiffuseLight->m_getSamplerState () );
-    strides = sizeof ( VertexL );
+    m_core->m_getD3D ()->m_getDevCon ()->VSSetShader ( m_shaderTexDiffuseLight->m_getVertexShader (), nullptr, 0 );
+    m_core->m_getD3D ()->m_getDevCon ()->PSSetShader ( m_shaderTexDiffuseLight->m_getPixelShader (), nullptr, 0 );
+    m_core->m_getD3D ()->m_getDevCon ()->IASetInputLayout ( m_shaderTexDiffuseLight->m_getInputLayout () );
+    m_core->m_getD3D ()->m_getDevCon ()->PSSetSamplers ( 0, 1, m_shaderTexDiffuseLight->m_getSamplerState () );
+    strides = sizeof ( VertexTL );
     m_core->m_getD3D ()->m_getDevCon ()->IASetVertexBuffers ( 0, 1, _2d_lightedTriangle->m_getVertexBuffer (), &strides, &offset );
     m_core->m_getD3D ()->m_getDevCon ()->IASetIndexBuffer ( _2d_lightedTriangle->m_getIndexBuffer (), DXGI_FORMAT_R32_UINT, 0 );
     m_core->m_getD3D ()->m_getDevCon ()->IASetPrimitiveTopology ( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
@@ -481,11 +486,11 @@ void Game::m_release ( void )
       delete m_shaderColour;
       m_shaderColour = nullptr;
     }
-    if (m_shaderDiffuseLight)
+    if (m_shaderTexDiffuseLight)
     {
-      m_shaderDiffuseLight;
-      delete m_shaderDiffuseLight;
-      m_shaderDiffuseLight = nullptr;
+      m_shaderTexDiffuseLight;
+      delete m_shaderTexDiffuseLight;
+      m_shaderTexDiffuseLight = nullptr;
     }
     if (m_universe)
     {

@@ -27,9 +27,10 @@ struct worldViewProjectionMatrices
 // light buffer (matching the global cbuffer type introduced in pixel shader)
 struct LightBuffer
 {
+  DirectX::XMFLOAT4 ambientColour;
   DirectX::XMFLOAT4 diffuseColour;
   DirectX::XMFLOAT3 diffuseDirection;
-  float padding; // extra, so the structure size match a multiple of 16 (function 'CreateBuffer' requirements)
+  float padding; // extra, so the structure size match a multiple of 4 (function 'CreateBuffer' requirements)
 };
 
 

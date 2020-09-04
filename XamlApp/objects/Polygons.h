@@ -101,10 +101,10 @@ public:
 };
 
 
-class LightedTriangle : public Model<VertexL>
+class LightedTriangle : public Model<VertexTL>
 {
 private:
-  VertexL m_verticesData [3]; // object model vertices data
+  VertexTL m_verticesData [3]; // object model vertices data
   unsigned long m_verticesIndex [3]; // object model vertices indices
   unsigned long m_verticesCount; // object model vertices count
 
@@ -117,10 +117,10 @@ public:
 };
 
 
-class Cube : public Model<VertexL>
+class Cube : public Model<VertexTL>
 {
 private:
-  VertexL* m_verticesData; // object model vertices data
+  VertexTL* m_verticesData; // object model vertices data
   unsigned long* m_verticesIndex; // object model vertices indices
   unsigned long m_verticesCount; // object model vertices count
 

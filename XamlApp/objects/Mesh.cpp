@@ -232,7 +232,7 @@ void MeshClassLinker ( void ) // don't call this function: solution for linker e
   Texture* tex { nullptr };
   Vertex* data { nullptr };
   VertexT* dataT { nullptr };
-  VertexL* dataL { nullptr };
+  VertexTL* dataL { nullptr };
   Mesh<Vertex> tempVertex ( core, shad, tex, "", false );
   tempVertex.m_getIndexBuffer ();
   tempVertex.m_getVertexBuffer ();
@@ -245,7 +245,7 @@ void MeshClassLinker ( void ) // don't call this function: solution for linker e
   tempVertexT.m_render ();
   tempVertexT.m_updateBuffer ( dataT );
   tempVertexT.m_release ();
-  Mesh<VertexL> tempVertexL ( core, shad, tex, "", false );
+  Mesh<VertexTL> tempVertexL ( core, shad, tex, "", false );
   tempVertexL.m_getIndexBuffer ();
   tempVertexL.m_getVertexBuffer ();
   tempVertexL.m_render ();
@@ -262,7 +262,7 @@ MeshCube::MeshCube ( TheCore* coreObj, Shader* shadObj, Texture* texObj ) :
   try
   {
 
-    DirectX::XMFLOAT3 position { -.4f, .2f, 0.0f };
+    DirectX::XMFLOAT3 position { -0.4f, 0.6f, 0.0f };
     float scale = .15f;
 
     m_getPosition () = position;

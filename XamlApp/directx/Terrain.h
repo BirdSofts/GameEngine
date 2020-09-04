@@ -15,6 +15,13 @@
 #include "../resources/Shader.h"
 
 
+struct TerrainMap
+{
+  float x, y, z;
+  float nX, nY, nZ;
+};
+
+
 // Terrain wrapper
 class Terrain
 {
@@ -34,6 +41,7 @@ private:
   bool m_initialized; // true if initialization was successful
 
   bool m_allocate ( void ); // resource allocation process
+  bool m_allocate2 ( void ); // resource allocation process
 public:
   Terrain ( TheCore* coreObj, Shader* shadObj );
   //~Terrain ( void );

@@ -11,7 +11,7 @@
 #include "Shared.h"
 
 
-unsigned int VertexTexDiffuseL::read ( const char* path, VertexL** vertices )
+unsigned int VertexTexDiffuseL::read ( const char* path, VertexTL** vertices )
 {
   try
   {
@@ -31,7 +31,7 @@ unsigned int VertexTexDiffuseL::read ( const char* path, VertexL** vertices )
       stream >> type;
       stream.clear ();
 
-      *vertices = new (std::nothrow) VertexL [count];
+      *vertices = new (std::nothrow) VertexTL [count];
 
       unsigned int index { 0 };
       for (unsigned int i = 3; i <= count; i += 3)
@@ -45,9 +45,6 @@ unsigned int VertexTexDiffuseL::read ( const char* path, VertexL** vertices )
         while (index != i)
         {
           stream >> (*vertices) [index].position.x >> (*vertices) [index].position.y >> (*vertices) [index].position.z;
-          //(*vertices) [index].position.x += .2f;
-          /*(*vertices) [index].position.y += 1;
-          (*vertices) [index].position.z += 1;*/
           stream >> (*vertices) [index].texture.x >> (*vertices) [index].texture.y;
           stream >> (*vertices) [index].normal.x >> (*vertices) [index].normal.y >> (*vertices) [index].normal.z;
           index++;
@@ -71,7 +68,7 @@ unsigned int VertexTexDiffuseL::read ( const char* path, VertexL** vertices )
 };
 
 
-//void VertexTexDiffuseL::write ( VertexL* /*data*/, unsigned int& /*count*/ )
+//void VertexTexDiffuseL::write ( VertexTL* /*data*/, unsigned int& /*count*/ )
 //{
 //  try
 //  {

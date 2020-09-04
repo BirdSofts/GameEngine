@@ -2,13 +2,11 @@
 /// <summary>
 /// 
 /// </summary>
-/// <created>}Y{,27.06.2020</created>
+/// <created>}Y{,30.08.2020</created>
 /// <state></state>
 // ********************************************************************************
 
-// global declarations (modified externally)
-Texture2D shaderTexture; // texture resource
-SamplerState samplerType; // the way the texture is rendered
+SamplerState samplerType; // how the pixels are written on the polygon face
 
 cbuffer LightBuffer // buffer object type (ambient / diffuse light properties)
 {
@@ -18,35 +16,24 @@ cbuffer LightBuffer // buffer object type (ambient / diffuse light properties)
   float padding; // to size the structure at multiple of 4
 }
 
-struct Pixel // pixel shader input type
+// colour pixel shader input type
+struct Pixel
 {
-  float4 position : SV_POSITION; // corrected vertex position
-  float2 tex : TEXCOORD0; // texture coordinate
-  float3 normal : NORMAL; // the calculated and normalized light
+  float4 position : SV_POSITION;
+  float4 colour : COLOR;
+  float3 normal : NORMAL;
 };
 
 
-float4 main( Pixel input ) : SV_TARGET // processes on pixel
+// colour pixel shader: taking the colour draws each pixel on the polygons that will be rendered to the screen.
+float4 main(Pixel input) : SV_TARGET // called by GPU when the output of vertex shader is ready
 {
   
-  // SV_TARGET: the semantic indicates that the return value of texture pixel shader should match the render target format
+  // SV_TARGET: the semantic indicates that the return value of colour pixel shader should match the render target format
   
-  
-  // process:
-  //-- sampling from the texture, render the polygon face 
-  //-- calculation of the amount of light on polygon face
-  
-  // output:
-  //-- resulted pixel containing location and properties combined from vertex, texture and light
-  
-  
-  float4 textureColour;
   float3 lightDir;
   float lightIntensity;
   float4 colour;
-
-  // using sampler, sample the pixel colour from the texture at this texture coordinate location.
-  textureColour = shaderTexture.Sample(samplerType, input.tex);
   
   // default output colour is set to ambient light value for all pixels
   colour = ambientColour;
@@ -65,12 +52,11 @@ float4 main( Pixel input ) : SV_TARGET // processes on pixel
     colour += (diffuseColour * lightIntensity);
   }
   
+  colour = colour + input.colour;
+  
   // clamp the final light colour
   colour = saturate(colour);
   
-  // combination (multiplication) of textured pixel and the final diffuse colour
-  colour = colour * textureColour;
-  
-  return colour; // final pixel colour
+  return colour;
   
 }
